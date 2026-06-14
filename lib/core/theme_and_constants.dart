@@ -83,7 +83,7 @@ class AppTheme {
 class AppConstants {
   // Worker URL — deploy করার পর এখানে বসাও
   static const String workerBaseUrl =
-      'https://atlaspro-main.YOUR_SUBDOMAIN.workers.dev';
+      'https://atlaspro-db.hamza818483.workers.dev';
 
   static const String appName = 'AtlasPro';
   static const String appVersion = '1.0.0';
