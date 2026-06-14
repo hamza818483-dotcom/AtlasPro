@@ -21,7 +21,7 @@ jobs:
           rm -rf temp_app
       - name: Fix Kotlin version
         run: |
-          sed -i "s/ext.kotlin_version = .*/ext.kotlin_version = '1.9.10'/" android/build.gradle
+          sed -i "s/ext.kotlin_version = .*/ext.kotlin_version = '1.9.23'/" android/build.gradle
           cat android/build.gradle
       - name: Get dependencies
         run: flutter pub get
