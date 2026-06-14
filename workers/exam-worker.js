@@ -1,0 +1,134 @@
+// workers/exam-worker.js — FINAL (Batch 15)
+// Handles: /api/exam/submit, /api/exam/answers/:id, /api/exam/mcq (redirect to home-pdf-worker)
+// auth-worker.js থেকে exam routes সরিয়ে এখানে রাখো
+
+export default {
+  async fetch(request, env) {
+    const url = new URL(request.url);
+    const path = url.pathname;
+    const method = request.method;
+
+    const cors = {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    };
+    if (method === 'OPTIONS') return new Response(null, { headers: cors });
+
+    const json = (data, status = 200) =>
+      new Response(JSON.stringify(data), {
+        status,
+        headers: { ...cors, 'Content-Type': 'application/json' },
+      });
+
+    // Auth
+    const token = (request.headers.get('Authorization') || '').replace('Bearer ', '');
+    if (!token) return json({ error: 'Unauthorized' }, 401);
+    const user = await env.DB.prepare(
+      'SELECT * FROM users WHERE session_token=?'
+    ).bind(token).first();
+    if (!user) return json({ error: 'Invalid token' }, 401);
+
+    try {
+      // ── SUBMIT EXAM ────────────────────────────────────────
+      if (path === '/api/exam/submit' && method === 'POST') {
+        const body = await request.json();
+        const {
+          pdf_id, page_numbers, mcq_type,
+          total_questions, correct_answers, score, answers,
+        } = body;
+
+        const res = await env.DB.prepare(`
+          INSERT INTO exam_results
+            (user_id, pdf_id, page_numbers, mcq_type,
+             total_questions, correct_answers, score, created_at)
+          VALUES (?,?,?,?,?,?,?,datetime('now'))
+        `).bind(
+          user.id, pdf_id,
+          Array.isArray(page_numbers) ? page_numbers.join(',') : (page_numbers || ''),
+          mcq_type || 'standard',
+          total_questions || 0, correct_answers || 0, score || 0,
+        ).run();
+
+        const examResultId = res.meta.last_row_id;
+
+        // Save per-question answers
+        if (Array.isArray(answers) && answers.length > 0) {
+          for (const ans of answers) {
+            await env.DB.prepare(`
+              INSERT INTO exam_answers
+                (exam_result_id, mcq_id, question,
+                 option_a, option_b, option_c, option_d,
+                 correct_answer, user_answer, is_correct,
+                 explanation, page_number)
+              VALUES (?,?,?,?,?,?,?,?,?,?,?,?)
+            `).bind(
+              examResultId,
+              ans.mcq_id || null,
+              ans.question || '',
+              ans.option_a || '', ans.option_b || '',
+              ans.option_c || '', ans.option_d || '',
+              ans.correct_answer || 'A',
+              ans.user_answer || null,
+              ans.is_correct ? 1 : 0,
+              ans.explanation || '',
+              ans.page_number || 1,
+            ).run();
+          }
+        }
+
+        return json({ id: examResultId, score, message: 'Saved' }, 201);
+      }
+
+      // ── GET EXAM ANSWERS (detail / practice) ──────────────
+      if (path.match(/^\/api\/exam\/answers\/\d+$/) && method === 'GET') {
+        const examId = path.split('/').pop();
+        const mistakeOnly = url.searchParams.get('mistake_only') === 'true';
+
+        const exam = await env.DB.prepare(
+          'SELECT * FROM exam_results WHERE id=? AND user_id=?'
+        ).bind(examId, user.id).first();
+        if (!exam) return json({ error: 'Not found' }, 404);
+
+        const q = mistakeOnly
+          ? 'SELECT * FROM exam_answers WHERE exam_result_id=? AND is_correct=0 ORDER BY id ASC'
+          : 'SELECT * FROM exam_answers WHERE exam_result_id=? ORDER BY id ASC';
+
+        const { results } = await env.DB.prepare(q).bind(examId).all();
+        return json({ questions: results.map(r => ({ ...r, is_correct: r.is_correct === 1 })), exam });
+      }
+
+      // ── EXAM HISTORY (profile screen) ─────────────────────
+      if (path === '/api/exam/history' && method === 'GET') {
+        const { results } = await env.DB.prepare(`
+          SELECT er.*,
+            p.title  AS pdf_title,
+            c.name   AS chapter_name,
+            s.name   AS subject_name,
+            strftime('%d/%m/%Y %H:%M', er.created_at) AS exam_date
+          FROM exam_results er
+          LEFT JOIN pdfs     p ON er.pdf_id     = p.id
+          LEFT JOIN chapters c ON p.chapter_id  = c.id
+          LEFT JOIN subjects s ON c.subject_id  = s.id
+          WHERE er.user_id = ?
+          ORDER BY er.created_at DESC
+          LIMIT 50
+        `).bind(user.id).all();
+
+        // Attach question count per exam
+        const history = [];
+        for (const exam of results) {
+          const cnt = await env.DB.prepare(
+            'SELECT COUNT(*) AS c FROM exam_answers WHERE exam_result_id=?'
+          ).bind(exam.id).first();
+          history.push({ ...exam, answer_count: cnt?.c || 0 });
+        }
+        return json({ history });
+      }
+
+      return json({ error: 'Not found' }, 404);
+    } catch (e) {
+      return json({ error: e.message }, 500);
+    }
+  },
+};

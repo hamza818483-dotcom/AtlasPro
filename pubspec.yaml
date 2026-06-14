@@ -1,0 +1,57 @@
+name: atlaspro
+description: AtlasPro - Educational Platform for Students
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.3.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # Navigation
+  go_router: ^14.2.0
+
+  # HTTP
+  http: ^1.2.1
+
+  # Local storage
+  shared_preferences: ^2.3.2
+  sqflite: ^2.3.2
+  path: ^1.9.0
+  path_provider: ^2.1.2
+
+  # PDF viewer
+  syncfusion_flutter_pdfviewer: ^26.2.14
+
+  # File picker (CSV + PDF upload)
+  file_picker: ^8.1.2
+
+  # Image picker (profile photo)
+  image_picker: ^1.1.2
+
+  # URL launcher (YouTube links)
+  url_launcher: ^6.3.0
+
+  # Network check
+  connectivity_plus: ^6.0.3
+
+  # Icons
+  cupertino_icons: ^1.0.8
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^4.0.0
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/images/
+  fonts:
+    - family: Inter
+      fonts:
+        - asset: assets/fonts/Inter-Regular.ttf
+        - asset: assets/fonts/Inter-Bold.ttf
+          weight: 700
