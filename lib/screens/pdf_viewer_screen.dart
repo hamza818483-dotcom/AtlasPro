@@ -105,11 +105,7 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
     if (page == _currentPage) return;
     final allowed = await checkAndRecordPageAccess(context, widget.pdfId, page);
     if (!allowed) {
-      _pdfCtrl?.animateToPage(
-        _currentPage,
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeInOut,
-      );
+      _pdfCtrl?.jumpToPage(_currentPage);
       setState(() => _pageBlocked = true);
       Future.delayed(const Duration(seconds: 2), () {
         if (mounted) setState(() => _pageBlocked = false);
