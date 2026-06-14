@@ -1,4 +1,4 @@
-name: Build APK
+name: Build APK & Web
 on:
   push:
     branches: [ main ]
@@ -18,12 +18,11 @@ jobs:
         run: |
           flutter create --org com.atlaspro --project-name atlaspro temp_app
           cp -r temp_app/android .
-          cp -r temp_app/ios . 2>/dev/null || true
           rm -rf temp_app
-      - name: Copy source files
+      - name: Fix Kotlin version
         run: |
-          cp -r lib/* temp_lib/ 2>/dev/null || true
-          rm -rf android/app/src/main/kotlin/com/atlaspro/atlaspro/MainActivity.kt 2>/dev/null || true
+          sed -i "s/ext.kotlin_version = .*/ext.kotlin_version = '1.9.10'/" android/build.gradle
+          cat android/build.gradle
       - name: Get dependencies
         run: flutter pub get
       - name: Build APK
