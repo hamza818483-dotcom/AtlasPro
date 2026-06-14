@@ -19,10 +19,10 @@ jobs:
           flutter create --org com.atlaspro --project-name atlaspro temp_app
           cp -r temp_app/android .
           rm -rf temp_app
-      - name: Fix Kotlin version
+      - name: Fix Kotlin & Gradle versions
         run: |
-          sed -i "s/ext.kotlin_version = .*/ext.kotlin_version = '1.9.23'/" android/build.gradle
-          cat android/build.gradle
+          sed -i "s/ext.kotlin_version = .*/ext.kotlin_version = '1.9.22'/" android/build.gradle
+          echo "resolutionStrategy { force 'org.jetbrains.kotlin:kotlin-stdlib:1.9.22' }" >> android/build.gradle
       - name: Get dependencies
         run: flutter pub get
       - name: Build APK
