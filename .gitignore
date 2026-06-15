@@ -1,0 +1,9 @@
+android-sdk/
+build/
+commandlinetools*
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+*.class
+*.jar
+*.apk
