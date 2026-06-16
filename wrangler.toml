@@ -10,10 +10,10 @@ binding = "DB"
 database_name = "atlaspro"
 database_id = "4b5de415-f0ba-4fd3-95f2-ee95f2da46d0"
 
-# R2 Bucket for PDF and image storage
-[[r2_buckets]]
-binding = "R2"
-bucket_name = "atlaspro-files"
+# R2 Bucket — enable R2 on your Cloudflare account first, then uncomment:
+# [[r2_buckets]]
+# binding = "R2"
+# bucket_name = "atlaspro-files"
 
 # Public variables (non-secret)
 [vars]
