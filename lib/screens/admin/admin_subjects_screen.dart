@@ -5,6 +5,7 @@ import 'package:file_picker/file_picker.dart';
 import '../../core/constants.dart';
 import '../../core/theme.dart';
 import '../../services/auth_service.dart';
+import 'admin_pdf_pages_screen.dart';
 
 class AdminSubjectsScreen extends StatefulWidget {
   const AdminSubjectsScreen({super.key});
@@ -20,6 +21,7 @@ class _AdminSubjectsScreenState extends State<AdminSubjectsScreen> {
   int? _expandedChapter;
   bool _loading = true;
   String? _error;
+  Map<int, bool> _ocrLoading = {};
 
   @override
   void initState() {
@@ -28,7 +30,10 @@ class _AdminSubjectsScreenState extends State<AdminSubjectsScreen> {
   }
 
   Future<void> _loadSubjects() async {
-    setState(() { _loading = true; _error = null; });
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
     try {
       final token = await AuthService.getToken();
       final res = await http.get(
@@ -38,64 +43,107 @@ class _AdminSubjectsScreenState extends State<AdminSubjectsScreen> {
       if (res.statusCode == 200) {
         final data = jsonDecode(res.body);
         setState(() {
-          _subjects = List<Map<String, dynamic>>.from(data['subjects'] ?? []);
+          _subjects =
+              List<Map<String, dynamic>>.from(data['subjects'] ?? []);
           _loading = false;
         });
       } else {
-        setState(() { _error = 'Failed to load'; _loading = false; });
+        setState(() {
+          _error = 'লোড ব্যর্থ (${res.statusCode})';
+          _loading = false;
+        });
       }
     } catch (e) {
-      setState(() { _error = e.toString(); _loading = false; });
+      setState(() {
+        _error = e.toString();
+        _loading = false;
+      });
     }
   }
 
   Future<void> _loadChapters(int subjectId) async {
-    final token = await AuthService.getToken();
-    final res = await http.get(
-      Uri.parse('${AppConstants.workerBaseUrl}/api/admin/chapters?subject_id=$subjectId'),
-      headers: {'Authorization': 'Bearer $token'},
-    );
-    if (res.statusCode == 200) {
-      final data = jsonDecode(res.body);
-      setState(() {
-        _chapters[subjectId] = List<Map<String, dynamic>>.from(data['chapters'] ?? []);
-      });
-    }
+    try {
+      final token = await AuthService.getToken();
+      final res = await http.get(
+        Uri.parse(
+            '${AppConstants.workerBaseUrl}/api/admin/chapters?subject_id=$subjectId'),
+        headers: {'Authorization': 'Bearer $token'},
+      );
+      if (res.statusCode == 200) {
+        final data = jsonDecode(res.body);
+        setState(() {
+          _chapters[subjectId] =
+              List<Map<String, dynamic>>.from(data['chapters'] ?? []);
+        });
+      }
+    } catch (_) {}
   }
 
   Future<void> _loadPdfs(int chapterId) async {
-    final token = await AuthService.getToken();
-    final res = await http.get(
-      Uri.parse('${AppConstants.workerBaseUrl}/api/admin/pdfs?chapter_id=$chapterId'),
-      headers: {'Authorization': 'Bearer $token'},
-    );
-    if (res.statusCode == 200) {
-      final data = jsonDecode(res.body);
-      setState(() {
-        _pdfs[chapterId] = List<Map<String, dynamic>>.from(data['pdfs'] ?? []);
-      });
+    try {
+      final token = await AuthService.getToken();
+      final res = await http.get(
+        Uri.parse(
+            '${AppConstants.workerBaseUrl}/api/admin/pdfs?chapter_id=$chapterId'),
+        headers: {'Authorization': 'Bearer $token'},
+      );
+      if (res.statusCode == 200) {
+        final data = jsonDecode(res.body);
+        setState(() {
+          _pdfs[chapterId] =
+              List<Map<String, dynamic>>.from(data['pdfs'] ?? []);
+        });
+      }
+    } catch (_) {}
+  }
+
+  Future<void> _triggerOcr(int pdfId) async {
+    setState(() => _ocrLoading[pdfId] = true);
+    try {
+      final token = await AuthService.getToken();
+      final res = await http.post(
+        Uri.parse('${AppConstants.workerBaseUrl}/api/admin/pdfs/$pdfId/ocr'),
+        headers: {'Authorization': 'Bearer $token'},
+      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(res.statusCode == 200
+              ? '✅ OCR Processing শুরু হয়েছে!'
+              : '❌ OCR শুরু করা যায়নি'),
+          backgroundColor:
+              res.statusCode == 200 ? Colors.green.shade700 : Colors.red,
+        ));
+      }
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('❌ OCR Error'),
+          backgroundColor: Colors.red,
+        ));
+      }
     }
+    setState(() => _ocrLoading[pdfId] = false);
   }
 
   Future<void> _showAddSubjectDialog([Map<String, dynamic>? existing]) async {
-    final nameCtrl = TextEditingController(text: existing?['name'] ?? '');
-    final descCtrl = TextEditingController(text: existing?['description'] ?? '');
-    final iconCtrl = TextEditingController(text: existing?['icon'] ?? '📚');
+    final nameCtrl =
+        TextEditingController(text: existing?['name'] ?? '');
+    final descCtrl =
+        TextEditingController(text: existing?['description'] ?? '');
+    final iconCtrl =
+        TextEditingController(text: existing?['icon'] ?? '📚');
 
     final result = await showDialog<bool>(
       context: context,
       builder: (ctx) => _buildDialog(
-        title: existing != null ? 'Edit Subject' : 'Add Subject',
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            _buildTextField(nameCtrl, 'Subject Name', Icons.book),
-            const SizedBox(height: 12),
-            _buildTextField(descCtrl, 'Description (optional)', Icons.description),
-            const SizedBox(height: 12),
-            _buildTextField(iconCtrl, 'Emoji Icon', Icons.emoji_emotions),
-          ],
-        ),
+        title: existing != null ? 'বিষয় Edit' : 'নতুন বিষয়',
+        child: Column(mainAxisSize: MainAxisSize.min, children: [
+          _field(nameCtrl, 'বিষয়ের নাম', Icons.book),
+          const SizedBox(height: 12),
+          _field(descCtrl, 'বিবরণ (optional)', Icons.description),
+          const SizedBox(height: 12),
+          _field(iconCtrl, 'Emoji Icon', Icons.emoji_emotions),
+        ]),
         onSave: () async {
           if (nameCtrl.text.trim().isEmpty) return;
           final token = await AuthService.getToken();
@@ -111,9 +159,10 @@ class _AdminSubjectsScreenState extends State<AdminSubjectsScreen> {
             'description': descCtrl.text.trim(),
             'icon': iconCtrl.text.trim(),
           });
-          final streamedRes = await req.send();
-          if (streamedRes.statusCode == 200 || streamedRes.statusCode == 201) {
-            if (ctx.mounted) Navigator.pop(ctx, true);
+          final r = await req.send();
+          if ((r.statusCode == 200 || r.statusCode == 201) &&
+              ctx.mounted) {
+            Navigator.pop(ctx, true);
           }
         },
       ),
@@ -121,22 +170,23 @@ class _AdminSubjectsScreenState extends State<AdminSubjectsScreen> {
     if (result == true) _loadSubjects();
   }
 
-  Future<void> _showAddChapterDialog(int subjectId, [Map<String, dynamic>? existing]) async {
-    final nameCtrl = TextEditingController(text: existing?['name'] ?? '');
-    final orderCtrl = TextEditingController(text: existing?['order_index']?.toString() ?? '1');
+  Future<void> _showAddChapterDialog(int subjectId,
+      [Map<String, dynamic>? existing]) async {
+    final nameCtrl =
+        TextEditingController(text: existing?['name'] ?? '');
+    final orderCtrl = TextEditingController(
+        text: existing?['order_index']?.toString() ?? '1');
 
     final result = await showDialog<bool>(
       context: context,
       builder: (ctx) => _buildDialog(
-        title: existing != null ? 'Edit Chapter' : 'Add Chapter',
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            _buildTextField(nameCtrl, 'Chapter Name', Icons.list_alt),
-            const SizedBox(height: 12),
-            _buildTextField(orderCtrl, 'Order', Icons.sort, TextInputType.number),
-          ],
-        ),
+        title: existing != null ? 'Chapter Edit' : 'নতুন Chapter',
+        child: Column(mainAxisSize: MainAxisSize.min, children: [
+          _field(nameCtrl, 'Chapter-এর নাম', Icons.list_alt),
+          const SizedBox(height: 12),
+          _field(orderCtrl, 'ক্রম সংখ্যা', Icons.sort,
+              TextInputType.number),
+        ]),
         onSave: () async {
           if (nameCtrl.text.trim().isEmpty) return;
           final token = await AuthService.getToken();
@@ -152,14 +202,46 @@ class _AdminSubjectsScreenState extends State<AdminSubjectsScreen> {
             'name': nameCtrl.text.trim(),
             'order_index': int.tryParse(orderCtrl.text) ?? 1,
           });
-          final streamedRes = await req.send();
-          if (streamedRes.statusCode == 200 || streamedRes.statusCode == 201) {
-            if (ctx.mounted) Navigator.pop(ctx, true);
+          final r = await req.send();
+          if ((r.statusCode == 200 || r.statusCode == 201) &&
+              ctx.mounted) {
+            Navigator.pop(ctx, true);
           }
         },
       ),
     );
     if (result == true) _loadChapters(subjectId);
+  }
+
+  Future<void> _showEditPdfDialog(Map<String, dynamic> pdf,
+      int chapterId) async {
+    final titleCtrl =
+        TextEditingController(text: pdf['title'] ?? '');
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => _buildDialog(
+        title: 'PDF Edit',
+        child: _field(titleCtrl, 'PDF Title', Icons.picture_as_pdf),
+        onSave: () async {
+          if (titleCtrl.text.trim().isEmpty) return;
+          final token = await AuthService.getToken();
+          final res = await http.put(
+            Uri.parse(
+                '${AppConstants.workerBaseUrl}/api/admin/pdfs/${pdf['id']}'),
+            headers: {
+              'Authorization': 'Bearer $token',
+              'Content-Type': 'application/json'
+            },
+            body: jsonEncode({'title': titleCtrl.text.trim()}),
+          );
+          if ((res.statusCode == 200 || res.statusCode == 201) &&
+              ctx.mounted) {
+            Navigator.pop(ctx, true);
+          }
+        },
+      ),
+    );
+    if (result == true) _loadPdfs(chapterId);
   }
 
   Future<void> _uploadPdf(int chapterId) async {
@@ -172,32 +254,17 @@ class _AdminSubjectsScreenState extends State<AdminSubjectsScreen> {
     final file = result.files.first;
     if (file.bytes == null) return;
 
-    // Show upload dialog
     if (!mounted) return;
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (ctx) => const Center(
-        child: Card(
-          color: Color(0xFF1E1E2E),
-          child: Padding(
-            padding: EdgeInsets.all(24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                CircularProgressIndicator(),
-                SizedBox(height: 16),
-                Text('Uploading PDF...', style: TextStyle(color: Colors.white)),
-              ],
-            ),
-          ),
-        ),
-      ),
+      builder: (ctx) => const _UploadingDialog(),
     );
 
     try {
       final token = await AuthService.getToken();
-      final uri = Uri.parse('${AppConstants.workerBaseUrl}/api/admin/pdfs/upload');
+      final uri =
+          Uri.parse('${AppConstants.workerBaseUrl}/api/admin/pdfs/upload');
       final request = http.MultipartRequest('POST', uri);
       request.headers['Authorization'] = 'Bearer $token';
       request.fields['chapter_id'] = chapterId.toString();
@@ -209,29 +276,40 @@ class _AdminSubjectsScreenState extends State<AdminSubjectsScreen> {
       ));
       final streamedRes = await request.send();
       if (mounted) Navigator.pop(context);
-      if (streamedRes.statusCode == 200 || streamedRes.statusCode == 201) {
-        _loadPdfs(chapterId);
+
+      if (streamedRes.statusCode == 200 ||
+          streamedRes.statusCode == 201) {
+        // Auto-trigger OCR
+        final body = await streamedRes.stream.bytesToString();
+        try {
+          final data = jsonDecode(body);
+          final pdfId = data['pdf_id'] ?? data['id'];
+          if (pdfId != null) _triggerOcr(pdfId);
+        } catch (_) {}
+
+        await _loadPdfs(chapterId);
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: const Text('PDF uploaded successfully!'),
-              backgroundColor: Colors.green.shade700,
-            ),
-          );
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content:
+                const Text('✅ PDF upload সফল! OCR processing শুরু...'),
+            backgroundColor: Colors.green.shade700,
+          ));
         }
       } else {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Upload failed'), backgroundColor: Colors.red),
-          );
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+            content: Text('❌ Upload ব্যর্থ'),
+            backgroundColor: Colors.red,
+          ));
         }
       }
     } catch (e) {
       if (mounted) {
         Navigator.pop(context);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
-        );
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('Error: $e'),
+          backgroundColor: Colors.red,
+        ));
       }
     }
   }
@@ -241,16 +319,23 @@ class _AdminSubjectsScreenState extends State<AdminSubjectsScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: const Color(0xFF1E1E2E),
-        title: const Text('Confirm Delete', style: TextStyle(color: Colors.white)),
-        content: Text('Delete this $type?',
+        shape:
+            RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text('মুছে ফেলবে?',
+            style:
+                TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        content: Text('এই $type মুছে ফেলা হবে। Undo সম্ভব নয়।',
             style: const TextStyle(color: Colors.white70)),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false),
-              child: const Text('Cancel')),
+          TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('না, থাকুক',
+                  style: TextStyle(color: Colors.white54))),
           ElevatedButton(
             onPressed: () => Navigator.pop(ctx, true),
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-            child: const Text('Delete'),
+            style:
+                ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            child: const Text('হ্যাঁ, মুছো'),
           ),
         ],
       ),
@@ -258,7 +343,8 @@ class _AdminSubjectsScreenState extends State<AdminSubjectsScreen> {
     if (confirm != true) return;
     final token = await AuthService.getToken();
     await http.delete(
-      Uri.parse('${AppConstants.workerBaseUrl}/api/admin/${type}s/$id'),
+      Uri.parse(
+          '${AppConstants.workerBaseUrl}/api/admin/${type}s/$id'),
       headers: {'Authorization': 'Bearer $token'},
     );
     if (type == 'subject') _loadSubjects();
@@ -273,22 +359,27 @@ class _AdminSubjectsScreenState extends State<AdminSubjectsScreen> {
     }
     if (_error != null) {
       return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(_error!, style: const TextStyle(color: Colors.red)),
-            ElevatedButton(onPressed: _loadSubjects, child: const Text('Retry')),
-          ],
-        ),
+        child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+          Text(_error!, style: const TextStyle(color: Colors.red)),
+          const SizedBox(height: 12),
+          ElevatedButton.icon(
+            onPressed: _loadSubjects,
+            icon: const Icon(Icons.refresh),
+            label: const Text('Retry'),
+            style: ElevatedButton.styleFrom(
+                backgroundColor: AppTheme.primaryColor),
+          ),
+        ]),
       );
     }
+
     return Scaffold(
       backgroundColor: AppTheme.bgColor,
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _showAddSubjectDialog(),
         backgroundColor: AppTheme.primaryColor,
         icon: const Icon(Icons.add),
-        label: const Text('Add Subject'),
+        label: const Text('বিষয় যোগ করো'),
       ),
       body: _subjects.isEmpty
           ? Center(
@@ -298,13 +389,13 @@ class _AdminSubjectsScreenState extends State<AdminSubjectsScreen> {
                   const Icon(Icons.library_books_outlined,
                       color: Colors.white24, size: 64),
                   const SizedBox(height: 16),
-                  const Text('No subjects yet',
+                  const Text('কোনো বিষয় নেই',
                       style: TextStyle(color: Colors.white54)),
                   const SizedBox(height: 12),
                   ElevatedButton.icon(
                     onPressed: () => _showAddSubjectDialog(),
                     icon: const Icon(Icons.add),
-                    label: const Text('Add First Subject'),
+                    label: const Text('প্রথম বিষয় যোগ করো'),
                     style: ElevatedButton.styleFrom(
                         backgroundColor: AppTheme.primaryColor),
                   ),
@@ -312,9 +403,9 @@ class _AdminSubjectsScreenState extends State<AdminSubjectsScreen> {
               ),
             )
           : ListView.builder(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.fromLTRB(14, 14, 14, 100),
               itemCount: _subjects.length,
-              itemBuilder: (ctx, i) => _buildSubjectCard(_subjects[i]),
+              itemBuilder: (_, i) => _buildSubjectCard(_subjects[i]),
             ),
     );
   }
@@ -335,97 +426,74 @@ class _AdminSubjectsScreenState extends State<AdminSubjectsScreen> {
               : Colors.white.withOpacity(0.06),
         ),
       ),
-      child: Column(
-        children: [
-          ListTile(
-            contentPadding:
-                const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-            leading: Container(
-              width: 44,
-              height: 44,
-              decoration: BoxDecoration(
-                color: AppTheme.primaryColor.withOpacity(0.15),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Center(
-                child: Text(
-                  subject['icon'] ?? '📚',
-                  style: const TextStyle(fontSize: 22),
-                ),
-              ),
+      child: Column(children: [
+        ListTile(
+          contentPadding:
+              const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+          leading: Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              color: AppTheme.primaryColor.withOpacity(0.12),
+              borderRadius: BorderRadius.circular(12),
             ),
-            title: Text(
-              subject['name'] ?? '',
-              style: const TextStyle(
-                  color: Colors.white, fontWeight: FontWeight.bold),
-            ),
-            subtitle: Text(
-              subject['description'] ?? '',
-              style: const TextStyle(color: Colors.white54, fontSize: 12),
-            ),
-            trailing: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                IconButton(
-                  icon: const Icon(Icons.edit, color: Colors.blue, size: 18),
-                  onPressed: () => _showAddSubjectDialog(subject),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.delete, color: Colors.red, size: 18),
-                  onPressed: () => _deleteItem('subject', sId),
-                ),
-                IconButton(
-                  icon: Icon(
-                    isExpanded
-                        ? Icons.keyboard_arrow_up
-                        : Icons.keyboard_arrow_down,
-                    color: Colors.white54,
-                  ),
-                  onPressed: () async {
-                    setState(() {
-                      _expandedSubject = isExpanded ? null : sId;
-                      _expandedChapter = null;
-                    });
-                    if (!isExpanded) await _loadChapters(sId);
-                  },
-                ),
-              ],
+            child: Center(
+              child: Text(subject['icon'] ?? '📚',
+                  style: const TextStyle(fontSize: 22)),
             ),
           ),
-          if (isExpanded) ...[
-            const Divider(color: Colors.white12, height: 1),
-            Padding(
-              padding: const EdgeInsets.all(12),
-              child: Column(
-                children: [
-                  Row(
-                    children: [
-                      const Icon(Icons.list_alt,
-                          color: Colors.white38, size: 14),
-                      const SizedBox(width: 6),
-                      Text(
-                        'Chapters (${chapters.length})',
-                        style: const TextStyle(
-                            color: Colors.white54, fontSize: 12),
-                      ),
-                      const Spacer(),
-                      TextButton.icon(
-                        onPressed: () => _showAddChapterDialog(sId),
-                        icon: const Icon(Icons.add, size: 14),
-                        label: const Text('Add Chapter',
-                            style: TextStyle(fontSize: 12)),
-                        style: TextButton.styleFrom(
-                            foregroundColor: AppTheme.primaryColor),
-                      ),
-                    ],
-                  ),
-                  ...chapters.map((ch) => _buildChapterCard(ch, sId)),
-                ],
-              ),
+          title: Text(subject['name'] ?? '',
+              style: const TextStyle(
+                  color: Colors.white, fontWeight: FontWeight.bold)),
+          subtitle: subject['description'] != null &&
+                  (subject['description'] as String).isNotEmpty
+              ? Text(subject['description'],
+                  style:
+                      const TextStyle(color: Colors.white38, fontSize: 11))
+              : null,
+          trailing: Row(mainAxisSize: MainAxisSize.min, children: [
+            _iconBtn(
+                Icons.edit,
+                Colors.blue,
+                () => _showAddSubjectDialog(subject)),
+            _iconBtn(Icons.delete, Colors.red,
+                () => _deleteItem('subject', sId)),
+            _iconBtn(
+              isExpanded
+                  ? Icons.keyboard_arrow_up
+                  : Icons.keyboard_arrow_down,
+              Colors.white38,
+              () async {
+                setState(() {
+                  _expandedSubject = isExpanded ? null : sId;
+                  _expandedChapter = null;
+                });
+                if (!isExpanded) await _loadChapters(sId);
+              },
             ),
-          ],
+          ]),
+        ),
+        if (isExpanded) ...[
+          const Divider(color: Colors.white12, height: 1),
+          Padding(
+            padding: const EdgeInsets.all(12),
+            child: Column(children: [
+              Row(children: [
+                const Icon(Icons.folder_open, color: Colors.amber, size: 14),
+                const SizedBox(width: 6),
+                Text('Chapters (${chapters.length})',
+                    style: const TextStyle(
+                        color: Colors.white54, fontSize: 12)),
+                const Spacer(),
+                _textBtn('+ Chapter যোগ',
+                    () => _showAddChapterDialog(sId)),
+              ]),
+              const SizedBox(height: 8),
+              ...chapters.map((ch) => _buildChapterCard(ch, sId)),
+            ]),
+          ),
         ],
-      ),
+      ]),
     );
   }
 
@@ -439,109 +507,202 @@ class _AdminSubjectsScreenState extends State<AdminSubjectsScreen> {
       decoration: BoxDecoration(
         color: const Color(0xFF12121F),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.white.withOpacity(0.05)),
+        border: Border.all(
+          color: isExpanded
+              ? Colors.amber.withOpacity(0.3)
+              : Colors.white.withOpacity(0.05),
+        ),
       ),
-      child: Column(
-        children: [
-          ListTile(
-            dense: true,
-            leading: const Icon(Icons.folder_rounded,
-                color: Colors.amber, size: 20),
-            title: Text(
-              chapter['name'] ?? '',
-              style: const TextStyle(color: Colors.white, fontSize: 14),
+      child: Column(children: [
+        ListTile(
+          dense: true,
+          contentPadding:
+              const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
+          leading: const Icon(Icons.folder_rounded,
+              color: Colors.amber, size: 20),
+          title: Text(chapter['name'] ?? '',
+              style:
+                  const TextStyle(color: Colors.white, fontSize: 14)),
+          subtitle: Text('Order: ${chapter['order_index'] ?? 0}',
+              style:
+                  const TextStyle(color: Colors.white24, fontSize: 10)),
+          trailing: Row(mainAxisSize: MainAxisSize.min, children: [
+            _iconBtn(Icons.edit, Colors.blue,
+                () => _showAddChapterDialog(subjectId, chapter), size: 16),
+            _iconBtn(Icons.delete, Colors.red,
+                () => _deleteItem('chapter', chId, parentId: subjectId),
+                size: 16),
+            _iconBtn(
+              isExpanded
+                  ? Icons.keyboard_arrow_up
+                  : Icons.keyboard_arrow_down,
+              Colors.white38,
+              () async {
+                setState(() =>
+                    _expandedChapter = isExpanded ? null : chId);
+                if (!isExpanded) await _loadPdfs(chId);
+              },
+              size: 18,
             ),
-            trailing: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                IconButton(
-                  icon: const Icon(Icons.edit, color: Colors.blue, size: 16),
-                  onPressed: () =>
-                      _showAddChapterDialog(subjectId, chapter),
-                  constraints: const BoxConstraints(),
-                  padding: const EdgeInsets.all(6),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.delete, color: Colors.red, size: 16),
-                  onPressed: () =>
-                      _deleteItem('chapter', chId, parentId: subjectId),
-                  constraints: const BoxConstraints(),
-                  padding: const EdgeInsets.all(6),
-                ),
-                IconButton(
-                  icon: Icon(
-                    isExpanded
-                        ? Icons.keyboard_arrow_up
-                        : Icons.keyboard_arrow_down,
-                    color: Colors.white38,
-                    size: 18,
-                  ),
-                  onPressed: () async {
-                    setState(() {
-                      _expandedChapter = isExpanded ? null : chId;
-                    });
-                    if (!isExpanded) await _loadPdfs(chId);
-                  },
-                  constraints: const BoxConstraints(),
-                  padding: const EdgeInsets.all(6),
-                ),
-              ],
+          ]),
+        ),
+        if (isExpanded) ...[
+          const Divider(color: Colors.white12, height: 1),
+          Padding(
+            padding: const EdgeInsets.all(10),
+            child: Column(children: [
+              Row(children: [
+                const Icon(Icons.picture_as_pdf,
+                    color: Colors.red, size: 13),
+                const SizedBox(width: 6),
+                Text('PDFs (${pdfs.length})',
+                    style: const TextStyle(
+                        color: Colors.white54, fontSize: 11)),
+                const Spacer(),
+                _textBtn('📤 Upload PDF', () => _uploadPdf(chId),
+                    color: Colors.green),
+              ]),
+              const SizedBox(height: 8),
+              ...pdfs.map((pdf) => _buildPdfCard(pdf, chId)),
+            ]),
+          ),
+        ],
+      ]),
+    );
+  }
+
+  Widget _buildPdfCard(Map<String, dynamic> pdf, int chapterId) {
+    final pdfId = pdf['id'] as int;
+    final pageCount = pdf['page_count'] ?? 0;
+    final ocrDone = pdf['ocr_done'] == true || pdf['ocr_done'] == 1;
+    final isOcrLoading = _ocrLoading[pdfId] == true;
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.03),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: Colors.white.withOpacity(0.06)),
+      ),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Row(children: [
+          Container(
+            padding: const EdgeInsets.all(7),
+            decoration: BoxDecoration(
+              color: Colors.red.withOpacity(0.12),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: const Icon(Icons.picture_as_pdf,
+                color: Colors.red, size: 18),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+              Text(pdf['title'] ?? '',
+                  style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 13,
+                      fontWeight: FontWeight.bold)),
+              Text(
+                '$pageCount পেজ  •  ${ocrDone ? "✅ OCR Done" : "⏳ OCR Pending"}',
+                style: TextStyle(
+                    color: ocrDone ? Colors.green : Colors.orange,
+                    fontSize: 10),
+              ),
+            ]),
+          ),
+          _iconBtn(Icons.edit, Colors.blue,
+              () => _showEditPdfDialog(pdf, chapterId), size: 16),
+          _iconBtn(Icons.delete, Colors.red,
+              () => _deleteItem('pdf', pdfId, parentId: chapterId),
+              size: 16),
+        ]),
+        const SizedBox(height: 10),
+        Row(children: [
+          // OCR button
+          Expanded(
+            child: _actionBtn(
+              isOcrLoading
+                  ? '🔄 OCR চলছে...'
+                  : ocrDone
+                      ? '🔁 Re-OCR'
+                      : '🔍 OCR করো',
+              isOcrLoading ? null : () => _triggerOcr(pdfId),
+              color: Colors.teal,
             ),
           ),
-          if (isExpanded) ...[
-            const Divider(color: Colors.white12, height: 1),
-            Padding(
-              padding: const EdgeInsets.all(10),
-              child: Column(
-                children: [
-                  Row(
-                    children: [
-                      const Icon(Icons.picture_as_pdf,
-                          color: Colors.white38, size: 14),
-                      const SizedBox(width: 6),
-                      Text('PDFs (${pdfs.length})',
-                          style: const TextStyle(
-                              color: Colors.white54, fontSize: 11)),
-                      const Spacer(),
-                      TextButton.icon(
-                        onPressed: () => _uploadPdf(chId),
-                        icon: const Icon(Icons.upload_file, size: 14),
-                        label: const Text('Upload PDF',
-                            style: TextStyle(fontSize: 11)),
-                        style: TextButton.styleFrom(
-                            foregroundColor: Colors.green),
+          const SizedBox(width: 8),
+          // Per-page MCQ management
+          Expanded(
+            flex: 2,
+            child: _actionBtn(
+              '📝 পেজ ও MCQ ম্যানেজ',
+              pageCount == 0
+                  ? null
+                  : () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => AdminPdfPagesScreen(
+                            pdfId: pdfId,
+                            pdfTitle: pdf['title'] ?? '',
+                            pageCount: pageCount,
+                          ),
+                        ),
                       ),
-                    ],
-                  ),
-                  ...pdfs.map((pdf) => ListTile(
-                        dense: true,
-                        leading: const Icon(Icons.picture_as_pdf,
-                            color: Colors.red, size: 18),
-                        title: Text(
-                          pdf['title'] ?? '',
-                          style: const TextStyle(
-                              color: Colors.white70, fontSize: 12),
-                        ),
-                        subtitle: Text(
-                          '${pdf['page_count'] ?? 0} pages',
-                          style: const TextStyle(
-                              color: Colors.white38, fontSize: 11),
-                        ),
-                        trailing: IconButton(
-                          icon: const Icon(Icons.delete,
-                              color: Colors.red, size: 16),
-                          onPressed: () =>
-                              _deleteItem('pdf', pdf['id'], parentId: chId),
-                          constraints: const BoxConstraints(),
-                          padding: const EdgeInsets.all(6),
-                        ),
-                      )),
-                ],
-              ),
+              color: AppTheme.primaryColor,
             ),
-          ],
-        ],
+          ),
+        ]),
+      ]),
+    );
+  }
+
+  Widget _actionBtn(String label, VoidCallback? onTap, {Color? color}) {
+    final c = color ?? AppTheme.primaryColor;
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        decoration: BoxDecoration(
+          color: onTap == null ? Colors.white.withOpacity(0.04) : c.withOpacity(0.12),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+            color: onTap == null ? Colors.white12 : c.withOpacity(0.35),
+          ),
+        ),
+        child: Center(
+          child: Text(label,
+              style: TextStyle(
+                  color: onTap == null ? Colors.white24 : c,
+                  fontSize: 11,
+                  fontWeight: FontWeight.bold)),
+        ),
       ),
+    );
+  }
+
+  Widget _iconBtn(IconData icon, Color color, VoidCallback onTap,
+      {double size = 18}) {
+    return IconButton(
+      icon: Icon(icon, color: color, size: size),
+      onPressed: onTap,
+      constraints: const BoxConstraints(),
+      padding: const EdgeInsets.all(6),
+    );
+  }
+
+  Widget _textBtn(String label, VoidCallback onTap, {Color? color}) {
+    return TextButton(
+      onPressed: onTap,
+      style: TextButton.styleFrom(
+          foregroundColor: color ?? AppTheme.primaryColor,
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          minimumSize: Size.zero,
+          tapTargetSize: MaterialTapTargetSize.shrinkWrap),
+      child: Text(label, style: const TextStyle(fontSize: 12)),
     );
   }
 
@@ -554,7 +715,8 @@ class _AdminSubjectsScreenState extends State<AdminSubjectsScreen> {
     return StatefulBuilder(
       builder: (context, setSt) => AlertDialog(
         backgroundColor: const Color(0xFF1E1E2E),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        shape:
+            RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Text(title,
             style: const TextStyle(
                 color: Colors.white, fontWeight: FontWeight.bold)),
@@ -562,8 +724,8 @@ class _AdminSubjectsScreenState extends State<AdminSubjectsScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child:
-                const Text('Cancel', style: TextStyle(color: Colors.white54)),
+            child: const Text('বাতিল',
+                style: TextStyle(color: Colors.white54)),
           ),
           ElevatedButton(
             onPressed: saving
@@ -579,23 +741,20 @@ class _AdminSubjectsScreenState extends State<AdminSubjectsScreen> {
                 ? const SizedBox(
                     width: 16,
                     height: 16,
-                    child: CircularProgressIndicator(strokeWidth: 2))
-                : const Text('Save'),
+                    child:
+                        CircularProgressIndicator(strokeWidth: 2))
+                : const Text('সেভ করো'),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildTextField(
-    TextEditingController ctrl,
-    String hint,
-    IconData icon, [
-    TextInputType? keyboardType,
-  ]) {
+  Widget _field(TextEditingController ctrl, String hint, IconData icon,
+      [TextInputType? type]) {
     return TextField(
       controller: ctrl,
-      keyboardType: keyboardType,
+      keyboardType: type,
       style: const TextStyle(color: Colors.white),
       decoration: InputDecoration(
         hintText: hint,
@@ -605,11 +764,13 @@ class _AdminSubjectsScreenState extends State<AdminSubjectsScreen> {
         fillColor: Colors.white.withOpacity(0.05),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
-          borderSide: BorderSide(color: Colors.white.withOpacity(0.1)),
+          borderSide:
+              BorderSide(color: Colors.white.withOpacity(0.1)),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
-          borderSide: BorderSide(color: Colors.white.withOpacity(0.1)),
+          borderSide:
+              BorderSide(color: Colors.white.withOpacity(0.1)),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
@@ -617,6 +778,30 @@ class _AdminSubjectsScreenState extends State<AdminSubjectsScreen> {
         ),
         contentPadding:
             const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+      ),
+    );
+  }
+}
+
+class _UploadingDialog extends StatelessWidget {
+  const _UploadingDialog();
+  @override
+  Widget build(BuildContext context) {
+    return const Center(
+      child: Card(
+        color: Color(0xFF1E1E2E),
+        child: Padding(
+          padding: EdgeInsets.all(24),
+          child: Column(mainAxisSize: MainAxisSize.min, children: [
+            CircularProgressIndicator(),
+            SizedBox(height: 16),
+            Text('PDF আপলোড হচ্ছে...',
+                style: TextStyle(color: Colors.white)),
+            SizedBox(height: 6),
+            Text('একটু অপেক্ষা করো',
+                style: TextStyle(color: Colors.white38, fontSize: 12)),
+          ]),
+        ),
       ),
     );
   }
