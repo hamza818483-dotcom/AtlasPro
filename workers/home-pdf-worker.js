@@ -62,20 +62,10 @@ export default {
       // ===== PDF DOWNLOAD (stream from R2) =====
       if (path.match(/^\/api\/pdf\/download\/\d+$/) && method === 'GET') {
         const pdfId = path.split('/').pop();
-        const pdf = await env.DB.prepare('SELECT r2_key FROM pdfs WHERE id=?')
+        const pdf = await env.DB.prepare('SELECT r2_url FROM pdfs WHERE id=?')
           .bind(pdfId).first();
-        if (!pdf) return json({ error: 'PDF not found' }, 404);
-
-        const obj = await env.R2.get(pdf.r2_key);
-        if (!obj) return json({ error: 'File not found in storage' }, 404);
-
-        return new Response(obj.body, {
-          headers: {
-            ...cors,
-            'Content-Type': 'application/pdf',
-            'Content-Disposition': 'attachment',
-          },
-        });
+        if (!pdf?.r2_url) return json({ error: 'PDF not found' }, 404);
+        return Response.redirect(pdf.r2_url, 302);
       }
 
       // ===== MCQ fetch for exam (with unique pattern) =====

@@ -1,5 +1,6 @@
-// focus-profile-worker.js — Batch 08
+// focus-profile-worker.js
 // Routes: /api/focus/*, /api/profile/*, /api/user/*, /api/page-view
+import { supabaseUpload } from './utils.js';
 
 export default {
   async fetch(request, env) {
@@ -292,10 +293,7 @@ export default {
 
         const key = `profiles/${user.id}_${Date.now()}${getExt(file.name)}`;
         const buffer = await file.arrayBuffer();
-        await env.R2.put(key, buffer, {
-          httpMetadata: { contentType: file.type || 'image/jpeg' },
-        });
-        const photoUrl = `https://${env.R2_PUBLIC_DOMAIN}/${key}`;
+        const photoUrl = await supabaseUpload(env, key, buffer, file.type || 'image/jpeg');
         await env.DB.prepare('UPDATE users SET profile_pic=? WHERE id=?')
           .bind(photoUrl, user.id).run();
         return json({ url: photoUrl });

@@ -1,5 +1,6 @@
 // admin-worker.js — AtlasPro Admin API
 // Handles: subjects, chapters, pdfs, mcq, users, announcements, packages, owner, settings
+import { supabaseUpload, supabaseDelete } from './utils.js';
 
 export default {
   async fetch(request, env) {
@@ -202,24 +203,21 @@ export default {
 
         if (!file) return json({ error: 'No file' }, 400);
 
-        const key = `pdfs/${Date.now()}_${file.name}`;
+        const key = `pdfs/${Date.now()}_${file.name.replace(/[^a-zA-Z0-9._-]/g, '_')}`;
         const buffer = await file.arrayBuffer();
-        await env.R2.put(key, buffer, {
-          httpMetadata: { contentType: 'application/pdf' },
-        });
+        const publicUrl = await supabaseUpload(env, key, buffer, 'application/pdf');
 
-        const r2Url = `https://${env.R2_PUBLIC_DOMAIN}/${key}`;
         const res = await env.DB.prepare(
           'INSERT INTO pdfs (chapter_id, title, r2_key, r2_url, file_size) VALUES (?,?,?,?,?)'
-        ).bind(chapterId, title, key, r2Url, buffer.byteLength).run();
+        ).bind(chapterId, title, key, publicUrl, buffer.byteLength).run();
 
-        return json({ id: res.meta.last_row_id, url: r2Url }, 201);
+        return json({ id: res.meta.last_row_id, url: publicUrl }, 201);
       }
 
       if (path.match(/^\/api\/admin\/pdfs\/\d+$/) && method === 'DELETE') {
         const id = path.split('/').pop();
         const pdf = await env.DB.prepare('SELECT r2_key FROM pdfs WHERE id=?').bind(id).first();
-        if (pdf?.r2_key) await env.R2.delete(pdf.r2_key);
+        if (pdf?.r2_key) await supabaseDelete(env, pdf.r2_key);
         await env.DB.prepare('DELETE FROM pdfs WHERE id=?').bind(id).run();
         return json({ message: 'Deleted' });
       }
@@ -667,12 +665,9 @@ export default {
         const formData = await request.formData();
         const file = formData.get('file');
         if (!file) return json({ error: 'No file' }, 400);
-        const key = `owner/${Date.now()}_${file.name}`;
+        const key = `owner/${Date.now()}_${file.name.replace(/[^a-zA-Z0-9._-]/g, '_')}`;
         const buffer = await file.arrayBuffer();
-        await env.R2.put(key, buffer, {
-          httpMetadata: { contentType: file.type || 'image/jpeg' },
-        });
-        const imageUrl = `https://${env.R2_PUBLIC_DOMAIN}/${key}`;
+        const imageUrl = await supabaseUpload(env, key, buffer, file.type || 'image/jpeg');
         return json({ url: imageUrl });
       }
 

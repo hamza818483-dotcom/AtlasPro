@@ -35,3 +35,26 @@ export function jsonRes(data, status = 200) {
     },
   });
 }
+
+// Supabase Storage helpers (replaces R2)
+export async function supabaseUpload(env, path, buffer, contentType = 'application/octet-stream') {
+  const url = `${env.SUPABASE_URL}/storage/v1/object/${path}`;
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${env.SUPABASE_ANON_KEY}`,
+      'Content-Type': contentType,
+      'x-upsert': 'true',
+    },
+    body: buffer,
+  });
+  if (!res.ok) throw new Error(`Supabase upload failed: ${await res.text()}`);
+  return `${env.SUPABASE_URL}/storage/v1/object/public/${path}`;
+}
+
+export async function supabaseDelete(env, path) {
+  await fetch(`${env.SUPABASE_URL}/storage/v1/object/${path}`, {
+    method: 'DELETE',
+    headers: { 'Authorization': `Bearer ${env.SUPABASE_ANON_KEY}` },
+  });
+}
