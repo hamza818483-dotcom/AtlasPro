@@ -13,9 +13,13 @@
 <!-- ══ HEADER ══ -->
 <header class="header">
   <button class="icon-btn menu-btn" onclick="toggleSidebar()">☰</button>
-  <div class="header-brand">
-    <span class="atlas-brand" style="font-size:20px">ATLAS</span>
-  </div>
+  <a class="logo-link" href="index.html" aria-label="AtlasPro হোম">
+    <img class="logo-icon" src="img/logo-icon.svg" alt="ATLAS">
+    <div class="logo-text-block">
+      <span class="logo-name"><span class="logo-a">A</span>TLAS</span>
+      <span class="logo-sub">পড়াশোনা হোক গোছানো</span>
+    </div>
+  </a>
   <div class="header-actions">
     <button class="icon-btn" id="themeToggle" onclick="Theme.toggle()" title="Theme">☀️</button>
     <button class="icon-btn" onclick="showToast('🔔 কোনো নতুন notification নেই')" title="Notification">🔔</button>
@@ -92,20 +96,10 @@
       <div class="quick-label">Focus Timer</div>
       <div class="quick-sub">Study session</div>
     </div>
-    <div class="quick-card" onclick="window.location.href='profile.html#history'">
-      <div class="quick-icon">📊</div>
-      <div class="quick-label">My Mistakes</div>
-      <div class="quick-sub">ভুল থেকে শিখো</div>
-    </div>
     <div class="quick-card" onclick="window.location.href='packages.html'">
       <div class="quick-icon">⭐</div>
       <div class="quick-label">Premium Plan</div>
       <div class="quick-sub">Upgrade করো</div>
-    </div>
-    <div class="quick-card" onclick="showToast('🤖 ATLAS AI শীঘ্রই আসছে!')">
-      <div class="quick-icon">🤖</div>
-      <div class="quick-label">ATLAS AI</div>
-      <div class="quick-sub">Coming soon</div>
     </div>
     <div class="quick-card full-width admin-card" id="adminQuick" style="display:none" onclick="window.location.href='admin/index.html'">
       <div class="quick-icon">👑</div>

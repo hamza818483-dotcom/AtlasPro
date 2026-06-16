@@ -68,6 +68,42 @@ input, textarea, select { font-family: inherit; }
   letter-spacing: 3px;
 }
 
+/* ── Header Logo ── */
+.logo-link {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  text-decoration: none;
+  min-width: 0;
+}
+.logo-icon {
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+}
+.logo-text-block {
+  display: flex;
+  flex-direction: column;
+  line-height: 1;
+}
+.logo-name {
+  font-size: 19px;
+  font-weight: 900;
+  color: var(--text);
+  letter-spacing: 1.5px;
+  font-family: 'Inter', sans-serif;
+}
+.logo-name .logo-a { color: #4ADE80; }
+.logo-sub {
+  font-size: 8.5px;
+  color: var(--text3);
+  margin-top: 2px;
+  letter-spacing: 0.3px;
+  font-family: 'Noto Sans Bengali', sans-serif;
+  white-space: nowrap;
+}
+
 /* ── Header ── */
 .header {
   position: fixed;

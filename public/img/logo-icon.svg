@@ -1,0 +1,19 @@
+<svg viewBox="0 0 50 52" xmlns="http://www.w3.org/2000/svg">
+  <!-- Cap crown (darker green, behind brim) -->
+  <rect x="19" y="4" width="12" height="12" rx="2" fill="#15803D"/>
+  <!-- Graduation cap brim (flat diamond/rhombus) -->
+  <path d="M2,15 L25,7 L48,15 L25,23 Z" fill="#4ADE80"/>
+  <!-- Cap tassel circle -->
+  <circle cx="47" cy="15" r="2.5" fill="#15803D"/>
+
+  <!-- A — left outer leg (curves out at bottom) -->
+  <path d="M23,23 C19,28 12,36 8,50 L14,50 C17,38 22,30 24,26 Z" fill="#4ADE80"/>
+  <!-- A — right outer leg -->
+  <path d="M27,23 C31,28 38,36 42,50 L36,50 C33,38 28,30 26,26 Z" fill="#4ADE80"/>
+
+  <!-- A — crossbar -->
+  <rect x="14" y="34" width="22" height="5" rx="2.5" fill="#4ADE80"/>
+
+  <!-- A — inner dark triangle (enclosed space) -->
+  <path d="M25,25 L18,35 L32,35 Z" fill="#15803D"/>
+</svg>
