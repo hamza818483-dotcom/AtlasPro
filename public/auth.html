@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="bn" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AtlasPro · লগইন</title>
+<link rel="stylesheet" href="css/style.css">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Bengali:wght@400;600;700;900&family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
+<style>
+body { padding-top: 0; display: flex; align-items: center; justify-content: center; min-height: 100vh; padding-bottom: 0; }
+.auth-wrap { width: 100%; max-width: 400px; padding: 24px 16px; }
+.auth-logo { text-align: center; margin-bottom: 32px; }
+.auth-tabs { display: flex; gap: 6px; margin-bottom: 14px; }
+.auth-tab {
+  flex: 1; padding: 10px 8px;
+  border-radius: var(--radius-sm);
+  border: 1.5px solid var(--border);
+  background: var(--card);
+  color: var(--text2);
+  font-size: 12px; font-weight: 600;
+  cursor: pointer; transition: all 0.2s;
+  font-family: inherit;
+}
+.auth-tab.active { background: var(--primary); border-color: var(--primary); color: #fff; }
+.auth-tab:hover:not(.active) { border-color: var(--primary); color: var(--primary); }
+.auth-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 22px;
+  box-shadow: var(--shadow);
+}
+.auth-form { display: none; }
+.auth-form.active { display: block; animation: fadeIn .22s ease; }
+@keyframes fadeIn { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
+.form-title { font-size: 16px; font-weight: 800; margin-bottom: 4px; }
+.form-sub { font-size: 11px; color: var(--text2); margin-bottom: 18px; line-height: 1.5; }
+.inp-group { margin-bottom: 12px; }
+.inp-group label { display: block; font-size: 11px; color: var(--text2); margin-bottom: 4px; font-weight: 600; }
+.inp-group input, .inp-group select {
+  width: 100%; padding: 11px 12px;
+  background: var(--bg2);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text); font-size: 14px;
+  font-family: inherit;
+  transition: border-color 0.2s;
+}
+.inp-group input:focus, .inp-group select:focus {
+  outline: none; border-color: var(--primary);
+}
+.inp-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.err-msg { font-size: 10px; color: var(--red); display: none; margin-top: 3px; }
+.inp-error { border-color: var(--red) !important; }
+.inp-error + .err-msg, .inp-group .inp-error ~ .err-msg { display: block; }
+.auth-footer { text-align: center; font-size: 11px; color: var(--text2); margin-top: 14px; }
+.auth-footer a { color: var(--primary); cursor: pointer; font-weight: 600; }
+.guest-btn {
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  width: 100%; padding: 13px;
+  margin-top: 14px;
+  border-radius: var(--radius-sm);
+  border: 1.5px dashed var(--border);
+  background: transparent;
+  color: var(--text2); font-size: 13px; font-weight: 600;
+  cursor: pointer; font-family: inherit;
+  transition: all 0.2s;
+}
+.guest-btn:hover { border-color: var(--primary); color: var(--primary); }
+</style>
+</head>
+<body>
+<div class="auth-wrap">
+  <!-- Logo -->
+  <div class="auth-logo">
+    <div style="font-size:48px;margin-bottom:8px">🎓</div>
+    <div class="atlas-brand" style="font-size:26px">ATLAS</div>
+    <div style="font-size:12px;color:var(--text2);margin-top:4px">বাংলাদেশের সেরা প্রস্তুতি প্ল্যাটফর্ম</div>
+  </div>
+
+  <!-- Tabs -->
+  <div class="auth-tabs">
+    <button class="auth-tab active" id="tabLoginBtn" onclick="switchTab('login')">🔐 লগইন</button>
+    <button class="auth-tab" id="tabRegisterBtn" onclick="switchTab('register')">📝 রেজিস্টার</button>
+    <button class="auth-tab" id="tabForgetBtn" onclick="switchTab('forget')">🔑 ফরগেট</button>
+  </div>
+
+  <div class="auth-card">
+
+    <!-- ── LOGIN ── -->
+    <div class="auth-form active" id="formLogin">
+      <div class="form-title">🔐 লগইন</div>
+      <div class="form-sub">ফোন নম্বর ও পাসওয়ার্ড দিন</div>
+      <div class="inp-group">
+        <label>📱 ফোন নম্বর</label>
+        <input type="tel" id="loginPhone" placeholder="01XXXXXXXXX" maxlength="11">
+        <div class="err-msg" id="loginPhoneErr">ফোন ১১ ডিজিট হতে হবে</div>
+      </div>
+      <div class="inp-group">
+        <label>🔒 পাসওয়ার্ড</label>
+        <input type="password" id="loginPass" placeholder="পাসওয়ার্ড">
+        <div class="err-msg" id="loginPassErr">ন্যূনতম ৬ ক্যারেক্টার</div>
+      </div>
+      <button class="btn btn-primary btn-full" id="loginBtn" onclick="handleLogin()">লগইন করুন</button>
+      <div class="auth-footer">একাউন্ট নেই? <a onclick="switchTab('register')">রেজিস্টার</a> &nbsp;|&nbsp; <a onclick="switchTab('forget')">পাসওয়ার্ড ভুলে গেছেন?</a></div>
+    </div>
+
+    <!-- ── REGISTER ── -->
+    <div class="auth-form" id="formRegister">
+      <div class="form-title">📝 রেজিস্ট্রেশন</div>
+      <div class="form-sub">সব তথ্য সঠিকভাবে পূরণ করুন</div>
+      <div class="inp-group">
+        <label>👤 পুরো নাম *</label>
+        <input type="text" id="regName" placeholder="আপনার পুরো নাম">
+        <div class="err-msg" id="regNameErr">নাম আবশ্যক</div>
+      </div>
+      <div class="inp-row">
+        <div class="inp-group">
+          <label>🎓 HSC Batch *</label>
+          <input type="text" id="regBatch" placeholder="যেমন: ২০২৬">
+          <div class="err-msg" id="regBatchErr">আবশ্যক</div>
+        </div>
+        <div class="inp-group">
+          <label>🔄 টাইমার *</label>
+          <select id="regTimer">
+            <option value="">— নির্বাচন —</option>
+            <option value="first">ফার্স্ট টাইমার</option>
+            <option value="second">সেকেন্ড টাইমার</option>
+          </select>
+          <div class="err-msg" id="regTimerErr">আবশ্যক</div>
+        </div>
+      </div>
+      <div class="inp-group">
+        <label>🏫 কলেজ *</label>
+        <input type="text" id="regCollege" placeholder="কলেজের নাম">
+        <div class="err-msg" id="regCollegeErr">আবশ্যক</div>
+      </div>
+      <div class="inp-row">
+        <div class="inp-group">
+          <label>👨‍👦 পিতার নাম</label>
+          <input type="text" id="regFather" placeholder="পিতার নাম">
+        </div>
+        <div class="inp-group">
+          <label>👩‍👦 মাতার নাম</label>
+          <input type="text" id="regMother" placeholder="মাতার নাম">
+        </div>
+      </div>
+      <div class="inp-row">
+        <div class="inp-group">
+          <label>📊 SSC GPA *</label>
+          <input type="text" id="regSSC" placeholder="৫.০০">
+          <div class="err-msg" id="regSSCErr">দশমিক (৫.০০)</div>
+        </div>
+        <div class="inp-group">
+          <label>📊 HSC GPA *</label>
+          <input type="text" id="regHSC" placeholder="৫.০০">
+          <div class="err-msg" id="regHSCErr">দশমিক (৫.০০)</div>
+        </div>
+      </div>
+      <div class="inp-group">
+        <label>📱 ফোন নম্বর *</label>
+        <input type="tel" id="regPhone" placeholder="01XXXXXXXXX" maxlength="11">
+        <div class="err-msg" id="regPhoneErr">ফোন ১১ ডিজিট হতে হবে</div>
+      </div>
+      <div class="inp-group">
+        <label>🔒 পাসওয়ার্ড *</label>
+        <input type="password" id="regPass" placeholder="ন্যূনতম ৬ ক্যারেক্টার">
+        <div class="err-msg" id="regPassErr">ন্যূনতম ৬ ক্যারেক্টার</div>
+      </div>
+      <button class="btn btn-primary btn-full" id="registerBtn" onclick="handleRegister()">রেজিস্টার করুন</button>
+      <div class="auth-footer">একাউন্ট আছে? <a onclick="switchTab('login')">লগইন</a></div>
+    </div>
+
+    <!-- ── FORGET ── -->
+    <div class="auth-form" id="formForget">
+      <div class="form-title">🔑 পাসওয়ার্ড রিসেট</div>
+      <div class="form-sub">ফোন দিয়ে নতুন পাসওয়ার্ড সেট করুন</div>
+      <div class="inp-group">
+        <label>📱 ফোন নম্বর</label>
+        <input type="tel" id="forgetPhone" placeholder="01XXXXXXXXX" maxlength="11">
+        <div class="err-msg" id="forgetPhoneErr">ফোন ১১ ডিজিট হতে হবে</div>
+      </div>
+      <div class="inp-group">
+        <label>🔒 নতুন পাসওয়ার্ড</label>
+        <input type="password" id="forgetPass" placeholder="ন্যূনতম ৬ ক্যারেক্টার">
+        <div class="err-msg" id="forgetPassErr">ন্যূনতম ৬ ক্যারেক্টার</div>
+      </div>
+      <button class="btn btn-primary btn-full" id="forgetBtn" onclick="handleForget()">আপডেট করুন</button>
+      <div class="auth-footer">মনে পড়েছে? <a onclick="switchTab('login')">লগইন</a></div>
+    </div>
+
+  </div>
+
+  <!-- Guest Mode -->
+  <button class="guest-btn" onclick="continueAsGuest()">
+    👀 Guest হিসেবে দেখো (login ছাড়া)
+  </button>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script src="js/config.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/theme.js"></script>
+<script>
+// ── AUTH BACKEND: replace these functions when connecting real API ──
+// Currently stubbed — plug in Supabase/Worker calls here
+
+let currentTab = 'login';
+
+function switchTab(tab) {
+  currentTab = tab;
+  document.querySelectorAll('.auth-tab').forEach(b => b.classList.remove('active'));
+  const key = tab.charAt(0).toUpperCase() + tab.slice(1);
+  document.getElementById('tab' + key + 'Btn')?.classList.add('active');
+  document.querySelectorAll('.auth-form').forEach(f => f.classList.remove('active'));
+  document.getElementById('form' + key)?.classList.add('active');
+  clearErrors();
+}
+
+function clearErrors() {
+  document.querySelectorAll('.err-msg').forEach(e => e.style.display = 'none');
+  document.querySelectorAll('.inp-error').forEach(i => i.classList.remove('inp-error'));
+}
+
+function showFieldErr(inputId, errId) {
+  const inp = document.getElementById(inputId);
+  const err = document.getElementById(errId);
+  if (inp) inp.classList.add('inp-error');
+  if (err) err.style.display = 'block';
+}
+
+function showToast(msg, duration = 2500) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(t._t);
+  t._t = setTimeout(() => t.classList.remove('show'), duration);
+}
+
+function validatePhone(p) { return /^\d{11}$/.test(p); }
+function validateGPA(g) {
+  if (!g) return false;
+  const n = parseFloat(g);
+  return !isNaN(n) && n >= 0 && n <= 5;
+}
+
+// ── STUB: replace with real API call ──
+async function handleLogin() {
+  clearErrors();
+  const phone = document.getElementById('loginPhone').value.trim();
+  const pass  = document.getElementById('loginPass').value;
+  let err = false;
+  if (!validatePhone(phone)) { showFieldErr('loginPhone', 'loginPhoneErr'); err = true; }
+  if (pass.length < 6)       { showFieldErr('loginPass',  'loginPassErr');  err = true; }
+  if (err) return;
+
+  const btn = document.getElementById('loginBtn');
+  btn.disabled = true; btn.textContent = 'লগইন হচ্ছে...';
+
+  try {
+    const res = await fetch(CONFIG.workerUrl + '/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ phone, password: pass }),
+    });
+    const data = await res.json();
+    if (!res.ok) { showToast('❌ ' + (data.message || 'লগইন ব্যর্থ')); return; }
+    Auth.setSession(data);
+    showToast('✅ লগইন সফল!');
+    setTimeout(() => window.location.href = 'index.html', 700);
+  } catch (_) {
+    showToast('❌ সংযোগ ব্যর্থ');
+  }
+
+  btn.disabled = false; btn.textContent = 'লগইন করুন';
+}
+
+// ── STUB: replace with real API call ──
+async function handleRegister() {
+  clearErrors();
+  const name    = document.getElementById('regName').value.trim();
+  const batch   = document.getElementById('regBatch').value.trim();
+  const college = document.getElementById('regCollege').value.trim();
+  const father  = document.getElementById('regFather').value.trim();
+  const mother  = document.getElementById('regMother').value.trim();
+  const ssc     = document.getElementById('regSSC').value.trim();
+  const hsc     = document.getElementById('regHSC').value.trim();
+  const timer   = document.getElementById('regTimer').value;
+  const phone   = document.getElementById('regPhone').value.trim();
+  const pass    = document.getElementById('regPass').value;
+
+  let err = false;
+  if (!name)              { showFieldErr('regName',    'regNameErr');    err = true; }
+  if (!batch)             { showFieldErr('regBatch',   'regBatchErr');   err = true; }
+  if (!college)           { showFieldErr('regCollege', 'regCollegeErr'); err = true; }
+  if (!validateGPA(ssc))  { showFieldErr('regSSC',     'regSSCErr');     err = true; }
+  if (!validateGPA(hsc))  { showFieldErr('regHSC',     'regHSCErr');     err = true; }
+  if (!timer)             { showFieldErr('regTimer',   'regTimerErr');   err = true; }
+  if (!validatePhone(phone)) { showFieldErr('regPhone', 'regPhoneErr'); err = true; }
+  if (pass.length < 6)    { showFieldErr('regPass',    'regPassErr');    err = true; }
+  if (err) return;
+
+  const btn = document.getElementById('registerBtn');
+  btn.disabled = true; btn.textContent = 'রেজিস্টার হচ্ছে...';
+
+  try {
+    const res = await fetch(CONFIG.workerUrl + '/api/auth/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ phone, password: pass, name, batch, college,
+        father_name: father, mother_name: mother,
+        ssc_gpa: parseFloat(ssc), hsc_gpa: parseFloat(hsc),
+        timer_type: timer }),
+    });
+    const data = await res.json();
+    if (!res.ok) { showToast('❌ ' + (data.message || 'রেজিস্ট্রেশন ব্যর্থ')); return; }
+    Auth.setSession(data);
+    showToast('✅ রেজিস্ট্রেশন সফল!');
+    setTimeout(() => window.location.href = 'index.html', 700);
+  } catch (_) {
+    showToast('❌ সংযোগ ব্যর্থ');
+  }
+
+  btn.disabled = false; btn.textContent = 'রেজিস্টার করুন';
+}
+
+// ── STUB: replace with real API call ──
+async function handleForget() {
+  clearErrors();
+  const phone = document.getElementById('forgetPhone').value.trim();
+  const pass  = document.getElementById('forgetPass').value;
+  let err = false;
+  if (!validatePhone(phone)) { showFieldErr('forgetPhone', 'forgetPhoneErr'); err = true; }
+  if (pass.length < 6)       { showFieldErr('forgetPass',  'forgetPassErr');  err = true; }
+  if (err) return;
+
+  const btn = document.getElementById('forgetBtn');
+  btn.disabled = true; btn.textContent = 'আপডেট হচ্ছে...';
+
+  try {
+    const res = await fetch(CONFIG.workerUrl + '/api/auth/reset-password', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ phone, new_password: pass }),
+    });
+    const data = await res.json();
+    if (!res.ok) { showToast('❌ ' + (data.message || 'আপডেট ব্যর্থ')); return; }
+    showToast('✅ পাসওয়ার্ড আপডেট!');
+    setTimeout(() => switchTab('login'), 700);
+  } catch (_) {
+    showToast('❌ সংযোগ ব্যর্থ');
+  }
+
+  btn.disabled = false; btn.textContent = 'আপডেট করুন';
+}
+
+function continueAsGuest() {
+  window.location.href = 'index.html';
+}
+
+// Enter key support
+document.addEventListener('keydown', e => {
+  if (e.key !== 'Enter') return;
+  if (currentTab === 'login')    handleLogin();
+  if (currentTab === 'register') handleRegister();
+  if (currentTab === 'forget')   handleForget();
+});
+
+// Already logged in → redirect
+if (Auth.isLoggedIn()) {
+  window.location.href = 'index.html';
+}
+</script>
+</body>
+</html>
