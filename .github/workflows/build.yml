@@ -44,6 +44,12 @@ jobs:
           channel: 'stable'
       - run: flutter pub get
       - run: flutter build web --release --base-href /
+      - name: Create Cloudflare Pages project if not exists
+        run: |
+          curl -s -X POST "https://api.cloudflare.com/client/v4/accounts/${{ secrets.CLOUDFLARE_ACCOUNT_ID }}/pages/projects" \
+            -H "Authorization: Bearer ${{ secrets.CLOUDFLARE_API_TOKEN }}" \
+            -H "Content-Type: application/json" \
+            --data '{"name":"atlaspro","production_branch":"main"}' || true
       - uses: cloudflare/pages-action@v1
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
