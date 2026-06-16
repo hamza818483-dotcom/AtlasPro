@@ -474,7 +474,16 @@ body { padding-top: 56px; padding-bottom: 80px; }
           <option value="">-- বিষয় বেছে নিন --</option>
         </select>
       </div>
-      <div class="form-group" style="margin-bottom:6px">
+      <button class="link-btn" onclick="toggleNewSubject()">+ নতুন বিষয় যোগ করো</button>
+      <div class="inline-add" id="newSubjectBox">
+        <div class="inline-add-row">
+          <input class="form-input" id="newSubjectName" placeholder="বিষয়ের নাম (যেমন: পদার্থবিজ্ঞান)" style="flex:1">
+          <input class="form-input" id="newSubjectIcon" placeholder="Icon (যেমন: ⚗️)" style="width:70px">
+          <button class="btn btn-primary btn-sm" onclick="createSubject()">যোগ করো</button>
+          <button class="btn btn-sm btn-outline" onclick="toggleNewSubject()">✕</button>
+        </div>
+      </div>
+      <div class="form-group" style="margin-bottom:6px;margin-top:10px">
         <label class="form-label">অধ্যায়</label>
         <select class="form-select" id="selChapter" disabled onchange="onChapterChange()">
           <option value="">-- অধ্যায় বেছে নিন --</option>
@@ -820,6 +829,31 @@ function hideUploadAndList() {
 function showUploadAndList() {
   document.getElementById('uploadSection').style.display = 'block';
   document.getElementById('pdfListSection').style.display = 'block';
+}
+
+function toggleNewSubject() {
+  const box = document.getElementById('newSubjectBox');
+  box.classList.toggle('show');
+  if (box.classList.contains('show')) document.getElementById('newSubjectName').focus();
+  else { document.getElementById('newSubjectName').value = ''; document.getElementById('newSubjectIcon').value = ''; }
+}
+
+async function createSubject() {
+  const name = document.getElementById('newSubjectName').value.trim();
+  const icon = document.getElementById('newSubjectIcon').value.trim() || '📚';
+  if (!name) return showToast('বিষয়ের নাম লিখুন', 'error');
+  try {
+    const r = await api('/api/admin/subjects', { method: 'POST', body: JSON.stringify({ name, icon, description: '' }) });
+    if (!r.ok) throw new Error((await r.json()).error || 'ব্যর্থ');
+    const d = await r.json();
+    showToast('বিষয় যোগ হয়েছে ✓', 'success');
+    document.getElementById('newSubjectBox').classList.remove('show');
+    document.getElementById('newSubjectName').value = '';
+    document.getElementById('newSubjectIcon').value = '';
+    await loadSubjects();
+    document.getElementById('selSubject').value = d.id || '';
+    await onSubjectChange();
+  } catch(e) { showToast('সমস্যা: ' + e.message, 'error'); }
 }
 
 function toggleNewChapter() {

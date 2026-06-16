@@ -73,19 +73,6 @@
     <div style="margin-top:6px" id="greetingBadge"></div>
   </div>
 
-  <!-- Subjects Section -->
-  <div class="section-label">
-    <span class="section-title">বিষয়সমূহ</span>
-    <span id="adminBadge" style="display:none">
-      <a href="admin/index.html" style="font-size:11px;background:rgba(239,68,68,0.12);color:#f87171;padding:3px 10px;border-radius:6px;border:1px solid rgba(239,68,68,0.25)">⚙️ Admin</a>
-    </span>
-  </div>
-
-  <!-- Subject Grid (dynamic) -->
-  <div id="subjectArea">
-    <div class="loader"><div class="spinner"></div><div class="text-sm">লোড হচ্ছে...</div></div>
-  </div>
-
   <!-- মূল বই পেইজভিত্তিক প্রস্তুতি -->
   <div style="padding:0 14px;margin-bottom:14px">
     <div onclick="window.location.href='study.html'" style="
@@ -216,7 +203,6 @@ const GRAD = [
 async function init() {
   initHeader();
   loadAnnouncements();
-  loadSubjects();
   loadOwner();
 }
 
@@ -256,7 +242,6 @@ function initHeader() {
   // Admin
   if (isAdmin) {
     document.getElementById('adminLink').style.display = 'flex';
-    document.getElementById('adminBadge').style.display = 'block';
     document.getElementById('adminQuick').style.display = 'flex';
   }
 }
@@ -352,10 +337,10 @@ async function loadOwner() {
   } catch(_) {}
 }
 
-// Scroll to subjects on nav click
+// Nav subjects → study page
 document.getElementById('navSubjects').addEventListener('click', e => {
   e.preventDefault();
-  document.getElementById('subjectArea').scrollIntoView({ behavior: 'smooth' });
+  window.location.href = 'study.html';
 });
 
 init();
