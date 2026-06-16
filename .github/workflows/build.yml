@@ -43,10 +43,6 @@ jobs:
       - name: Install Wrangler
         run: npm install -g wrangler@latest
 
-      - name: Inject D1 Database ID
-        run: |
-          sed -i "s/YOUR_D1_DATABASE_ID/${{ secrets.D1_DATABASE_ID }}/g" wrangler.toml
-
       - name: Deploy Cloudflare Worker
         run: wrangler deploy --config wrangler.toml
         env:
