@@ -1,0 +1,1407 @@
+<!DOCTYPE html>
+<html lang="bn" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PDF ও MCQ ব্যবস্থাপনা – AtlasPro Admin</title>
+<link rel="stylesheet" href="../css/style.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Bengali:wght@400;600;700;900&family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
+<style>
+body { padding-top: 56px; padding-bottom: 80px; }
+
+.admin-header {
+  position: fixed; top: 0; left: 0; right: 0;
+  height: 56px; background: var(--bg2);
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center;
+  padding: 0 14px; gap: 10px;
+  z-index: 200; backdrop-filter: blur(12px);
+}
+.admin-header-title {
+  flex: 1; font-size: 14px; font-weight: 700;
+  color: var(--amber);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.back-btn {
+  display: flex; align-items: center; gap: 6px;
+  padding: 7px 12px; border-radius: var(--radius-sm);
+  background: var(--card); border: 1px solid var(--border);
+  font-size: 13px; font-weight: 600; color: var(--text2);
+  cursor: pointer; transition: all 0.2s; text-decoration: none;
+  white-space: nowrap;
+}
+.back-btn:hover { border-color: var(--primary); color: var(--primary); }
+
+.admin-nav {
+  position: fixed; bottom: 0; left: 0; right: 0;
+  height: 60px; background: var(--bg2);
+  border-top: 1px solid var(--border);
+  display: flex; z-index: 100;
+}
+.admin-nav-item {
+  flex: 1; display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: 2px; color: var(--text3); font-size: 10px;
+  text-decoration: none; cursor: pointer; transition: color 0.2s;
+}
+.admin-nav-item.active { color: var(--primary); }
+.admin-nav-icon { font-size: 20px; }
+
+.main-content { padding: 14px; }
+
+.section-card {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: var(--radius); margin-bottom: 14px;
+  overflow: hidden; position: relative;
+}
+.section-card::before {
+  content: ''; position: absolute;
+  top: 0; left: 0; right: 0; height: 3px;
+}
+.card-purple::before { background: linear-gradient(90deg, var(--primary), #9C8BFF); }
+.card-green::before { background: linear-gradient(90deg, var(--green), #34D399); }
+.card-amber::before { background: linear-gradient(90deg, var(--amber), #FCD34D); }
+.card-body { padding: 16px; }
+.card-title {
+  font-size: 13px; font-weight: 700; margin-bottom: 14px;
+  display: flex; align-items: center; gap: 8px;
+}
+
+.form-group { margin-bottom: 12px; }
+.form-label {
+  display: block; font-size: 11px; font-weight: 700;
+  color: var(--text3); text-transform: uppercase;
+  letter-spacing: 0.6px; margin-bottom: 6px;
+}
+.form-select, .form-input, .form-textarea {
+  width: 100%; background: var(--bg2);
+  border: 1.5px solid var(--border); border-radius: var(--radius-sm);
+  color: var(--text); font-size: 14px; padding: 10px 12px;
+  outline: none; transition: border-color 0.2s; font-family: inherit;
+  box-sizing: border-box;
+}
+.form-select:focus, .form-input:focus, .form-textarea:focus { border-color: var(--primary); }
+.form-select:disabled { opacity: 0.5; cursor: not-allowed; }
+.form-select option { background: var(--bg2); }
+.form-textarea { resize: vertical; min-height: 76px; line-height: 1.5; }
+
+.inline-add {
+  display: none; margin-top: 10px;
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); padding: 12px;
+}
+.inline-add.show { display: block; }
+.inline-add-row { display: flex; gap: 8px; }
+.link-btn {
+  background: none; border: none; color: var(--primary);
+  font-size: 12px; font-weight: 600; cursor: pointer;
+  padding: 6px 0; display: inline-flex; align-items: center;
+  gap: 4px; font-family: inherit; text-decoration: none;
+  transition: opacity 0.2s;
+}
+.link-btn:hover { opacity: 0.75; }
+
+.drop-zone {
+  border: 2px dashed var(--border); border-radius: var(--radius-sm);
+  padding: 28px 16px; text-align: center; cursor: pointer;
+  transition: all 0.25s; position: relative;
+  background: var(--bg2);
+}
+.drop-zone:hover, .drop-zone.dragover {
+  border-color: var(--green); background: rgba(16,185,129,0.05);
+}
+.drop-zone input[type=file] {
+  position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%;
+}
+.drop-zone-icon { font-size: 32px; margin-bottom: 8px; }
+.drop-zone-text { font-size: 13px; color: var(--text3); line-height: 1.5; }
+.drop-zone-hint { font-size: 11px; color: var(--text3); margin-top: 4px; }
+.file-chosen {
+  margin-top: 10px; font-size: 12px; color: var(--green); font-weight: 600;
+  word-break: break-all; display: none;
+}
+
+.progress-wrap { margin-top: 10px; display: none; }
+.progress-label { font-size: 11px; color: var(--text2); margin-bottom: 5px; }
+.progress-bar-bg {
+  height: 6px; background: var(--border);
+  border-radius: 3px; overflow: hidden;
+}
+.progress-bar-fill {
+  height: 100%; background: linear-gradient(90deg, var(--green), #34D399);
+  width: 0%; transition: width 0.3s; border-radius: 3px;
+}
+
+.upload-success {
+  display: none; margin-top: 10px; padding: 10px 14px;
+  background: rgba(16,185,129,0.1); border: 1px solid rgba(16,185,129,0.3);
+  border-radius: var(--radius-sm); font-size: 13px;
+  color: var(--green); font-weight: 600;
+}
+
+.pdf-list { display: flex; flex-direction: column; gap: 10px; }
+.pdf-card {
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); padding: 12px 14px;
+  transition: border-color 0.2s;
+}
+.pdf-card:hover { border-color: rgba(108,99,255,0.25); }
+.pdf-card-top { display: flex; align-items: flex-start; gap: 10px; }
+.pdf-card-icon { font-size: 24px; flex-shrink: 0; margin-top: 2px; }
+.pdf-card-info { flex: 1; min-width: 0; }
+.pdf-card-title {
+  font-size: 13px; font-weight: 700; color: var(--text);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.pdf-card-meta { font-size: 11px; color: var(--text3); margin-top: 3px; }
+.pdf-card-actions { display: flex; gap: 6px; flex-shrink: 0; }
+
+.act-btn {
+  width: 32px; height: 32px; border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; cursor: pointer;
+  border: 1px solid var(--border); background: var(--card);
+  transition: all 0.2s; flex-shrink: 0;
+}
+.act-btn:hover { transform: scale(1.08); }
+.act-edit:hover { border-color: var(--primary); background: rgba(108,99,255,0.12); }
+.act-delete:hover { border-color: var(--red); background: rgba(239,68,68,0.1); }
+
+.btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  gap: 8px; padding: 11px 20px; border-radius: var(--radius-sm);
+  font-size: 13px; font-weight: 700; cursor: pointer; border: none;
+  transition: all 0.22s; font-family: inherit;
+}
+.btn-full { width: 100%; }
+.btn-primary { background: var(--primary); color: white; }
+.btn-primary:hover:not(:disabled) { background: #5A52E0; box-shadow: 0 0 0 3px rgba(108,99,255,0.2); }
+.btn-primary:disabled { opacity: 0.55; cursor: not-allowed; }
+.btn-green { background: var(--green); color: white; }
+.btn-green:hover:not(:disabled) { background: #0EA271; }
+.btn-green:disabled { opacity: 0.55; cursor: not-allowed; }
+.btn-amber { background: var(--amber); color: #1A1A2E; }
+.btn-amber:hover:not(:disabled) { background: #D97706; }
+.btn-amber:disabled { opacity: 0.55; cursor: not-allowed; }
+.btn-outline { background: transparent; color: var(--primary); border: 1.5px solid var(--primary); }
+.btn-outline:hover { background: rgba(108,99,255,0.1); }
+.btn-sm { padding: 7px 14px; font-size: 12px; }
+.btn-danger { background: rgba(239,68,68,0.1); color: var(--red); border: 1.5px solid rgba(239,68,68,0.3); }
+.btn-danger:hover { background: rgba(239,68,68,0.18); }
+
+.spinner-inline {
+  display: inline-block; width: 14px; height: 14px;
+  border: 2px solid rgba(255,255,255,0.3);
+  border-top-color: white; border-radius: 50%;
+  animation: spin 0.7s linear infinite; vertical-align: middle;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.section-heading {
+  font-size: 11px; font-weight: 700; color: var(--text3);
+  text-transform: uppercase; letter-spacing: 1px;
+  margin-bottom: 12px; padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+}
+
+.empty-state {
+  text-align: center; padding: 32px 16px; color: var(--text3);
+}
+.empty-state-icon { font-size: 36px; margin-bottom: 10px; }
+.empty-state-title { font-size: 14px; font-weight: 700; color: var(--text2); margin-bottom: 5px; }
+.empty-state-text { font-size: 12px; line-height: 1.6; }
+
+.skeleton {
+  background: linear-gradient(90deg, var(--card) 25%, var(--card-hover,rgba(255,255,255,0.05)) 50%, var(--card) 75%);
+  background-size: 200% 100%; animation: shimmer 1.4s infinite; border-radius: var(--radius-sm);
+}
+@keyframes shimmer { to { background-position: -200% 0; } }
+.skel-row { height: 72px; margin-bottom: 10px; }
+.skel-sm { height: 48px; margin-bottom: 10px; }
+
+.mcq-panel {
+  position: fixed; inset: 0; background: var(--bg);
+  z-index: 300; transform: translateX(100%);
+  transition: transform 0.32s cubic-bezier(.4,0,.2,1);
+  display: flex; flex-direction: column; overflow: hidden;
+}
+.mcq-panel.open { transform: translateX(0); }
+.mcq-panel-header {
+  height: 56px; background: var(--bg2);
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; gap: 10px;
+  padding: 0 14px; flex-shrink: 0;
+}
+.mcq-panel-title { flex: 1; font-size: 13px; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mcq-panel-body { flex: 1; overflow-y: auto; padding: 14px; }
+
+.page-nav {
+  display: flex; align-items: center; gap: 10px;
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 12px 14px;
+  margin-bottom: 14px;
+}
+.page-nav-label { font-size: 12px; font-weight: 700; color: var(--text2); white-space: nowrap; }
+.page-nav-input {
+  width: 64px; background: var(--bg2); border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm); color: var(--text);
+  font-size: 15px; font-weight: 700; padding: 8px 10px;
+  outline: none; text-align: center; font-family: inherit;
+  transition: border-color 0.2s;
+}
+.page-nav-input:focus { border-color: var(--primary); }
+.page-nav-btn {
+  width: 36px; height: 36px; border-radius: var(--radius-sm);
+  border: 1.5px solid var(--border); background: var(--card);
+  color: var(--text2); font-size: 16px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.2s; flex-shrink: 0;
+}
+.page-nav-btn:hover { border-color: var(--primary); color: var(--primary); }
+.page-nav-count {
+  margin-left: auto; font-size: 11px; font-weight: 700;
+  padding: 3px 10px; border-radius: 20px;
+  background: rgba(108,99,255,0.12); color: #9C8BFF;
+  border: 1px solid rgba(108,99,255,0.25); white-space: nowrap;
+}
+
+.tab-bar {
+  display: flex; background: var(--card);
+  border: 1px solid var(--border); border-radius: var(--radius);
+  overflow: hidden; margin-bottom: 14px;
+}
+.tab-btn {
+  flex: 1; padding: 11px 6px; text-align: center;
+  font-size: 12px; font-weight: 700; cursor: pointer;
+  background: transparent; color: var(--text3);
+  border: none; border-right: 1px solid var(--border);
+  font-family: inherit; transition: all 0.2s; white-space: nowrap;
+}
+.tab-btn:last-child { border-right: none; }
+.tab-btn.active { background: var(--primary); color: white; }
+.tab-panel { display: none; }
+.tab-panel.active { display: block; }
+
+.options-grid { display: flex; flex-direction: column; gap: 8px; }
+.option-row { display: flex; align-items: center; gap: 8px; }
+.option-badge {
+  width: 30px; height: 30px; flex-shrink: 0; border-radius: 50%;
+  background: rgba(108,99,255,0.12); border: 1.5px solid rgba(108,99,255,0.3);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px; font-weight: 700; color: #9C8BFF;
+  cursor: pointer; transition: all 0.2s;
+}
+.option-badge.correct-sel {
+  background: var(--green); border-color: var(--green); color: white;
+}
+.option-input { flex: 1; }
+
+.answer-selector { display: flex; gap: 8px; margin-top: 8px; }
+.answer-opt {
+  flex: 1; padding: 10px; border-radius: var(--radius-sm);
+  border: 1.5px solid var(--border); background: var(--bg2);
+  text-align: center; font-size: 15px; font-weight: 700;
+  cursor: pointer; transition: all 0.2s; color: var(--text2);
+}
+.answer-opt:hover { border-color: var(--primary); color: var(--primary); }
+.answer-opt.selected { background: var(--green); border-color: var(--green); color: white; }
+
+.type-selector { display: flex; gap: 8px; }
+.type-opt {
+  flex: 1; padding: 8px 6px; border-radius: var(--radius-sm);
+  border: 1.5px solid var(--border); background: var(--bg2);
+  text-align: center; font-size: 11px; font-weight: 700;
+  cursor: pointer; transition: all 0.2s; color: var(--text3);
+  font-family: inherit;
+}
+.type-opt.selected {
+  background: rgba(108,99,255,0.12); border-color: var(--primary); color: #9C8BFF;
+}
+
+.mcq-list { display: flex; flex-direction: column; gap: 10px; margin-top: 14px; }
+.mcq-card {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: var(--radius); overflow: hidden; transition: border-color 0.2s;
+}
+.mcq-card:hover { border-color: rgba(108,99,255,0.25); }
+.mcq-card-header {
+  padding: 12px 14px; display: flex; align-items: flex-start; gap: 10px;
+}
+.mcq-num {
+  width: 22px; height: 22px; flex-shrink: 0; border-radius: 50%;
+  background: rgba(108,99,255,0.12); border: 1px solid rgba(108,99,255,0.3);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 10px; font-weight: 700; color: #9C8BFF; margin-top: 2px;
+}
+.mcq-question { flex: 1; font-size: 13px; line-height: 1.5; color: var(--text); }
+.mcq-actions { display: flex; gap: 6px; flex-shrink: 0; }
+.mcq-options {
+  padding: 0 14px 12px 46px;
+  display: grid; grid-template-columns: 1fr 1fr; gap: 5px;
+}
+.mcq-opt {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 11px; color: var(--text2); padding: 5px 8px;
+  border-radius: 6px; border: 1px solid var(--border); background: var(--bg2);
+}
+.mcq-opt.correct {
+  border-color: rgba(16,185,129,0.4);
+  background: rgba(16,185,129,0.08); color: var(--green);
+}
+.opt-key {
+  width: 18px; height: 18px; border-radius: 50%;
+  background: rgba(255,255,255,0.08); display: flex; align-items: center;
+  justify-content: center; font-size: 10px; font-weight: 700; flex-shrink: 0;
+}
+.mcq-opt.correct .opt-key { background: var(--green); color: white; }
+.mcq-footer {
+  padding: 8px 14px 12px 46px; border-top: 1px solid var(--border);
+  display: flex; align-items: center; gap: 8px;
+}
+.type-badge {
+  font-size: 10px; padding: 2px 8px; border-radius: 20px; font-weight: 700;
+}
+.badge-standard { background: rgba(108,99,255,0.12); color: #9C8BFF; border: 1px solid rgba(108,99,255,0.3); }
+.badge-hard { background: rgba(239,68,68,0.12); color: var(--red); border: 1px solid rgba(239,68,68,0.3); }
+.badge-tf { background: rgba(16,185,129,0.12); color: var(--green); border: 1px solid rgba(16,185,129,0.3); }
+.mcq-explanation { font-size: 10px; color: var(--text3); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.mcq-edit-form {
+  display: none; border-top: 1px solid var(--border);
+  padding: 14px; background: var(--bg2);
+}
+.mcq-card.editing .mcq-edit-form { display: block; }
+
+.csv-info {
+  background: rgba(16,185,129,0.07); border: 1px solid rgba(16,185,129,0.2);
+  border-radius: var(--radius-sm); padding: 12px; margin-bottom: 12px;
+}
+.csv-info code {
+  font-size: 11px; color: var(--green); background: rgba(16,185,129,0.1);
+  padding: 1px 6px; border-radius: 4px; font-family: monospace;
+}
+
+.file-drop {
+  border: 2px dashed var(--border); border-radius: var(--radius-sm);
+  padding: 20px; text-align: center; cursor: pointer;
+  transition: all 0.2s; position: relative; background: var(--bg2);
+}
+.file-drop:hover, .file-drop.dragover { border-color: var(--primary); background: rgba(108,99,255,0.05); }
+.file-drop input[type=file] { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
+
+.ai-info-box {
+  background: rgba(108,99,255,0.08); border: 1px solid rgba(108,99,255,0.2);
+  border-radius: var(--radius-sm); padding: 12px; margin-bottom: 12px;
+  font-size: 12px; color: var(--text2); line-height: 1.6;
+}
+.ai-info-box strong { color: #9C8BFF; }
+
+.ai-spinner-wrap {
+  display: none; flex-direction: column; align-items: center;
+  gap: 10px; padding: 28px; text-align: center;
+}
+.ai-spinner-wrap.show { display: flex; }
+.ai-spinner {
+  width: 42px; height: 42px; border: 3px solid var(--border);
+  border-top-color: var(--primary); border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+.ai-spinner-label { font-size: 13px; color: var(--text2); font-weight: 600; }
+.ai-spinner-sub { font-size: 11px; color: var(--text3); }
+
+.ai-result { display: none; }
+.ai-result.show { display: block; }
+.ai-result-header {
+  font-size: 12px; font-weight: 700; color: var(--text3);
+  text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px;
+}
+.ai-preview-card {
+  background: var(--bg2); border: 1px solid rgba(108,99,255,0.2);
+  border-radius: var(--radius-sm); padding: 12px; margin-bottom: 8px;
+}
+.ai-preview-q { font-size: 13px; font-weight: 600; margin-bottom: 8px; }
+.ai-preview-opts { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; margin-bottom: 8px; }
+.ai-preview-opt {
+  font-size: 11px; color: var(--text2); padding: 4px 8px;
+  border-radius: 4px; background: var(--card);
+}
+.ai-preview-opt.correct { color: var(--green); background: rgba(16,185,129,0.08); }
+.ai-preview-opt input, .ai-preview-q textarea {
+  background: transparent; border: none; color: inherit;
+  font-size: inherit; font-family: inherit; width: 100%;
+  outline: none; resize: none; line-height: 1.5;
+}
+
+.confirm-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.75);
+  z-index: 900; display: flex; align-items: center; justify-content: center;
+  padding: 20px; opacity: 0; pointer-events: none; transition: opacity 0.2s;
+}
+.confirm-overlay.open { opacity: 1; pointer-events: all; }
+.confirm-box {
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 24px;
+  max-width: 320px; width: 100%;
+  transform: scale(0.95); transition: transform 0.2s; text-align: center;
+}
+.confirm-overlay.open .confirm-box { transform: scale(1); }
+.confirm-icon { font-size: 36px; margin-bottom: 12px; }
+.confirm-title { font-size: 15px; font-weight: 700; margin-bottom: 6px; }
+.confirm-text { font-size: 12px; color: var(--text2); margin-bottom: 20px; line-height: 1.5; }
+.confirm-actions { display: flex; gap: 10px; }
+.confirm-actions .btn { flex: 1; }
+
+.toast { bottom: 72px !important; }
+</style>
+</head>
+<body>
+
+<header class="admin-header">
+  <a class="back-btn" href="index.html">← ফিরে যাও</a>
+  <div class="admin-header-title">📁 PDF ও MCQ ব্যবস্থাপনা</div>
+  <button class="icon-btn" id="themeToggle" onclick="Theme.toggle()" title="Theme">☀️</button>
+</header>
+
+<main class="main-content">
+
+  <div class="section-card card-purple">
+    <div class="card-body">
+      <div class="card-title">📚 বিষয় ও অধ্যায় নির্বাচন</div>
+      <div class="form-group">
+        <label class="form-label">বিষয়</label>
+        <select class="form-select" id="selSubject" onchange="onSubjectChange()">
+          <option value="">-- বিষয় বেছে নিন --</option>
+        </select>
+      </div>
+      <div class="form-group" style="margin-bottom:6px">
+        <label class="form-label">অধ্যায়</label>
+        <select class="form-select" id="selChapter" disabled onchange="onChapterChange()">
+          <option value="">-- অধ্যায় বেছে নিন --</option>
+        </select>
+      </div>
+      <button class="link-btn" onclick="toggleNewChapter()">+ নতুন অধ্যায় যোগ করো</button>
+      <div class="inline-add" id="newChapterBox">
+        <div class="inline-add-row">
+          <input class="form-input" id="newChapterName" placeholder="অধ্যায়ের নাম" style="flex:1">
+          <button class="btn btn-primary btn-sm" onclick="createChapter()">যোগ করো</button>
+          <button class="btn btn-sm btn-outline" onclick="toggleNewChapter()">✕</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-card card-green" id="uploadSection" style="display:none">
+    <div class="card-body">
+      <div class="card-title">📤 PDF আপলোড</div>
+      <div class="drop-zone" id="dropZone"
+        ondragover="dzOver(event)" ondragleave="dzLeave()" ondrop="dzDrop(event)">
+        <input type="file" id="pdfFileInput" accept=".pdf" onchange="onFileSelect(event)">
+        <div class="drop-zone-icon">📄</div>
+        <div class="drop-zone-text">PDF ফাইল এখানে টানুন বা ক্লিক করুন</div>
+        <div class="drop-zone-hint">শুধুমাত্র .pdf ফাইল গ্রহণযোগ্য</div>
+      </div>
+      <div class="file-chosen" id="fileChosen"></div>
+      <div class="form-group" style="margin-top:12px;margin-bottom:12px">
+        <label class="form-label">PDF শিরোনাম</label>
+        <input class="form-input" id="pdfTitle" placeholder="PDF এর নাম লিখুন">
+      </div>
+      <div class="progress-wrap" id="progressWrap">
+        <div class="progress-label" id="progressLabel">আপলোড হচ্ছে...</div>
+        <div class="progress-bar-bg"><div class="progress-bar-fill" id="progressFill"></div></div>
+      </div>
+      <div class="upload-success" id="uploadSuccess">✅ আপলোড সম্পন্ন! PDF তালিকা আপডেট হচ্ছে...</div>
+      <button class="btn btn-green btn-full" id="uploadBtn" onclick="uploadPdf()">আপলোড করো</button>
+    </div>
+  </div>
+
+  <div id="pdfListSection" style="display:none">
+    <div class="section-heading">এই অধ্যায়ের PDF সমূহ</div>
+    <div class="pdf-list" id="pdfList">
+      <div class="skeleton skel-row"></div>
+      <div class="skeleton skel-row"></div>
+    </div>
+  </div>
+
+</main>
+
+<div class="mcq-panel" id="mcqPanel">
+  <div class="mcq-panel-header">
+    <button class="back-btn" onclick="closeMcqPanel()">← ফিরে যাও</button>
+    <div class="mcq-panel-title" id="mcqPanelTitle">MCQ সম্পাদনা</div>
+  </div>
+  <div class="mcq-panel-body">
+
+    <div class="page-nav">
+      <span class="page-nav-label">পেইজ নং:</span>
+      <button class="page-nav-btn" onclick="pageStep(-1)">‹</button>
+      <input type="number" class="page-nav-input" id="pageInput" value="1" min="1" onchange="onPageChange()">
+      <button class="page-nav-btn" onclick="pageStep(1)">›</button>
+      <span class="page-nav-count" id="pageCount">০ টি MCQ</span>
+    </div>
+
+    <div class="tab-bar">
+      <button class="tab-btn active" onclick="switchTab('manual')">📝 ম্যানুয়াল</button>
+      <button class="tab-btn" onclick="switchTab('csv')">📊 CSV</button>
+      <button class="tab-btn" onclick="switchTab('ai')">🤖 AI</button>
+    </div>
+
+    <div class="tab-panel active" id="tab-manual">
+      <div class="section-card" style="margin-bottom:14px">
+        <div class="card-body">
+          <div class="card-title" id="manualFormTitle">➕ নতুন প্রশ্ন যোগ</div>
+          <form id="mcqForm" onsubmit="saveMcq(event)">
+            <input type="hidden" id="mcqId">
+            <div class="form-group">
+              <label class="form-label">প্রশ্ন *</label>
+              <textarea class="form-textarea" id="mcqQuestion" placeholder="প্রশ্নটি লিখুন..." rows="3" required></textarea>
+            </div>
+            <div class="form-group">
+              <label class="form-label">বিকল্পসমূহ *</label>
+              <div class="options-grid">
+                <div class="option-row">
+                  <div class="option-badge" id="badge-k" onclick="selectAnswer('k')">ক</div>
+                  <input class="form-input option-input" id="opt-k" placeholder="বিকল্প ক" required>
+                </div>
+                <div class="option-row">
+                  <div class="option-badge" id="badge-kh" onclick="selectAnswer('kh')">খ</div>
+                  <input class="form-input option-input" id="opt-kh" placeholder="বিকল্প খ" required>
+                </div>
+                <div class="option-row">
+                  <div class="option-badge" id="badge-g" onclick="selectAnswer('g')">গ</div>
+                  <input class="form-input option-input" id="opt-g" placeholder="বিকল্প গ" required>
+                </div>
+                <div class="option-row">
+                  <div class="option-badge" id="badge-gh" onclick="selectAnswer('gh')">ঘ</div>
+                  <input class="form-input option-input" id="opt-gh" placeholder="বিকল্প ঘ" required>
+                </div>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">সঠিক উত্তর *</label>
+              <div class="answer-selector">
+                <div class="answer-opt" data-k="k" onclick="selectAnswer('k')">ক</div>
+                <div class="answer-opt" data-k="kh" onclick="selectAnswer('kh')">খ</div>
+                <div class="answer-opt" data-k="g" onclick="selectAnswer('g')">গ</div>
+                <div class="answer-opt" data-k="gh" onclick="selectAnswer('gh')">ঘ</div>
+              </div>
+              <input type="hidden" id="mcqCorrect">
+            </div>
+            <div class="form-group">
+              <label class="form-label">প্রশ্নের ধরন</label>
+              <div class="type-selector">
+                <button type="button" class="type-opt selected" data-type="standard" onclick="selectType('standard')">📚 Standard</button>
+                <button type="button" class="type-opt" data-type="true_false" onclick="selectType('true_false')">✅ True-False</button>
+                <button type="button" class="type-opt" data-type="hard" onclick="selectType('hard')">🔥 Hard</button>
+              </div>
+              <input type="hidden" id="mcqType" value="standard">
+            </div>
+            <div class="form-group">
+              <label class="form-label">ব্যাখ্যা (ঐচ্ছিক)</label>
+              <textarea class="form-textarea" id="mcqExplanation" placeholder="সঠিক উত্তরের ব্যাখ্যা..." rows="2"></textarea>
+            </div>
+            <div class="form-group">
+              <label class="form-label">ছবি (ঐচ্ছিক)</label>
+              <input type="file" class="form-input" id="mcqImage" accept="image/*" style="padding:8px 12px">
+            </div>
+            <div style="display:flex;gap:10px">
+              <button type="button" class="btn btn-outline" id="mcqCancelBtn" style="display:none" onclick="cancelMcqEdit()">বাতিল</button>
+              <button type="submit" class="btn btn-primary btn-full" id="mcqSaveBtn">✓ প্রশ্ন সংরক্ষণ</button>
+            </div>
+          </form>
+        </div>
+      </div>
+      <div id="manualMcqList"></div>
+    </div>
+
+    <div class="tab-panel" id="tab-csv">
+      <div class="section-card" style="margin-bottom:14px">
+        <div class="card-body">
+          <div class="card-title">📊 CSV থেকে আমদানি</div>
+          <div class="csv-info">
+            <strong style="color:var(--green)">ফরম্যাট:</strong><br>
+            <code>question,option_a,option_b,option_c,option_d,correct_answer,explanation</code><br>
+            <span style="font-size:11px;color:var(--text3);margin-top:6px;display:block">correct_answer: k / kh / g / gh (বা ক / খ / গ / ঘ)</span>
+          </div>
+          <div class="form-group">
+            <label class="form-label">পেইজ নম্বর</label>
+            <input type="number" class="form-input" id="csvPageNum" placeholder="যে পেইজে যোগ করবে" min="1" style="max-width:140px">
+          </div>
+          <div class="file-drop" id="csvFileDrop"
+            ondragover="csvDragOver(event)" ondragleave="csvDragLeave()" ondrop="csvFileDrop_(event)">
+            <input type="file" id="csvFileInput" accept=".csv,text/csv" onchange="csvFileSelect(event)">
+            <div style="font-size:28px;margin-bottom:6px">📊</div>
+            <div style="font-size:12px;color:var(--text3)">CSV ফাইল এখানে ড্র্যাগ করুন বা ক্লিক করুন</div>
+          </div>
+          <div id="csvPreviewInfo" style="display:none;font-size:11px;color:var(--text3);margin-top:8px"></div>
+          <div id="csvImportProgressWrap" style="display:none;margin-top:8px">
+            <div style="font-size:11px;color:var(--text2);margin-bottom:4px" id="csvProgressLabel">আমদানি হচ্ছে...</div>
+            <div style="background:var(--border);border-radius:3px;height:5px;overflow:hidden">
+              <div id="csvProgressFill" style="background:var(--primary);height:100%;width:0%;transition:width 0.3s;border-radius:3px"></div>
+            </div>
+          </div>
+          <button class="btn btn-primary btn-full" id="csvImportBtn" style="display:none;margin-top:12px" onclick="importCsv()">📥 আমদানি করুন</button>
+          <div id="csvImportResult" style="display:none;margin-top:10px;padding:10px 14px;background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.3);border-radius:var(--radius-sm);font-size:13px;color:var(--green);font-weight:600"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="tab-panel" id="tab-ai">
+      <div class="section-card" style="margin-bottom:14px">
+        <div class="card-body">
+          <div class="card-title">🤖 AI দিয়ে MCQ তৈরি</div>
+          <div class="ai-info-box">
+            <strong>Gemini 2.5 Flash</strong> দিয়ে PDF এর page content থেকে স্বয়ংক্রিয়ভাবে MCQ তৈরি হবে।
+            বর্তমানে নির্বাচিত পেইজ ব্যবহার করা হবে।
+          </div>
+          <div class="form-group">
+            <label class="form-label">MCQ ধরন</label>
+            <div class="type-selector" id="aiTypeSelector">
+              <button type="button" class="type-opt selected" data-type="standard" onclick="selectAiType('standard')">📚 Standard</button>
+              <button type="button" class="type-opt" data-type="true_false" onclick="selectAiType('true_false')">✅ True-False</button>
+              <button type="button" class="type-opt" data-type="hard" onclick="selectAiType('hard')">🔥 Hard</button>
+            </div>
+            <input type="hidden" id="aiType" value="standard">
+          </div>
+          <div class="form-group">
+            <label class="form-label">কাস্টম প্রম্পট (ঐচ্ছিক)</label>
+            <textarea class="form-textarea" id="aiPrompt" rows="3" placeholder="ডিফল্ট: এই PDF পেইজ থেকে ৫টি MCQ তৈরি করো। প্রতিটি প্রশ্নে ৪টি বিকল্প এবং সঠিক উত্তরের ব্যাখ্যা দাও।"></textarea>
+          </div>
+          <div class="ai-spinner-wrap" id="aiSpinner">
+            <div class="ai-spinner"></div>
+            <div class="ai-spinner-label">AI MCQ তৈরি করছে...</div>
+            <div class="ai-spinner-sub">এটি কিছু সেকেন্ড নিতে পারে</div>
+          </div>
+          <button class="btn btn-amber btn-full" id="aiGenBtn" onclick="aiGenerate()">🤖 AI দিয়ে MCQ তৈরি করো</button>
+          <div class="ai-result" id="aiResult">
+            <div class="ai-result-header" id="aiResultHeader" style="margin-top:14px"></div>
+            <div id="aiPreviewList"></div>
+            <div style="display:flex;gap:10px;margin-top:8px">
+              <button class="btn btn-outline btn-sm" onclick="discardAi()">✕ বাতিল</button>
+              <button class="btn btn-green btn-full" id="aiSaveBtn" onclick="saveAiMcqs()">✓ সব সংরক্ষণ করো</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="mcqListWrap" style="display:none">
+      <div class="section-heading">এই পেইজের প্রশ্নসমূহ</div>
+      <div id="mcqList" class="mcq-list"></div>
+    </div>
+
+  </div>
+</div>
+
+<nav class="admin-nav">
+  <a class="admin-nav-item" href="index.html"><span class="admin-nav-icon">📊</span>Dashboard</a>
+  <a class="admin-nav-item" href="subjects.html"><span class="admin-nav-icon">📚</span>বিষয়</a>
+  <a class="admin-nav-item active" href="pdf.html"><span class="admin-nav-icon">📁</span>PDF</a>
+  <a class="admin-nav-item" href="mcq.html"><span class="admin-nav-icon">❓</span>MCQ</a>
+  <a class="admin-nav-item" href="users.html"><span class="admin-nav-icon">👥</span>Users</a>
+</nav>
+
+<div class="confirm-overlay" id="confirmOverlay">
+  <div class="confirm-box">
+    <div class="confirm-icon" id="confirmIcon">🗑️</div>
+    <div class="confirm-title" id="confirmTitle">মুছে ফেলবে?</div>
+    <div class="confirm-text" id="confirmText">এই কাজটি পূর্বাবস্থায় ফেরানো যাবে না।</div>
+    <div class="confirm-actions">
+      <button class="btn btn-outline" onclick="closeConfirm()">বাতিল</button>
+      <button class="btn btn-danger" id="confirmOkBtn">মুছে ফেলো</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="../js/config.js"></script>
+<script src="../js/auth.js"></script>
+<script src="../js/theme.js"></script>
+<script>
+if (!Auth.isAdmin()) window.location.href = '../auth.html';
+
+function esc(s) {
+  if (s == null) return '';
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+function showToast(msg, type, d) {
+  const t = document.getElementById('toast');
+  const c = { success:'var(--green)', error:'var(--red)', info:'var(--primary)' };
+  t.textContent = msg;
+  t.style.borderColor = c[type || 'info'] || c.info;
+  t.classList.add('show');
+  clearTimeout(t._t);
+  t._t = setTimeout(() => t.classList.remove('show'), d || 3000);
+}
+
+async function api(path, opts) {
+  return fetch(CONFIG.workerUrl + path, {
+    ...opts,
+    headers: { 'Authorization': 'Bearer ' + Auth.getToken(), 'Content-Type': 'application/json', ...(opts && opts.headers || {}) }
+  });
+}
+
+let confirmCb = null;
+function showConfirm(title, text, icon, cb) {
+  document.getElementById('confirmTitle').textContent = title;
+  document.getElementById('confirmText').textContent = text;
+  document.getElementById('confirmIcon').textContent = icon || '🗑️';
+  confirmCb = cb;
+  document.getElementById('confirmOverlay').classList.add('open');
+}
+function closeConfirm() {
+  document.getElementById('confirmOverlay').classList.remove('open');
+  confirmCb = null;
+}
+document.getElementById('confirmOkBtn').onclick = () => { if (confirmCb) confirmCb(); closeConfirm(); };
+
+let selSubjectId = null;
+let selChapterId = null;
+let activePdfId = null;
+let activePdfTitle = '';
+let currentPage = 1;
+let allMcqs = [];
+let csvData = [];
+let aiData = [];
+let editingMcqId = null;
+let selAnswerKey = null;
+let selTypeKey = 'standard';
+let selAiType = 'standard';
+let selectedPdfFile = null;
+
+async function loadSubjects() {
+  const sel = document.getElementById('selSubject');
+  try {
+    const r = await api('/api/admin/subjects');
+    if (!r.ok) throw new Error();
+    const d = await r.json();
+    (d.subjects || []).forEach(s => {
+      const o = document.createElement('option');
+      o.value = s.id; o.textContent = (s.icon || '') + ' ' + s.name;
+      sel.appendChild(o);
+    });
+  } catch { showToast('বিষয় লোড ব্যর্থ', 'error'); }
+}
+
+async function onSubjectChange() {
+  selSubjectId = document.getElementById('selSubject').value || null;
+  selChapterId = null;
+  const chSel = document.getElementById('selChapter');
+  chSel.innerHTML = '<option value="">-- অধ্যায় বেছে নিন --</option>';
+  chSel.disabled = true;
+  hideUploadAndList();
+  if (!selSubjectId) return;
+  try {
+    const r = await api('/api/admin/chapters?subject_id=' + selSubjectId);
+    if (!r.ok) throw new Error();
+    const d = await r.json();
+    (d.chapters || []).forEach(ch => {
+      const o = document.createElement('option');
+      o.value = ch.id; o.textContent = ch.name;
+      chSel.appendChild(o);
+    });
+    chSel.disabled = false;
+  } catch { showToast('অধ্যায় লোড ব্যর্থ', 'error'); }
+}
+
+async function onChapterChange() {
+  selChapterId = document.getElementById('selChapter').value || null;
+  if (!selChapterId) { hideUploadAndList(); return; }
+  showUploadAndList();
+  loadPdfs();
+}
+
+function hideUploadAndList() {
+  document.getElementById('uploadSection').style.display = 'none';
+  document.getElementById('pdfListSection').style.display = 'none';
+}
+function showUploadAndList() {
+  document.getElementById('uploadSection').style.display = 'block';
+  document.getElementById('pdfListSection').style.display = 'block';
+}
+
+function toggleNewChapter() {
+  const box = document.getElementById('newChapterBox');
+  box.classList.toggle('show');
+  if (box.classList.contains('show')) document.getElementById('newChapterName').focus();
+  else document.getElementById('newChapterName').value = '';
+}
+
+async function createChapter() {
+  if (!selSubjectId) return showToast('আগে বিষয় নির্বাচন করুন', 'error');
+  const name = document.getElementById('newChapterName').value.trim();
+  if (!name) return showToast('অধ্যায়ের নাম লিখুন', 'error');
+  try {
+    const r = await api('/api/admin/chapters', { method: 'POST', body: JSON.stringify({ subject_id: parseInt(selSubjectId), name }) });
+    if (!r.ok) throw new Error((await r.json()).error || 'ব্যর্থ');
+    showToast('অধ্যায় যোগ হয়েছে ✓', 'success');
+    document.getElementById('newChapterName').value = '';
+    document.getElementById('newChapterBox').classList.remove('show');
+    await onSubjectChange();
+    document.getElementById('selSubject').value = selSubjectId;
+    await onSubjectChange();
+    const chSel = document.getElementById('selChapter');
+    document.getElementById('selSubject').value = selSubjectId;
+    const r2 = await api('/api/admin/chapters?subject_id=' + selSubjectId);
+    const d2 = await r2.json();
+    chSel.innerHTML = '<option value="">-- অধ্যায় বেছে নিন --</option>';
+    (d2.chapters || []).forEach(ch => {
+      const o = document.createElement('option');
+      o.value = ch.id; o.textContent = ch.name;
+      chSel.appendChild(o);
+    });
+    chSel.disabled = false;
+  } catch (e) { showToast('ত্রুটি: ' + e.message, 'error'); }
+}
+
+function dzOver(e) { e.preventDefault(); document.getElementById('dropZone').classList.add('dragover'); }
+function dzLeave() { document.getElementById('dropZone').classList.remove('dragover'); }
+function dzDrop(e) {
+  e.preventDefault(); document.getElementById('dropZone').classList.remove('dragover');
+  const f = e.dataTransfer.files[0];
+  if (f && f.type === 'application/pdf') setFile(f);
+  else showToast('শুধু PDF ফাইল গ্রহণযোগ্য', 'error');
+}
+function onFileSelect(e) { if (e.target.files[0]) setFile(e.target.files[0]); }
+function setFile(f) {
+  selectedPdfFile = f;
+  const fc = document.getElementById('fileChosen');
+  fc.textContent = '✓ ' + f.name; fc.style.display = 'block';
+  const titleEl = document.getElementById('pdfTitle');
+  if (!titleEl.value) titleEl.value = f.name.replace(/\.pdf$/i, '');
+}
+
+async function uploadPdf() {
+  if (!selChapterId) return showToast('অধ্যায় নির্বাচন করুন', 'error');
+  if (!selectedPdfFile) return showToast('PDF ফাইল নির্বাচন করুন', 'error');
+  const title = document.getElementById('pdfTitle').value.trim();
+  if (!title) return showToast('শিরোনাম লিখুন', 'error');
+
+  const btn = document.getElementById('uploadBtn');
+  const pw = document.getElementById('progressWrap');
+  const pf = document.getElementById('progressFill');
+  const pl = document.getElementById('progressLabel');
+  const us = document.getElementById('uploadSuccess');
+
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner-inline"></span> আপলোড হচ্ছে...';
+  pw.style.display = 'block'; pf.style.width = '0%'; us.style.display = 'none';
+  pl.textContent = 'আপলোড হচ্ছে...';
+
+  try {
+    const fd = new FormData();
+    fd.append('file', selectedPdfFile);
+    fd.append('chapter_id', selChapterId);
+    fd.append('title', title);
+
+    await new Promise((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+      xhr.open('POST', CONFIG.workerUrl + '/api/admin/pdfs/upload');
+      xhr.setRequestHeader('Authorization', 'Bearer ' + Auth.getToken());
+      xhr.upload.onprogress = ev => {
+        if (ev.lengthComputable) {
+          const pct = Math.round(ev.loaded / ev.total * 100);
+          pf.style.width = pct + '%';
+          pl.textContent = 'আপলোড হচ্ছে... ' + pct + '%';
+        }
+      };
+      xhr.onload = () => {
+        try {
+          const d = JSON.parse(xhr.responseText);
+          if (xhr.status >= 200 && xhr.status < 300) resolve(d);
+          else reject(new Error(d.error || 'আপলোড ব্যর্থ'));
+        } catch { reject(new Error('আপলোড ব্যর্থ')); }
+      };
+      xhr.onerror = () => reject(new Error('নেটওয়ার্ক ত্রুটি'));
+      xhr.send(fd);
+    });
+
+    pf.style.width = '100%';
+    us.style.display = 'block';
+    selectedPdfFile = null;
+    document.getElementById('fileChosen').style.display = 'none';
+    document.getElementById('pdfTitle').value = '';
+    document.getElementById('pdfFileInput').value = '';
+    setTimeout(() => { us.style.display = 'none'; }, 3000);
+    showToast('PDF আপলোড সম্পন্ন ✓', 'success');
+    loadPdfs();
+  } catch (e) {
+    showToast('আপলোড ব্যর্থ: ' + e.message, 'error');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = 'আপলোড করো';
+    setTimeout(() => { pw.style.display = 'none'; }, 1500);
+  }
+}
+
+async function loadPdfs() {
+  if (!selChapterId) return;
+  const listEl = document.getElementById('pdfList');
+  listEl.innerHTML = '<div class="skeleton skel-row"></div><div class="skeleton skel-sm"></div>';
+  try {
+    const r = await api('/api/admin/pdfs?chapter_id=' + selChapterId);
+    if (!r.ok) throw new Error();
+    const d = await r.json();
+    renderPdfs(d.pdfs || []);
+  } catch {
+    listEl.innerHTML = '<div class="empty-state"><div class="empty-state-icon">⚠️</div><div class="empty-state-title">লোড ব্যর্থ</div><button class="btn btn-outline btn-sm" style="margin-top:10px" onclick="loadPdfs()">পুনরায় চেষ্টা</button></div>';
+  }
+}
+
+function fmtSize(bytes) {
+  if (!bytes) return '';
+  if (bytes < 1024) return bytes + ' B';
+  if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
+  return (bytes / 1048576).toFixed(1) + ' MB';
+}
+function fmtDate(s) {
+  if (!s) return '';
+  try { return new Date(s).toLocaleDateString('bn-BD', { day:'numeric', month:'short', year:'numeric' }); } catch { return s; }
+}
+
+function renderPdfs(pdfs) {
+  const listEl = document.getElementById('pdfList');
+  if (!pdfs.length) {
+    listEl.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📄</div><div class="empty-state-title">কোনো PDF নেই</div><div class="empty-state-text">উপরে PDF আপলোড করুন</div></div>';
+    return;
+  }
+  listEl.innerHTML = pdfs.map(p => `
+    <div class="pdf-card" id="pdf-${p.id}">
+      <div class="pdf-card-top">
+        <div class="pdf-card-icon">📕</div>
+        <div class="pdf-card-info">
+          <div class="pdf-card-title">${esc(p.title)}</div>
+          <div class="pdf-card-meta">
+            ${p.file_size ? fmtSize(p.file_size) + ' · ' : ''}
+            ${p.page_count ? p.page_count + ' পৃষ্ঠা · ' : ''}
+            ${p.created_at ? fmtDate(p.created_at) : ''}
+          </div>
+        </div>
+        <div class="pdf-card-actions">
+          <button class="act-btn act-edit" title="MCQ সম্পাদনা" onclick="openMcqPanel(${p.id}, '${esc(p.title)}')">📝</button>
+          <button class="act-btn act-delete" title="মুছুন" onclick="deletePdf(${p.id}, '${esc(p.title)}')">🗑️</button>
+        </div>
+      </div>
+    </div>`).join('');
+}
+
+function deletePdf(id, title) {
+  showConfirm(
+    '"' + title + '" মুছবে?',
+    'এই PDF এর সব MCQ ও ডেটা মুছে যাবে। পূর্বাবস্থায় ফেরানো যাবে না।',
+    '🗑️',
+    async () => {
+      try {
+        const r = await api('/api/admin/pdfs/' + id, { method: 'DELETE' });
+        if (!r.ok) throw new Error('ব্যর্থ');
+        showToast('PDF মুছে গেছে', 'success');
+        loadPdfs();
+      } catch { showToast('মুছতে ব্যর্থ', 'error'); }
+    }
+  );
+}
+
+function openMcqPanel(pdfId, pdfTitle) {
+  activePdfId = pdfId;
+  activePdfTitle = pdfTitle;
+  currentPage = 1;
+  document.getElementById('mcqPanelTitle').textContent = pdfTitle + ' — MCQ সম্পাদনা';
+  document.getElementById('pageInput').value = 1;
+  document.getElementById('mcqPanel').classList.add('open');
+  document.body.style.overflow = 'hidden';
+  resetMcqForm();
+  loadMcqs();
+}
+
+function closeMcqPanel() {
+  document.getElementById('mcqPanel').classList.remove('open');
+  document.body.style.overflow = '';
+  activePdfId = null; allMcqs = [];
+}
+
+function onPageChange() {
+  const v = parseInt(document.getElementById('pageInput').value);
+  if (isNaN(v) || v < 1) { document.getElementById('pageInput').value = 1; currentPage = 1; }
+  else currentPage = v;
+  resetMcqForm();
+  loadMcqs();
+}
+
+function pageStep(d) {
+  const cur = parseInt(document.getElementById('pageInput').value) || 1;
+  const nxt = Math.max(1, cur + d);
+  document.getElementById('pageInput').value = nxt;
+  currentPage = nxt;
+  resetMcqForm();
+  loadMcqs();
+}
+
+async function loadMcqs() {
+  if (!activePdfId) return;
+  const listWrap = document.getElementById('mcqListWrap');
+  listWrap.style.display = 'block';
+  document.getElementById('mcqList').innerHTML = '<div class="skeleton skel-sm"></div><div class="skeleton skel-sm"></div>';
+  try {
+    const r = await api('/api/admin/mcq?pdf_id=' + activePdfId);
+    if (!r.ok) throw new Error();
+    const d = await r.json();
+    allMcqs = (d.mcqs || []).filter(m => m.page_number === currentPage || m.page === currentPage);
+    document.getElementById('pageCount').textContent = allMcqs.length + ' টি MCQ';
+    renderMcqList();
+  } catch {
+    document.getElementById('mcqList').innerHTML = '<div class="empty-state"><div class="empty-state-icon">⚠️</div><div class="empty-state-title">লোড ব্যর্থ</div><button class="btn btn-outline btn-sm" style="margin-top:10px" onclick="loadMcqs()">Retry</button></div>';
+  }
+}
+
+function renderMcqList() {
+  const listEl = document.getElementById('mcqList');
+  if (!allMcqs.length) {
+    listEl.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📝</div><div class="empty-state-title">এই পেইজে কোনো প্রশ্ন নেই</div><div class="empty-state-text">ম্যানুয়াল, CSV বা AI ট্যাব থেকে প্রশ্ন যোগ করুন</div></div>';
+    return;
+  }
+  const optKeys = ['k','kh','g','gh'];
+  const optLbls = { k:'ক', kh:'খ', g:'গ', gh:'ঘ' };
+  const typeMeta = {
+    standard: { label:'Standard', cls:'badge-standard' },
+    hard: { label:'Hard 🔥', cls:'badge-hard' },
+    true_false: { label:'True-False', cls:'badge-tf' },
+  };
+  listEl.innerHTML = allMcqs.map((q, i) => {
+    const tm = typeMeta[q.type] || typeMeta.standard;
+    const opts = optKeys.map(k => {
+      const val = q['option_' + k] || q['option_' + {k:'a',kh:'b',g:'c',gh:'d'}[k]] || '';
+      const ca = q.correct_answer;
+      const isCorr = ca === k || ca === {k:'a',kh:'b',g:'c',gh:'d'}[k];
+      return `<div class="mcq-opt ${isCorr ? 'correct' : ''}"><span class="opt-key">${optLbls[k]}</span>${esc(val)}</div>`;
+    }).join('');
+    return `
+      <div class="mcq-card" id="mcard-${q.id}">
+        <div class="mcq-card-header">
+          <div class="mcq-num">${i+1}</div>
+          <div class="mcq-question">${esc(q.question)}</div>
+          <div class="mcq-actions">
+            <button class="act-btn act-edit" onclick="startMcqEdit(${q.id})" title="সম্পাদনা">✏️</button>
+            <button class="act-btn act-delete" onclick="deleteMcq(${q.id})" title="মুছুন">🗑️</button>
+          </div>
+        </div>
+        <div class="mcq-options">${opts}</div>
+        <div class="mcq-footer">
+          <span class="type-badge ${tm.cls}">${tm.label}</span>
+          ${q.explanation ? `<span class="mcq-explanation">💡 ${esc(q.explanation)}</span>` : ''}
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function switchTab(name) {
+  document.querySelectorAll('.tab-btn').forEach((b, i) => b.classList.toggle('active', ['manual','csv','ai'][i] === name));
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+}
+
+function selectAnswer(key) {
+  selAnswerKey = key;
+  document.getElementById('mcqCorrect').value = key;
+  ['k','kh','g','gh'].forEach(k => {
+    const b = document.getElementById('badge-' + k);
+    if (b) b.classList.toggle('correct-sel', k === key);
+    const a = document.querySelector('.answer-opt[data-k="' + k + '"]');
+    if (a) a.classList.toggle('selected', k === key);
+  });
+}
+
+function selectType(type) {
+  selTypeKey = type;
+  document.getElementById('mcqType').value = type;
+  document.querySelectorAll('#tab-manual .type-opt').forEach(el => el.classList.toggle('selected', el.dataset.type === type));
+}
+
+function selectAiType(type) {
+  selAiType = type;
+  document.getElementById('aiType').value = type;
+  document.querySelectorAll('#aiTypeSelector .type-opt').forEach(el => el.classList.toggle('selected', el.dataset.type === type));
+}
+
+function resetMcqForm() {
+  editingMcqId = null; selAnswerKey = null;
+  document.getElementById('mcqId').value = '';
+  document.getElementById('mcqForm').reset();
+  ['k','kh','g','gh'].forEach(k => {
+    const b = document.getElementById('badge-' + k); if (b) b.classList.remove('correct-sel');
+    const a = document.querySelector('.answer-opt[data-k="' + k + '"]'); if (a) a.classList.remove('selected');
+  });
+  selectType('standard');
+  document.getElementById('mcqCorrect').value = '';
+  document.getElementById('manualFormTitle').textContent = '➕ নতুন প্রশ্ন যোগ';
+  document.getElementById('mcqSaveBtn').textContent = '✓ প্রশ্ন সংরক্ষণ';
+  document.getElementById('mcqCancelBtn').style.display = 'none';
+}
+
+function startMcqEdit(id) {
+  const q = allMcqs.find(x => x.id === id);
+  if (!q) return;
+  switchTab('manual');
+  editingMcqId = id;
+  document.getElementById('mcqId').value = id;
+  document.getElementById('mcqQuestion').value = q.question || '';
+  document.getElementById('opt-k').value = q.option_k || q.option_a || '';
+  document.getElementById('opt-kh').value = q.option_kh || q.option_b || '';
+  document.getElementById('opt-g').value = q.option_g || q.option_c || '';
+  document.getElementById('opt-gh').value = q.option_gh || q.option_d || '';
+  document.getElementById('mcqExplanation').value = q.explanation || '';
+  const ca = q.correct_answer;
+  const mapped = { a:'k', b:'kh', c:'g', d:'gh' };
+  selectAnswer(mapped[ca] || ca || 'k');
+  selectType(q.type || 'standard');
+  document.getElementById('manualFormTitle').textContent = '✏️ প্রশ্ন সম্পাদনা';
+  document.getElementById('mcqSaveBtn').textContent = '✓ আপডেট করো';
+  document.getElementById('mcqCancelBtn').style.display = 'inline-flex';
+  document.getElementById('mcqQuestion').scrollIntoView({ behavior: 'smooth', block: 'center' });
+  document.getElementById('mcqQuestion').focus();
+}
+
+function cancelMcqEdit() { resetMcqForm(); }
+
+async function saveMcq(e) {
+  e.preventDefault();
+  if (!activePdfId) return showToast('PDF নির্বাচন করুন', 'error');
+  const question = document.getElementById('mcqQuestion').value.trim();
+  const correct = document.getElementById('mcqCorrect').value;
+  if (!question) return showToast('প্রশ্ন লিখুন', 'error');
+  if (!correct) return showToast('সঠিক উত্তর বাছুন', 'error');
+  const optK = document.getElementById('opt-k').value.trim();
+  const optKh = document.getElementById('opt-kh').value.trim();
+  const optG = document.getElementById('opt-g').value.trim();
+  const optGh = document.getElementById('opt-gh').value.trim();
+  if (!optK || !optKh || !optG || !optGh) return showToast('সব বিকল্প পূরণ করুন', 'error');
+
+  const body = {
+    pdf_id: activePdfId, page_number: currentPage,
+    question, option_a: optK, option_b: optKh, option_c: optG, option_d: optGh,
+    correct_answer: correct,
+    type: document.getElementById('mcqType').value || 'standard',
+    explanation: document.getElementById('mcqExplanation').value.trim() || null,
+  };
+
+  const mcqId = document.getElementById('mcqId').value;
+  const btn = document.getElementById('mcqSaveBtn');
+  btn.disabled = true; btn.innerHTML = '<span class="spinner-inline"></span> সংরক্ষণ হচ্ছে...';
+  try {
+    const r = mcqId
+      ? await api('/api/admin/mcq/' + mcqId, { method: 'PUT', body: JSON.stringify(body) })
+      : await api('/api/admin/mcq', { method: 'POST', body: JSON.stringify(body) });
+    if (!r.ok) throw new Error((await r.json()).error || 'ব্যর্থ');
+    showToast(mcqId ? 'প্রশ্ন আপডেট ✓' : 'প্রশ্ন যোগ ✓', 'success');
+    resetMcqForm(); loadMcqs();
+  } catch (err) { showToast('ত্রুটি: ' + err.message, 'error'); }
+  finally { btn.disabled = false; btn.textContent = editingMcqId ? '✓ আপডেট করো' : '✓ প্রশ্ন সংরক্ষণ'; }
+}
+
+function deleteMcq(id) {
+  const q = allMcqs.find(x => x.id === id);
+  showConfirm(
+    'প্রশ্ন মুছবে?',
+    q ? '"' + (q.question || '').substring(0, 60) + '..." মুছে যাবে।' : 'এই প্রশ্নটি মুছে যাবে।',
+    '🗑️',
+    async () => {
+      try {
+        const r = await api('/api/admin/mcq/' + id, { method: 'DELETE' });
+        if (!r.ok) throw new Error('ব্যর্থ');
+        showToast('প্রশ্ন মুছে গেছে', 'success');
+        loadMcqs();
+      } catch { showToast('মুছতে ব্যর্থ', 'error'); }
+    }
+  );
+}
+
+function csvDragOver(e) { e.preventDefault(); document.getElementById('csvFileDrop').classList.add('dragover'); }
+function csvDragLeave() { document.getElementById('csvFileDrop').classList.remove('dragover'); }
+function csvFileDrop_(e) {
+  e.preventDefault(); document.getElementById('csvFileDrop').classList.remove('dragover');
+  if (e.dataTransfer.files[0]) processCsvFile(e.dataTransfer.files[0]);
+}
+function csvFileSelect(e) { if (e.target.files[0]) processCsvFile(e.target.files[0]); }
+
+function parseCsv(text) {
+  const lines = text.trim().split(/\r?\n/).filter(l => l.trim());
+  if (!lines.length) return [];
+  const headers = lines[0].split(',').map(h => h.trim().replace(/^"|"$/g,'').toLowerCase());
+  return lines.slice(1).map(line => {
+    const fields = [];
+    let inQ = false, cur = '';
+    for (const ch of line) {
+      if (ch === '"') inQ = !inQ;
+      else if (ch === ',' && !inQ) { fields.push(cur.trim()); cur = ''; }
+      else cur += ch;
+    }
+    fields.push(cur.trim());
+    const obj = {};
+    headers.forEach((h, i) => { obj[h] = (fields[i] || '').replace(/^"|"$/g,'').trim(); });
+    return obj;
+  }).filter(r => r.question || r.question_text);
+}
+
+function processCsvFile(file) {
+  const reader = new FileReader();
+  reader.onload = e => {
+    const rows = parseCsv(e.target.result);
+    if (!rows.length) { showToast('CSV ফাইলে কোনো ডেটা নেই', 'error'); return; }
+    csvData = rows;
+    const info = document.getElementById('csvPreviewInfo');
+    info.style.display = 'block';
+    info.textContent = 'মোট ' + rows.length + ' টি প্রশ্ন পাওয়া গেছে। আমদানির জন্য নিচের বাটন চাপুন।';
+    const btn = document.getElementById('csvImportBtn');
+    btn.style.display = 'block';
+    btn.textContent = '📥 ' + rows.length + ' টি প্রশ্ন আমদানি করুন';
+    document.getElementById('csvImportResult').style.display = 'none';
+  };
+  reader.readAsText(file, 'UTF-8');
+}
+
+async function importCsv() {
+  if (!csvData.length) return showToast('CSV ফাইল নির্বাচন করুন', 'error');
+  if (!activePdfId) return showToast('PDF নির্বাচন করুন', 'error');
+  const pg = parseInt(document.getElementById('csvPageNum').value) || currentPage;
+  const validAns = { k:'k', kh:'kh', g:'g', gh:'gh', 'ক':'k', 'খ':'kh', 'গ':'g', 'ঘ':'gh', a:'k', b:'kh', c:'g', d:'gh' };
+  const mcqs = csvData.map(r => ({
+    pdf_id: activePdfId,
+    page_number: pg,
+    question: r.question || r.question_text || '',
+    option_a: r.option_a || r.option_k || '',
+    option_b: r.option_b || r.option_kh || '',
+    option_c: r.option_c || r.option_g || '',
+    option_d: r.option_d || r.option_gh || '',
+    correct_answer: validAns[(r.correct_answer || r.correct || '').toLowerCase()] || 'k',
+    type: ['standard','hard','true_false'].includes(r.type) ? r.type : 'standard',
+    explanation: r.explanation || null,
+  })).filter(r => r.question);
+
+  const btn = document.getElementById('csvImportBtn');
+  const pw = document.getElementById('csvImportProgressWrap');
+  const pf = document.getElementById('csvProgressFill');
+  const pl = document.getElementById('csvProgressLabel');
+  btn.disabled = true; pw.style.display = 'block'; pf.style.width = '0%';
+
+  try {
+    const chunk = 10; let done = 0;
+    for (let i = 0; i < mcqs.length; i += chunk) {
+      const r = await api('/api/admin/mcq/csv', { method: 'POST', body: JSON.stringify({ mcqs: mcqs.slice(i, i+chunk) }) });
+      if (!r.ok) throw new Error((await r.json()).error || 'আমদানি ব্যর্থ');
+      done += Math.min(chunk, mcqs.length - i);
+      const pct = Math.round(done / mcqs.length * 100);
+      pf.style.width = pct + '%';
+      pl.textContent = 'আমদানি হচ্ছে (' + done + '/' + mcqs.length + ')...';
+    }
+    const res = document.getElementById('csvImportResult');
+    res.style.display = 'block'; res.textContent = '✅ ' + done + ' টি প্রশ্ন আমদানি সম্পন্ন!';
+    csvData = []; document.getElementById('csvPreviewInfo').style.display = 'none';
+    btn.style.display = 'none'; document.getElementById('csvFileInput').value = '';
+    showToast(done + ' টি প্রশ্ন আমদানি ✓', 'success');
+    currentPage = pg; document.getElementById('pageInput').value = pg; loadMcqs();
+  } catch (e) { showToast('আমদানি ব্যর্থ: ' + e.message, 'error'); }
+  finally { btn.disabled = false; pw.style.display = 'none'; }
+}
+
+async function aiGenerate() {
+  if (!activePdfId) return showToast('PDF নির্বাচন করুন', 'error');
+  const type = document.getElementById('aiType').value || 'standard';
+  const promptVal = document.getElementById('aiPrompt').value.trim();
+  const defaultPrompt = 'এই PDF পেইজ থেকে ৫টি MCQ তৈরি করো। প্রতিটি প্রশ্নে ৪টি বিকল্প এবং সঠিক উত্তরের ব্যাখ্যা দাও।';
+
+  const spin = document.getElementById('aiSpinner');
+  const genBtn = document.getElementById('aiGenBtn');
+  const result = document.getElementById('aiResult');
+  spin.classList.add('show'); genBtn.disabled = true; result.classList.remove('show'); aiData = [];
+
+  try {
+    const r = await api('/api/admin/mcq/generate-vision', {
+      method: 'POST',
+      body: JSON.stringify({
+        pdf_id: activePdfId,
+        page_number: currentPage,
+        type,
+        prompt: promptVal || defaultPrompt,
+      })
+    });
+    if (!r.ok) throw new Error((await r.json()).error || 'AI ব্যর্থ');
+    const d = await r.json();
+    aiData = d.mcqs || [];
+    if (!aiData.length) throw new Error('কোনো প্রশ্ন তৈরি হয়নি');
+    renderAiPreview(aiData);
+  } catch (e) { showToast('AI ত্রুটি: ' + e.message, 'error'); }
+  finally { spin.classList.remove('show'); genBtn.disabled = false; }
+}
+
+function renderAiPreview(qs) {
+  const optKeys = ['k','kh','g','gh'];
+  const optLbls = { k:'ক', kh:'খ', g:'গ', gh:'ঘ' };
+  const hdr = document.getElementById('aiResultHeader');
+  hdr.textContent = 'AI তৈরি করেছে ' + qs.length + ' টি প্রশ্ন (সম্পাদনা করতে পারবেন)';
+  document.getElementById('aiPreviewList').innerHTML = qs.map((q, idx) => {
+    const ca = q.correct_answer;
+    const ansMap = { a:'k', b:'kh', c:'g', d:'gh' };
+    const corrKey = ansMap[ca] || ca || 'k';
+    return `<div class="ai-preview-card">
+      <div class="ai-preview-q">
+        <strong style="color:var(--text3);font-size:11px">${idx+1}.</strong>
+        <textarea id="ai-q-${idx}" rows="2" style="width:100%;background:transparent;border:none;color:var(--text);font-size:13px;font-family:inherit;outline:none;resize:none;line-height:1.5;margin-top:4px">${esc(q.question)}</textarea>
+      </div>
+      <div class="ai-preview-opts">
+        ${optKeys.map(k => {
+          const val = q['option_' + k] || q['option_' + {k:'a',kh:'b',g:'c',gh:'d'}[k]] || '';
+          const isC = corrKey === k;
+          return `<div class="ai-preview-opt ${isC ? 'correct' : ''}"><strong>${optLbls[k]})</strong> <input id="ai-o-${idx}-${k}" value="${esc(val)}" style="background:transparent;border:none;color:inherit;font-size:11px;font-family:inherit;width:calc(100% - 24px);outline:none"></div>`;
+        }).join('')}
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;font-size:11px;color:var(--text3)">
+        <span>সঠিক উত্তর:</span>
+        <select id="ai-ca-${idx}" style="background:var(--bg2);border:1px solid var(--border);border-radius:4px;color:var(--green);font-size:11px;padding:3px 8px">
+          ${optKeys.map(k => `<option value="${k}" ${corrKey === k ? 'selected' : ''}>${optLbls[k]}</option>`).join('')}
+        </select>
+      </div>
+    </div>`;
+  }).join('');
+  document.getElementById('aiResult').classList.add('show');
+}
+
+function discardAi() {
+  aiData = [];
+  document.getElementById('aiResult').classList.remove('show');
+  document.getElementById('aiPreviewList').innerHTML = '';
+}
+
+async function saveAiMcqs() {
+  if (!aiData.length) return;
+  if (!activePdfId) return;
+  const optKeys = ['k','kh','g','gh'];
+  const fieldMap = { k:'a', kh:'b', g:'c', gh:'d' };
+  const mcqs = aiData.map((q, idx) => ({
+    pdf_id: activePdfId,
+    page_number: currentPage,
+    question: (document.getElementById('ai-q-' + idx)?.value || q.question || '').trim(),
+    option_a: (document.getElementById('ai-o-' + idx + '-k')?.value || q.option_k || q.option_a || '').trim(),
+    option_b: (document.getElementById('ai-o-' + idx + '-kh')?.value || q.option_kh || q.option_b || '').trim(),
+    option_c: (document.getElementById('ai-o-' + idx + '-g')?.value || q.option_g || q.option_c || '').trim(),
+    option_d: (document.getElementById('ai-o-' + idx + '-gh')?.value || q.option_gh || q.option_d || '').trim(),
+    correct_answer: document.getElementById('ai-ca-' + idx)?.value || q.correct_answer || 'k',
+    type: q.type || selAiType || 'standard',
+    explanation: q.explanation || null,
+  })).filter(m => m.question);
+
+  const btn = document.getElementById('aiSaveBtn');
+  btn.disabled = true; btn.innerHTML = '<span class="spinner-inline"></span> সংরক্ষণ হচ্ছে...';
+  try {
+    const r = await api('/api/admin/mcq/csv', { method: 'POST', body: JSON.stringify({ mcqs }) });
+    if (!r.ok) throw new Error((await r.json()).error || 'ব্যর্থ');
+    showToast(mcqs.length + ' টি AI প্রশ্ন সংরক্ষিত ✓', 'success');
+    discardAi(); loadMcqs();
+  } catch (e) { showToast('সংরক্ষণ ব্যর্থ: ' + e.message, 'error'); }
+  finally { btn.disabled = false; btn.textContent = '✓ সব সংরক্ষণ করো'; }
+}
+
+loadSubjects();
+</script>
+</body>
+</html>

@@ -1,5 +1,6 @@
 // home-pdf-worker.js
-// Routes: /api/subjects, /api/chapters, /api/pdfs, /api/pdf-url, /api/pdf/download/:id
+// Routes: /api/subjects, /api/chapters, /api/pdfs, /api/pdf-url, /api/pdf-stream/:id
+import { getGeminiKeys, callGemini, callGroq, parseMcqJson } from './utils.js';
 
 export default {
   async fetch(request, env) {
@@ -66,6 +67,24 @@ export default {
           .bind(pdfId).first();
         if (!pdf?.r2_url) return json({ error: 'PDF not found' }, 404);
         return Response.redirect(pdf.r2_url, 302);
+      }
+
+      // ===== PDF STREAM PROXY (for PDF.js — avoids CORS) =====
+      if (path.match(/^\/api\/pdf-stream\/\d+$/) && method === 'GET') {
+        const pdfId = path.split('/').pop();
+        const pdf = await env.DB.prepare('SELECT r2_url, title FROM pdfs WHERE id=?')
+          .bind(pdfId).first();
+        if (!pdf?.r2_url) return json({ error: 'PDF not found' }, 404);
+        const upstream = await fetch(pdf.r2_url);
+        if (!upstream.ok) return json({ error: 'Upstream error' }, 502);
+        return new Response(upstream.body, {
+          headers: {
+            'Content-Type': 'application/pdf',
+            'Content-Disposition': `inline; filename="${encodeURIComponent(pdf.title || 'doc')}.pdf"`,
+            'Access-Control-Allow-Origin': '*',
+            'Cache-Control': 'public, max-age=86400',
+          },
+        });
       }
 
       // ===== MCQ fetch for exam (with unique pattern) =====
@@ -192,30 +211,20 @@ async function getPrompt(env, pdfId, type) {
 
 async function generateMcqs(env, prompt, pageNumber) {
   const fullPrompt = `${prompt}\n\nPage: ${pageNumber}`;
-  try {
-    const res = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${env.GEMINI_KEY}`,
-      { method: 'POST', headers: {'Content-Type':'application/json'},
-        body: JSON.stringify({ contents: [{ parts: [{ text: fullPrompt }] }],
-          generationConfig: { maxOutputTokens: 4096 } }) }
-    );
-    const d = await res.json();
-    const text = d.candidates?.[0]?.content?.parts?.[0]?.text || '[]';
-    const m = text.match(/\[[\s\S]*\]/);
-    if (m) return JSON.parse(m[0]);
-  } catch (_) {}
-  // Groq fallback
-  try {
-    const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-      method: 'POST',
-      headers: {'Content-Type':'application/json','Authorization':`Bearer ${env.GROQ_KEY}`},
-      body: JSON.stringify({ model:'llama3-8b-8192',
-        messages:[{role:'user',content:fullPrompt}], max_tokens:4096 })
-    });
-    const d = await res.json();
-    const text = d.choices?.[0]?.message?.content || '[]';
-    const m = text.match(/\[[\s\S]*\]/);
-    if (m) return JSON.parse(m[0]);
-  } catch (_) {}
+  const body = {
+    contents: [{ parts: [{ text: fullPrompt }] }],
+    generationConfig: { maxOutputTokens: 4096 },
+  };
+  const keys = getGeminiKeys(env);
+  const geminiText = await callGemini(keys, body);
+  if (geminiText) {
+    const r = parseMcqJson(geminiText);
+    if (r.length) return r;
+  }
+  const groqText = await callGroq(env.GROQ_KEY, [{ role: 'user', content: fullPrompt }]);
+  if (groqText) {
+    const r = parseMcqJson(groqText);
+    if (r.length) return r;
+  }
   return [];
 }

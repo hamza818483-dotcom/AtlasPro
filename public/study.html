@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="bn" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>মূল বই পড়াশোনা — AtlasPro</title>
+<link rel="stylesheet" href="css/style.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Bengali:wght@400;600;700;900&family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:'Noto Sans Bengali','Inter',sans-serif;min-height:100vh;padding:0}
+
+.screen{display:none;min-height:100vh;flex-direction:column}
+.screen.active{display:flex}
+
+.study-hdr{
+  position:sticky;top:0;z-index:100;
+  background:var(--bg2);border-bottom:1px solid var(--border);
+  display:flex;align-items:center;gap:10px;
+  padding:12px 14px;min-height:52px;
+}
+.back-btn{
+  width:36px;height:36px;border-radius:50%;
+  background:var(--card);border:1px solid var(--border);
+  color:var(--text);font-size:18px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+  transition:background .15s;
+}
+.back-btn:hover{background:var(--card-hover)}
+.scr-title{font-size:15px;font-weight:700;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* Subject Screen */
+.subj-banner{
+  background:linear-gradient(135deg,#6C63FF,#3D35B0);
+  margin:14px;border-radius:14px;padding:18px 16px;color:#fff;
+}
+.subj-banner-t{font-size:16px;font-weight:900;margin-bottom:4px}
+.subj-banner-s{font-size:12px;opacity:.8}
+
+.subj-list{padding:0 14px 80px;display:flex;flex-direction:column;gap:10px}
+.subj-card{
+  border-radius:12px;padding:16px 14px;
+  display:flex;align-items:center;gap:12px;
+  cursor:pointer;transition:transform .15s,box-shadow .15s;
+  border:1px solid rgba(255,255,255,0.08);color:#fff;
+}
+.subj-card:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,.35)}
+.subj-card:active{transform:scale(.98)}
+.subj-icon{font-size:26px;width:44px;height:44px;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.15);border-radius:10px;flex-shrink:0}
+.subj-info{flex:1}
+.subj-name{font-size:15px;font-weight:700}
+.subj-desc{font-size:11px;opacity:.75;margin-top:2px}
+.subj-arr{font-size:20px;opacity:.6}
+.g0{background:linear-gradient(135deg,#6C63FF,#3D35B0)}
+.g1{background:linear-gradient(135deg,#00D4AA,#00856F)}
+.g2{background:linear-gradient(135deg,#FF6B6B,#B03535)}
+.g3{background:linear-gradient(135deg,#FFBE0B,#B08500)}
+.g4{background:linear-gradient(135deg,#3A86FF,#1A56CC)}
+.g5{background:linear-gradient(135deg,#FF006E,#AA0048)}
+.g6{background:linear-gradient(135deg,#8B5CF6,#5B21B6)}
+.g7{background:linear-gradient(135deg,#EC4899,#9D174D)}
+
+/* Chapter / PDF screens */
+.item-list{padding:10px 14px 80px;display:flex;flex-direction:column;gap:8px}
+.list-item{
+  background:var(--card);border:1px solid var(--border);
+  border-radius:10px;padding:14px 16px;
+  display:flex;align-items:center;gap:10px;
+  cursor:pointer;transition:all .15s;
+}
+.list-item:hover{border-color:var(--primary);transform:translateX(3px)}
+.list-num{
+  width:28px;height:28px;border-radius:8px;
+  background:rgba(108,99,255,.15);color:var(--primary);
+  font-size:12px;font-weight:700;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+}
+.list-name{font-size:14px;font-weight:600;flex:1}
+.list-sub{font-size:11px;color:var(--text3);margin-top:2px}
+.list-arr{font-size:16px;color:var(--text3)}
+
+/* PDF Viewer */
+.pdf-toolbar{
+  position:sticky;top:0;z-index:90;
+  background:var(--bg2);border-bottom:1px solid var(--border);
+  display:flex;align-items:center;gap:8px;
+  padding:8px 12px;min-height:48px;
+}
+.zoom-wrap{
+  display:flex;align-items:center;gap:4px;margin-left:auto;
+  background:var(--card);border-radius:8px;padding:4px 6px;
+  border:1px solid var(--border);
+}
+.z-btn{
+  width:28px;height:28px;border-radius:6px;
+  background:transparent;border:none;color:var(--text);
+  font-size:18px;font-weight:700;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  transition:background .15s;
+}
+.z-btn:hover{background:rgba(108,99,255,.18)}
+.z-lbl{font-size:12px;font-weight:700;color:var(--text2);min-width:38px;text-align:center}
+
+.pages-wrap{padding:10px 8px 100px;display:flex;flex-direction:column;gap:14px}
+.page-card{
+  background:var(--card);border-radius:12px;overflow:hidden;
+  border:1.5px solid var(--border);transition:border-color .2s;
+}
+.page-card.sel{border-color:var(--primary)}
+
+.page-top-bar{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:8px 12px;background:rgba(0,0,0,.2);
+  border-bottom:1px solid var(--border);
+}
+.cb-label{display:flex;align-items:center;gap:8px;cursor:pointer;user-select:none}
+.cb-label input{display:none}
+.cb-box{
+  width:20px;height:20px;border-radius:6px;
+  border:2px solid var(--border);background:var(--bg);
+  display:flex;align-items:center;justify-content:center;
+  font-size:11px;transition:all .15s;
+}
+.cb-label input:checked~.cb-box{background:var(--primary);border-color:var(--primary);color:#fff}
+.cb-txt{font-size:12px;color:var(--text2)}
+.p-badge{
+  font-size:11px;font-weight:700;
+  background:rgba(108,99,255,.12);color:var(--primary);
+  padding:3px 8px;border-radius:6px;
+}
+
+.canvas-wrap{
+  position:relative;overflow:auto;background:#111120;
+  display:flex;justify-content:center;min-height:200px;align-items:center;
+}
+.canvas-wrap canvas{display:block;max-width:100%}
+.page-ph{
+  position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  flex-direction:column;gap:10px;color:var(--text3);font-size:12px;
+}
+.sp{
+  width:28px;height:28px;border-radius:50%;
+  border:3px solid var(--border);border-top-color:var(--primary);
+  animation:spin .8s linear infinite;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+.page-footer{
+  padding:10px 12px;background:rgba(255,255,255,.02);
+  border-top:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;
+}
+.exam-btn{
+  background:linear-gradient(135deg,#10B981,#059669);
+  color:#fff;border:none;border-radius:10px;
+  padding:10px 18px;font-size:13px;font-weight:700;
+  cursor:pointer;font-family:inherit;transition:transform .15s;
+}
+.exam-btn:hover{transform:scale(1.04)}
+.p-num-lbl{font-size:11px;color:var(--text3)}
+
+/* Float multi-exam button */
+.multi-float{
+  position:fixed;bottom:20px;left:50%;transform:translateX(-50%);
+  z-index:200;display:none;
+}
+.multi-float-btn{
+  background:linear-gradient(135deg,#6C63FF,#3D35B0);
+  color:#fff;border:none;border-radius:14px;
+  padding:14px 28px;font-size:14px;font-weight:900;
+  cursor:pointer;font-family:inherit;
+  box-shadow:0 8px 28px rgba(108,99,255,.45);
+  white-space:nowrap;transition:transform .15s;
+}
+.multi-float-btn:hover{transform:scale(1.03)}
+
+/* Exam type sheet */
+.overlay{
+  position:fixed;inset:0;background:rgba(0,0,0,.7);
+  display:flex;align-items:flex-end;justify-content:center;
+  z-index:300;
+}
+.type-sheet{
+  background:var(--bg2);border-radius:20px 20px 0 0;
+  padding:20px 16px 32px;width:100%;max-width:480px;
+}
+.sheet-handle{width:36px;height:4px;background:var(--border);border-radius:2px;margin:0 auto 16px}
+.sheet-title{font-size:15px;font-weight:700;text-align:center;margin-bottom:16px}
+.type-btns{display:flex;flex-direction:column;gap:10px}
+.type-btn{
+  border-radius:12px;padding:14px 16px;
+  border:1.5px solid var(--border);background:var(--card);
+  color:var(--text);font-family:inherit;font-size:14px;font-weight:700;
+  cursor:pointer;text-align:left;display:flex;align-items:center;gap:10px;
+  transition:all .15s;
+}
+.type-btn:hover{border-color:var(--primary);background:rgba(108,99,255,.08)}
+.type-icon{font-size:22px}
+.type-info{flex:1}
+.type-name{font-size:14px;font-weight:700}
+.type-desc{font-size:11px;color:var(--text3);margin-top:2px}
+
+/* Loader / Error */
+.ctr{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:12px;padding:60px 20px;color:var(--text3);text-align:center;font-size:13px;
+}
+.ctr .sp{margin:0 auto}
+
+/* Toast */
+#toast{
+  position:fixed;bottom:90px;left:50%;transform:translateX(-50%) translateY(20px);
+  background:var(--card);color:var(--text);padding:10px 18px;
+  border-radius:10px;font-size:13px;font-weight:600;
+  opacity:0;transition:all .3s;z-index:999;
+  box-shadow:0 4px 16px rgba(0,0,0,.3);border:1px solid var(--border);
+  white-space:nowrap;max-width:90vw;
+}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+</style>
+</head>
+<body>
+
+<div id="toast"></div>
+
+<!-- ██ SCREEN 1: SUBJECTS ██ -->
+<div class="screen active" id="s-subj">
+  <div class="study-hdr">
+    <button class="back-btn" onclick="window.location.href='index.html'">←</button>
+    <span class="scr-title">মূল বই পেইজভিত্তিক প্রস্তুতি</span>
+  </div>
+  <div class="subj-banner">
+    <div class="subj-banner-t">📖 বিষয় নির্বাচন করো</div>
+    <div class="subj-banner-s">যে বিষয় পড়তে চাও সেটি বেছে নাও</div>
+  </div>
+  <div id="subj-list"><div class="ctr"><div class="sp"></div><div>বিষয় লোড হচ্ছে...</div></div></div>
+</div>
+
+<!-- ██ SCREEN 2: CHAPTERS ██ -->
+<div class="screen" id="s-chap">
+  <div class="study-hdr">
+    <button class="back-btn" onclick="go('s-subj')">←</button>
+    <span class="scr-title" id="chap-title">অধ্যায়সমূহ</span>
+  </div>
+  <div id="chap-list"><div class="ctr"><div class="sp"></div><div>লোড হচ্ছে...</div></div></div>
+</div>
+
+<!-- ██ SCREEN 3: PDF LIST ██ -->
+<div class="screen" id="s-pdfs">
+  <div class="study-hdr">
+    <button class="back-btn" onclick="go('s-chap')">←</button>
+    <span class="scr-title" id="pdfs-title">PDF সমূহ</span>
+  </div>
+  <div id="pdf-list"><div class="ctr"><div class="sp"></div><div>লোড হচ্ছে...</div></div></div>
+</div>
+
+<!-- ██ SCREEN 4: PDF VIEWER ██ -->
+<div class="screen" id="s-view">
+  <div class="pdf-toolbar">
+    <button class="back-btn" onclick="go('s-pdfs')">←</button>
+    <span class="scr-title" id="view-title">PDF</span>
+    <div class="zoom-wrap">
+      <button class="z-btn" onclick="zoom(-0.25)">−</button>
+      <span class="z-lbl" id="zoom-lbl">150%</span>
+      <button class="z-btn" onclick="zoom(0.25)">+</button>
+    </div>
+  </div>
+  <div class="pages-wrap" id="pages-wrap"></div>
+  <div class="multi-float" id="multi-float">
+    <button class="multi-float-btn" onclick="openSheet(null)">
+      📝 এক্সাম দাও (<span id="sel-cnt">0</span> পেইজ) →
+    </button>
+  </div>
+</div>
+
+<!-- ██ EXAM TYPE SHEET ██ -->
+<div class="overlay" id="sheet" style="display:none" onclick="closeSheet(event)">
+  <div class="type-sheet" onclick="event.stopPropagation()">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title">MCQ ধরন বেছে নাও</div>
+    <div class="type-btns">
+      <button class="type-btn" onclick="startExam('standard')">
+        <span class="type-icon">📝</span>
+        <div class="type-info"><div class="type-name">Standard MCQ</div><div class="type-desc">সাধারণ বহুনির্বাচনী প্রশ্ন</div></div>→
+      </button>
+      <button class="type-btn" onclick="startExam('true_false')">
+        <span class="type-icon">✅</span>
+        <div class="type-info"><div class="type-name">সত্য / মিথ্যা</div><div class="type-desc">True/False ধরনের প্রশ্ন</div></div>→
+      </button>
+      <button class="type-btn" onclick="startExam('hard')">
+        <span class="type-icon">🔥</span>
+        <div class="type-info"><div class="type-name">কঠিন প্রশ্ন</div><div class="type-desc">বিশ্লেষণমূলক কঠিন MCQ</div></div>→
+      </button>
+    </div>
+  </div>
+</div>
+
+<script src="js/config.js"></script>
+<script src="js/auth.js"></script>
+<script>
+if(typeof pdfjsLib!=='undefined')
+  pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+let scale=1.5, pdfDoc=null, curPdfId=null, curPdfTitle='', selPages=new Set(), sheetTarget=null;
+const BASE=()=>(typeof CONFIG!=='undefined'?CONFIG.workerUrl:'');
+const token=()=>localStorage.getItem('session_token')||'';
+const hdrs=()=>({'Authorization':'Bearer '+token(),'Content-Type':'application/json'});
+
+function showToast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500)}
+function esc(s){return String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c])}
+
+function go(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo(0,0);
+}
+
+/* ── Subjects ── */
+async function loadSubjects(){
+  try{
+    const r=await fetch(BASE()+'/api/subjects',{headers:hdrs()});
+    const d=await r.json();
+    const c=document.getElementById('subj-list');
+    if(!d.subjects?.length){c.innerHTML='<div class="ctr">কোনো বিষয় পাওয়া যায়নি</div>';return}
+    const GS=['g0','g1','g2','g3','g4','g5','g6','g7'];
+    c.innerHTML='<div class="subj-list">'+d.subjects.map((s,i)=>`
+      <div class="subj-card ${GS[i%8]}" onclick="openSubject(${s.id},'${esc(s.name)}')">
+        <div class="subj-icon">${s.icon||'📚'}</div>
+        <div class="subj-info">
+          <div class="subj-name">${esc(s.name)}</div>
+          <div class="subj-desc">${esc(s.description||'অধ্যায় দেখতে ক্লিক করো')}</div>
+        </div>
+        <div class="subj-arr">›</div>
+      </div>`).join('')+'</div>';
+  }catch(e){document.getElementById('subj-list').innerHTML='<div class="ctr" style="color:var(--red)">লোড হয়নি। পুনরায় চেষ্টা করো।</div>'}
+}
+
+async function openSubject(id,name){
+  document.getElementById('chap-title').textContent=name;
+  go('s-chap');
+  const c=document.getElementById('chap-list');
+  c.innerHTML='<div class="ctr"><div class="sp"></div><div>লোড হচ্ছে...</div></div>';
+  try{
+    const r=await fetch(BASE()+'/api/chapters?subject_id='+id,{headers:hdrs()});
+    const d=await r.json();
+    if(!d.chapters?.length){c.innerHTML='<div class="ctr">কোনো অধ্যায় পাওয়া যায়নি</div>';return}
+    c.innerHTML='<div class="item-list">'+d.chapters.map((ch,i)=>`
+      <div class="list-item" onclick="openChapter(${ch.id},'${esc(ch.name)}')">
+        <div class="list-num">${i+1}</div>
+        <div class="list-info"><div class="list-name">${esc(ch.name)}</div></div>
+        <div class="list-arr">›</div>
+      </div>`).join('')+'</div>';
+  }catch(e){c.innerHTML='<div class="ctr" style="color:var(--red)">লোড হয়নি।</div>'}
+}
+
+async function openChapter(id,name){
+  document.getElementById('pdfs-title').textContent=name;
+  go('s-pdfs');
+  const c=document.getElementById('pdf-list');
+  c.innerHTML='<div class="ctr"><div class="sp"></div><div>লোড হচ্ছে...</div></div>';
+  try{
+    const r=await fetch(BASE()+'/api/pdfs?chapter_id='+id,{headers:hdrs()});
+    const d=await r.json();
+    if(!d.pdfs?.length){c.innerHTML='<div class="ctr">কোনো PDF পাওয়া যায়নি</div>';return}
+    c.innerHTML='<div class="item-list">'+d.pdfs.map(p=>`
+      <div class="list-item" onclick="openPdf(${p.id},'${esc(p.title)}')">
+        <div style="font-size:28px">📕</div>
+        <div class="list-info">
+          <div class="list-name">${esc(p.title)}</div>
+          <div class="list-sub">${p.page_count?p.page_count+' পেইজ':'PDF ফাইল'}</div>
+        </div>
+        <div class="list-arr">›</div>
+      </div>`).join('')+'</div>';
+  }catch(e){c.innerHTML='<div class="ctr" style="color:var(--red)">লোড হয়নি।</div>'}
+}
+
+/* ── PDF Viewer ── */
+async function openPdf(id,title){
+  curPdfId=id; curPdfTitle=title; selPages.clear();
+  document.getElementById('view-title').textContent=title;
+  go('s-view');
+  updateMultiBtn();
+  const wrap=document.getElementById('pages-wrap');
+  wrap.innerHTML='<div class="ctr"><div class="sp"></div><div>PDF লোড হচ্ছে...</div></div>';
+  try{
+    const r=await fetch(BASE()+'/api/pdf-url?pdf_id='+id,{headers:hdrs()});
+    const d=await r.json();
+    if(!d.url)throw new Error('URL পাওয়া যায়নি');
+    pdfDoc=await pdfjsLib.getDocument({url:d.url}).promise;
+    const n=pdfDoc.numPages;
+    wrap.innerHTML='';
+    for(let i=1;i<=n;i++)wrap.appendChild(makePage(i,n));
+    setupObs();
+  }catch(e){wrap.innerHTML=`<div class="ctr" style="color:var(--red)">PDF লোড হয়নি: ${esc(e.message)}</div>`}
+}
+
+function makePage(p,tot){
+  const d=document.createElement('div');
+  d.className='page-card'; d.id='pc-'+p; d.dataset.page=p;
+  d.innerHTML=`
+    <div class="page-top-bar">
+      <label class="cb-label" onclick="toggleSel(${p})">
+        <input type="checkbox" id="cb-${p}">
+        <div class="cb-box" id="cbv-${p}"></div>
+        <span class="cb-txt">নির্বাচন</span>
+      </label>
+      <span class="p-badge">পেইজ ${p} / ${tot}</span>
+    </div>
+    <div class="canvas-wrap" id="cw-${p}">
+      <div class="page-ph" id="ph-${p}"><div class="sp"></div><div>পেইজ ${p}...</div></div>
+      <canvas id="cv-${p}" style="display:none"></canvas>
+    </div>
+    <div class="page-footer">
+      <span class="p-num-lbl">পেইজ ${p}</span>
+      <button class="exam-btn" onclick="openSheet(${p})">📝 এক্সাম দাও</button>
+    </div>`;
+  return d;
+}
+
+function setupObs(){
+  const done=new Set();
+  const obs=new IntersectionObserver(entries=>{
+    entries.forEach(e=>{
+      if(e.isIntersecting){
+        const p=parseInt(e.target.dataset.page);
+        if(!done.has(p)){done.add(p);renderPage(p)}
+      }
+    });
+  },{rootMargin:'350px 0px'});
+  document.querySelectorAll('.page-card').forEach(el=>obs.observe(el));
+}
+
+async function renderPage(p){
+  if(!pdfDoc)return;
+  const cv=document.getElementById('cv-'+p);
+  const ph=document.getElementById('ph-'+p);
+  if(!cv)return;
+  try{
+    const page=await pdfDoc.getPage(p);
+    const vp=page.getViewport({scale});
+    cv.width=vp.width; cv.height=vp.height;
+    await page.render({canvasContext:cv.getContext('2d'),viewport:vp}).promise;
+    if(ph)ph.style.display='none';
+    cv.style.display='block';
+  }catch(e){if(ph)ph.innerHTML='❌ লোড হয়নি'}
+}
+
+function zoom(d){
+  scale=Math.max(.5,Math.min(3,scale+d));
+  document.getElementById('zoom-lbl').textContent=Math.round(scale*100)+'%';
+  document.querySelectorAll('.page-card').forEach(el=>{
+    const p=parseInt(el.dataset.page);
+    const cv=document.getElementById('cv-'+p);
+    if(cv&&cv.style.display!=='none')renderPage(p);
+  });
+}
+
+function toggleSel(p){
+  if(selPages.has(p)){
+    selPages.delete(p);
+    document.getElementById('pc-'+p)?.classList.remove('sel');
+    document.getElementById('cbv-'+p).textContent='';
+  }else{
+    selPages.add(p);
+    document.getElementById('pc-'+p)?.classList.add('sel');
+    document.getElementById('cbv-'+p).textContent='✓';
+  }
+  updateMultiBtn();
+}
+
+function updateMultiBtn(){
+  const f=document.getElementById('multi-float');
+  document.getElementById('sel-cnt').textContent=selPages.size;
+  f.style.display=selPages.size>0?'block':'none';
+}
+
+/* ── Exam Sheet ── */
+function openSheet(page){
+  sheetTarget=page;
+  document.getElementById('sheet').style.display='flex';
+}
+function closeSheet(e){if(e.target.id==='sheet')document.getElementById('sheet').style.display='none'}
+
+function startExam(type){
+  document.getElementById('sheet').style.display='none';
+  let pages;
+  if(sheetTarget!==null){
+    pages=String(sheetTarget);
+  }else{
+    pages=[...selPages].sort((a,b)=>a-b).join(',');
+    if(!pages){showToast('পেইজ নির্বাচন করো');return}
+  }
+  const url=`exam.html?pdf_id=${curPdfId}&pages=${pages}&type=${type}&pdf_name=${encodeURIComponent(curPdfTitle)}`;
+  window.location.href=url;
+}
+
+/* ── Init ── */
+document.addEventListener('DOMContentLoaded',()=>{
+  if(!localStorage.getItem('session_token')){window.location.href='auth.html';return}
+  loadSubjects();
+});
+</script>
+</body>
+</html>

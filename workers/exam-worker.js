@@ -30,6 +30,44 @@ export default {
     if (!user) return json({ error: 'Invalid token' }, 401);
 
     try {
+      // ── GET QUESTIONS (for exam.html) ─────────────────────
+      if (path === '/api/exam/questions' && method === 'GET') {
+        const pdfId  = url.searchParams.get('pdf_id');
+        const pagesRaw = url.searchParams.get('pages') || '';
+        const type   = url.searchParams.get('type') || 'standard';
+        const pages  = pagesRaw ? pagesRaw.split(',').map(Number).filter(Boolean) : [];
+
+        if (!pdfId) return json({ error: 'pdf_id required' }, 400);
+
+        let allMcqs = [];
+        if (pages.length > 0) {
+          for (const pg of pages) {
+            const { results } = await env.DB.prepare(
+              'SELECT * FROM mcqs WHERE pdf_id=? AND page_number=? AND type=? ORDER BY id ASC'
+            ).bind(pdfId, pg, type).all();
+            allMcqs.push(...results);
+          }
+        } else {
+          const { results } = await env.DB.prepare(
+            'SELECT * FROM mcqs WHERE pdf_id=? AND type=? ORDER BY id ASC'
+          ).bind(pdfId, type).all();
+          allMcqs = results;
+        }
+
+        const questions = allMcqs.map(m => ({
+          id:            m.id,
+          question:      m.question,
+          options:       [m.option_a, m.option_b, m.option_c, m.option_d],
+          correct_index: ['A','B','C','D'].indexOf((m.correct_answer||'A').toUpperCase()),
+          explanation:   m.explanation || '',
+          type:          m.type || type,
+          page:          m.page_number,
+          image_url:     m.image_url || null,
+        }));
+
+        return json({ questions });
+      }
+
       // ── SUBMIT EXAM ────────────────────────────────────────
       if (path === '/api/exam/submit' && method === 'POST') {
         const body = await request.json();

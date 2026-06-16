@@ -1,6 +1,6 @@
 // admin-worker.js — AtlasPro Admin API
 // Handles: subjects, chapters, pdfs, mcq, users, announcements, packages, owner, settings
-import { supabaseUpload, supabaseDelete } from './utils.js';
+import { supabaseUpload, supabaseDelete, getGeminiKeys, callGemini, callGroq, parseMcqJson } from './utils.js';
 
 export default {
   async fetch(request, env) {
@@ -301,41 +301,15 @@ export default {
         const geminiPrompt = `${prompt}\n\nContent: Page ${page_number} of the educational PDF.\n\nReturn ONLY a JSON array like: [{"question":"...","option_a":"...","option_b":"...","option_c":"...","option_d":"...","correct_answer":"A","explanation":"..."}]`;
 
         let mcqs = [];
-        try {
-          const geminiRes = await fetch(
-            `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${env.GEMINI_KEY}`,
-            {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                contents: [{ parts: [{ text: geminiPrompt }] }],
-                generationConfig: { maxOutputTokens: 2048 },
-              }),
-            }
-          );
-          const gData = await geminiRes.json();
-          const text = gData.candidates?.[0]?.content?.parts?.[0]?.text || '[]';
-          const jsonMatch = text.match(/\[[\s\S]*\]/);
-          if (jsonMatch) mcqs = JSON.parse(jsonMatch[0]);
-        } catch (e) {
-          try {
-            const groqRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${env.GROQ_KEY}`,
-              },
-              body: JSON.stringify({
-                model: 'llama3-8b-8192',
-                messages: [{ role: 'user', content: geminiPrompt }],
-                max_tokens: 2048,
-              }),
-            });
-            const gData = await groqRes.json();
-            const text = gData.choices?.[0]?.message?.content || '[]';
-            const jsonMatch = text.match(/\[[\s\S]*\]/);
-            if (jsonMatch) mcqs = JSON.parse(jsonMatch[0]);
-          } catch (_) {}
+        const keys = getGeminiKeys(env);
+        const gText = await callGemini(keys, {
+          contents: [{ parts: [{ text: geminiPrompt }] }],
+          generationConfig: { maxOutputTokens: 2048 },
+        });
+        if (gText) mcqs = parseMcqJson(gText);
+        if (!mcqs.length) {
+          const gr = await callGroq(env.GROQ_KEY, [{ role: 'user', content: geminiPrompt }], 2048);
+          if (gr) mcqs = parseMcqJson(gr);
         }
 
         for (const mcq of mcqs) {
@@ -386,6 +360,72 @@ export default {
         }
 
         return json({ count, message: `${count} MCQs imported` }, 201);
+      }
+
+      // MCQ Vision Generate — uses actual PDF content via Gemini
+      if (path === '/api/admin/mcq/generate-vision' && method === 'POST') {
+        const body = await request.json();
+        const { pdf_id, page_number, type = 'standard', prompt: customPrompt } = body;
+
+        const pdf = await env.DB.prepare('SELECT r2_url FROM pdfs WHERE id=?').bind(pdf_id).first();
+        if (!pdf?.r2_url) return json({ error: 'PDF not found' }, 404);
+
+        const defaults = {
+          standard:   'এই PDF পেইজের content থেকে ২০টি সাধারণ MCQ তৈরি করো। Return ONLY JSON array: [{"question":"","option_a":"","option_b":"","option_c":"","option_d":"","correct_answer":"A","explanation":""}]',
+          true_false: 'এই PDF পেইজের content থেকে ২০টি সত্য/মিথ্যা প্রশ্ন তৈরি করো। A=সত্য B=মিথ্যা। Return ONLY JSON array: [{"question":"","option_a":"সত্য","option_b":"মিথ্যা","option_c":"","option_d":"","correct_answer":"A","explanation":""}]',
+          hard:       'এই PDF পেইজের content থেকে ২০টি কঠিন বিশ্লেষণমূলক MCQ তৈরি করো। Return ONLY JSON array: [{"question":"","option_a":"","option_b":"","option_c":"","option_d":"","correct_answer":"A","explanation":""}]',
+        };
+        const prompt = customPrompt || defaults[type] || defaults.standard;
+
+        // Fetch PDF and convert to base64
+        let pdfBase64 = null;
+        try {
+          const pdfRes = await fetch(pdf.r2_url);
+          const buf = await pdfRes.arrayBuffer();
+          const u8 = new Uint8Array(buf);
+          let bin = '';
+          for (let i = 0; i < u8.length; i += 8192) {
+            bin += String.fromCharCode(...u8.subarray(i, i + 8192));
+          }
+          pdfBase64 = btoa(bin);
+        } catch (_) {}
+
+        let mcqs = [];
+        const keys = getGeminiKeys(env);
+
+        if (pdfBase64) {
+          const geminiBody = {
+            contents: [{
+              parts: [
+                { inline_data: { mime_type: 'application/pdf', data: pdfBase64 } },
+                { text: `পেইজ ${page_number} এর content থেকে MCQ তৈরি করো।\n${prompt}` },
+              ],
+            }],
+            generationConfig: { maxOutputTokens: 4096 },
+          };
+          const text = await callGemini(keys, geminiBody);
+          if (text) mcqs = parseMcqJson(text);
+        }
+
+        if (!mcqs.length) {
+          const textPrompt = `${prompt}\n\nPage: ${page_number}`;
+          const groqText = await callGroq(env.GROQ_KEY, [{ role: 'user', content: textPrompt }]);
+          if (groqText) mcqs = parseMcqJson(groqText);
+        }
+
+        for (const mcq of mcqs) {
+          await env.DB.prepare(`
+            INSERT INTO mcqs (pdf_id, type, question, option_a, option_b, option_c, option_d, correct_answer, explanation, page_number, source)
+            VALUES (?,?,?,?,?,?,?,?,?,?,'ai')
+          `).bind(
+            pdf_id, type,
+            mcq.question || '', mcq.option_a || '', mcq.option_b || '',
+            mcq.option_c || '', mcq.option_d || '',
+            (mcq.correct_answer || 'A').toUpperCase(), mcq.explanation || '', page_number
+          ).run();
+        }
+
+        return json({ count: mcqs.length, mcqs });
       }
 
       // ===== USERS =====

@@ -48,7 +48,7 @@ export default {
       return examWorker.fetch(request, env, ctx);
     }
 
-    // Subjects / chapters / PDFs (including /api/pdf-url)
+    // Subjects / chapters / PDFs (including /api/pdf-url and /api/pdf-stream)
     if (
       path.startsWith('/api/subjects') ||
       path.startsWith('/api/chapters') ||

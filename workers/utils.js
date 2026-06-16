@@ -36,6 +36,61 @@ export function jsonRes(data, status = 200) {
   });
 }
 
+// Gemini key rotation helpers
+export function getGeminiKeys(env) {
+  const keys = [];
+  if (env.GEMINI_KEYS) keys.push(...env.GEMINI_KEYS.split(',').map(k => k.trim()).filter(Boolean));
+  if (env.GEMINI_KEY)  keys.push(env.GEMINI_KEY.trim());
+  return [...new Set(keys)];
+}
+
+export async function callGemini(keys, body) {
+  for (const key of keys) {
+    try {
+      const res = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${key}`,
+        { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }
+      );
+      if (!res.ok) continue;
+      const d = await res.json();
+      const text = d.candidates?.[0]?.content?.parts?.[0]?.text;
+      if (text) return text;
+    } catch (_) {}
+  }
+  return null;
+}
+
+export async function callGroq(key, messages, maxTokens = 4096) {
+  if (!key) return null;
+  try {
+    const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${key}` },
+      body: JSON.stringify({ model: 'llama3-8b-8192', messages, max_tokens: maxTokens }),
+    });
+    if (!res.ok) return null;
+    const d = await res.json();
+    return d.choices?.[0]?.message?.content || null;
+  } catch (_) { return null; }
+}
+
+export async function callCfAi(env, prompt) {
+  if (!env.AI) return null;
+  try {
+    const res = await env.AI.run('@cf/meta/llama-3-8b-instruct', {
+      messages: [{ role: 'user', content: prompt }],
+    });
+    return res?.response || null;
+  } catch (_) { return null; }
+}
+
+export function parseMcqJson(text) {
+  if (!text) return [];
+  const m = text.match(/\[[\s\S]*\]/);
+  if (!m) return [];
+  try { return JSON.parse(m[0]); } catch (_) { return []; }
+}
+
 // Supabase Storage helpers (replaces R2)
 export async function supabaseUpload(env, path, buffer, contentType = 'application/octet-stream') {
   const url = `${env.SUPABASE_URL}/storage/v1/object/${path}`;
