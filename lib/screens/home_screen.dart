@@ -58,7 +58,13 @@ class _HomeScreenState extends State<HomeScreen>
     setState(() => _loading = true);
     final prefs = await SharedPreferences.getInstance();
     _isAdmin = prefs.getBool('is_admin') ?? false;
-    _userName = prefs.getString('user_name') ?? 'Student';
+    _userName = prefs.getString('user_name') ?? '';
+
+    final loggedIn = await AuthService.isLoggedIn();
+    if (!loggedIn) {
+      setState(() => _loading = false);
+      return;
+    }
 
     final remaining = await AccessService.getRemainingPages();
     final premium = await AccessService.isPremium();
@@ -110,7 +116,9 @@ class _HomeScreenState extends State<HomeScreen>
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'স্বাগতম, $_userName! 👋',
+                          _userName.isNotEmpty
+                              ? 'স্বাগতম, $_userName! 👋'
+                              : 'AtlasPro-তে স্বাগতম! 👋',
                           style: const TextStyle(
                               color: Colors.white,
                               fontSize: 20,
@@ -211,29 +219,79 @@ class _HomeScreenState extends State<HomeScreen>
                       child: Center(child: CircularProgressIndicator()),
                     )
                   else if (_subjects.isEmpty)
-                    Padding(
-                      padding: const EdgeInsets.all(32),
-                      child: Center(
-                        child: Column(
-                          children: [
-                            const Icon(Icons.library_books_outlined,
-                                color: Colors.white24, size: 64),
-                            const SizedBox(height: 12),
-                            const Text('কোনো বিষয় নেই',
-                                style: TextStyle(color: Colors.white38)),
-                            if (_isAdmin) ...[
-                              const SizedBox(height: 12),
-                              ElevatedButton.icon(
-                                onPressed: () => context.push('/admin'),
-                                icon: const Icon(Icons.add),
-                                label: const Text('বিষয় যোগ করো'),
-                                style: ElevatedButton.styleFrom(
-                                    backgroundColor: AppTheme.primaryColor),
+                    FutureBuilder<bool>(
+                      future: AuthService.isLoggedIn(),
+                      builder: (context, snap) {
+                        final loggedIn = snap.data ?? false;
+                        if (!loggedIn) {
+                          return Padding(
+                            padding: const EdgeInsets.all(32),
+                            child: Center(
+                              child: Column(
+                                children: [
+                                  const Text('🔐',
+                                      style: TextStyle(fontSize: 48)),
+                                  const SizedBox(height: 12),
+                                  const Text(
+                                    'কন্টেন্ট দেখতে লগইন করো',
+                                    style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold),
+                                  ),
+                                  const SizedBox(height: 6),
+                                  const Text(
+                                    'বিষয়, অধ্যায় ও PDF পেতে একাউন্ট দরকার',
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(
+                                        color: Colors.white38, fontSize: 12),
+                                  ),
+                                  const SizedBox(height: 20),
+                                  ElevatedButton(
+                                    onPressed: () => context.push('/auth'),
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: AppTheme.primaryColor,
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 32, vertical: 12),
+                                      shape: RoundedRectangleBorder(
+                                          borderRadius:
+                                              BorderRadius.circular(12)),
+                                    ),
+                                    child: const Text('লগইন / রেজিস্ট্রেশন'),
+                                  ),
+                                ],
                               ),
-                            ],
-                          ],
-                        ),
-                      ),
+                            ),
+                          );
+                        }
+                        return Padding(
+                          padding: const EdgeInsets.all(32),
+                          child: Center(
+                            child: Column(
+                              children: [
+                                const Icon(Icons.library_books_outlined,
+                                    color: Colors.white24, size: 64),
+                                const SizedBox(height: 12),
+                                const Text('কোনো বিষয় নেই',
+                                    style:
+                                        TextStyle(color: Colors.white38)),
+                                if (_isAdmin) ...[
+                                  const SizedBox(height: 12),
+                                  ElevatedButton.icon(
+                                    onPressed: () =>
+                                        context.push('/admin'),
+                                    icon: const Icon(Icons.add),
+                                    label: const Text('বিষয় যোগ করো'),
+                                    style: ElevatedButton.styleFrom(
+                                        backgroundColor:
+                                            AppTheme.primaryColor),
+                                  ),
+                                ],
+                              ],
+                            ),
+                          ),
+                        );
+                      },
                     )
                   else
                     Padding(
