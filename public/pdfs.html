@@ -1,0 +1,602 @@
+<!DOCTYPE html>
+<html lang="bn" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PDF — AtlasPro</title>
+<link rel="stylesheet" href="css/style.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Bengali:wght@400;600;700;900&family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
+<style>
+/* ── Page Header Bar ── */
+.page-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 14px 0;
+}
+.back-btn {
+  width: 38px; height: 38px;
+  border-radius: 50%;
+  background: var(--card);
+  border: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px;
+  cursor: pointer;
+  transition: all 0.2s;
+  color: var(--text);
+  flex-shrink: 0;
+}
+.back-btn:hover { background: var(--card-hover); border-color: var(--primary); }
+.page-title-block { flex: 1; min-width: 0; }
+.page-subject-name {
+  font-size: 17px;
+  font-weight: 900;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.page-subject-meta { font-size: 11px; color: var(--text3); margin-top: 2px; }
+
+/* ── Breadcrumb ── */
+.breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 14px 0;
+  font-size: 11px;
+  color: var(--text3);
+  flex-wrap: wrap;
+}
+.breadcrumb a { color: var(--primary); text-decoration: none; }
+.breadcrumb span { color: var(--text3); }
+
+/* ── Search Bar ── */
+.search-wrap {
+  padding: 12px 14px 0;
+  position: relative;
+}
+.search-input {
+  width: 100%;
+  height: 44px;
+  background: var(--card);
+  border: 1.5px solid var(--border);
+  border-radius: 12px;
+  padding: 0 14px 0 42px;
+  font-size: 14px;
+  color: var(--text);
+  outline: none;
+  transition: border-color 0.2s;
+}
+.search-input:focus { border-color: var(--primary); }
+.search-input::placeholder { color: var(--text3); }
+.search-icon {
+  position: absolute;
+  left: 27px;
+  top: 50%; transform: translateY(-50%);
+  font-size: 16px;
+  pointer-events: none;
+  margin-top: 6px;
+}
+
+/* ── Count Bar ── */
+.count-bar {
+  padding: 8px 14px 0;
+  font-size: 11px;
+  color: var(--text3);
+  font-weight: 600;
+}
+.count-bar span { color: var(--primary); }
+
+/* ── PDF List ── */
+.pdf-list {
+  padding: 10px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* ── PDF Card ── */
+.pdf-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: all 0.2s;
+  text-decoration: none;
+  color: inherit;
+  animation: fadeUp 0.3s ease both;
+}
+.pdf-card:hover {
+  border-color: var(--primary);
+  background: var(--card-hover);
+  transform: translateX(4px);
+  box-shadow: -3px 0 0 var(--primary), var(--shadow);
+}
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.pdf-card.locked {
+  opacity: 0.75;
+  cursor: default;
+}
+.pdf-card.locked:hover {
+  transform: none;
+  box-shadow: none;
+  border-color: rgba(245,158,11,0.4);
+}
+
+/* ── PDF Icon Box ── */
+.pdf-icon-box {
+  width: 44px; height: 52px;
+  background: rgba(239,68,68,0.1);
+  border: 1.5px solid rgba(239,68,68,0.25);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  position: relative;
+  font-size: 24px;
+}
+.pdf-icon-box.locked-icon {
+  background: rgba(245,158,11,0.08);
+  border-color: rgba(245,158,11,0.25);
+}
+
+/* ── PDF Body ── */
+.pdf-body { flex: 1; min-width: 0; }
+.pdf-name {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1.4;
+  margin-bottom: 5px;
+  word-break: break-word;
+}
+.pdf-badges {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 8px;
+  border-radius: 20px;
+  font-size: 10px;
+  font-weight: 700;
+}
+.badge-pages {
+  background: rgba(108,99,255,0.12);
+  color: var(--accent);
+  border: 1px solid rgba(108,99,255,0.2);
+}
+.badge-lock {
+  background: rgba(245,158,11,0.1);
+  color: var(--amber);
+  border: 1px solid rgba(245,158,11,0.2);
+}
+.badge-new {
+  background: rgba(16,185,129,0.12);
+  color: var(--green);
+  border: 1px solid rgba(16,185,129,0.2);
+}
+.pdf-arrow {
+  font-size: 20px;
+  color: var(--text3);
+  flex-shrink: 0;
+  transition: color 0.2s, transform 0.2s;
+}
+.pdf-card:not(.locked):hover .pdf-arrow {
+  color: var(--primary);
+  transform: translateX(3px);
+}
+
+/* ── Skeleton ── */
+.skeleton-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+.skel {
+  background: linear-gradient(90deg, var(--border) 25%, var(--card-hover) 50%, var(--border) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.4s ease infinite;
+  border-radius: 6px;
+}
+@keyframes shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+.skel-rect  { width: 44px; height: 52px; border-radius: 8px; flex-shrink: 0; }
+.skel-lines { flex: 1; display: flex; flex-direction: column; gap: 8px; }
+.skel-line-lg { height: 14px; width: 75%; }
+.skel-line-sm { height: 10px; width: 45%; }
+.skel-arrow { width: 18px; height: 18px; border-radius: 4px; flex-shrink: 0; }
+
+/* ── Error / Empty ── */
+.state-box {
+  text-align: center;
+  padding: 48px 20px;
+}
+.state-icon  { font-size: 48px; margin-bottom: 12px; }
+.state-title { font-size: 15px; font-weight: 700; color: var(--text2); margin-bottom: 6px; }
+.state-text  { font-size: 12px; color: var(--text3); margin-bottom: 20px; line-height: 1.6; }
+
+/* ── No Results ── */
+.no-results {
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--text3);
+}
+.no-results-icon { font-size: 40px; margin-bottom: 10px; }
+.no-results-text { font-size: 13px; }
+</style>
+</head>
+<body>
+
+<!-- ══ HEADER ══ -->
+<header class="header">
+  <button class="icon-btn menu-btn" onclick="toggleSidebar()">☰</button>
+  <a class="logo-link" href="index.html" aria-label="AtlasPro হোম">
+    <img class="logo-icon" src="img/logo-icon.svg" alt="ATLAS">
+    <div class="logo-text-block">
+      <span class="logo-name"><span class="logo-a">A</span>TLAS</span>
+      <span class="logo-sub">পড়াশোনা হোক গোছানো</span>
+    </div>
+  </a>
+  <div class="header-actions">
+    <button class="icon-btn" id="themeToggle" onclick="Theme.toggle()" title="Theme">☀️</button>
+    <button class="icon-btn" onclick="showToast('🔔 কোনো নতুন notification নেই')" title="Notification">🔔</button>
+    <div class="avatar-btn" id="avatarBtn" onclick="window.location.href='profile.html'">A</div>
+  </div>
+</header>
+
+<!-- ══ SIDEBAR ══ -->
+<div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+<div class="sidebar" id="sidebar">
+  <div class="sidebar-header">
+    <span class="atlas-brand" style="font-size:22px">ATLAS</span>
+    <div style="font-size:10px;color:var(--text3);margin-top:2px">Educational Platform</div>
+  </div>
+  <div class="sidebar-user" id="sidebarUser">
+    <div class="sidebar-avatar" id="sidebarAvatar">A</div>
+    <div>
+      <div class="sidebar-name" id="sidebarName">Guest</div>
+      <span class="sidebar-badge badge-free" id="sidebarBadge">🆓 Free</span>
+    </div>
+  </div>
+  <nav class="sidebar-nav">
+    <a class="sidebar-link" href="index.html"><span>🏠</span> হোম</a>
+    <a class="sidebar-link active" href="index.html"><span>📚</span> বিষয়</a>
+    <a class="sidebar-link" href="profile.html"><span>👤</span> প্রোফাইল</a>
+    <a class="sidebar-link" href="focus.html"><span>⏱️</span> Focus Timer</a>
+    <a class="sidebar-link" href="packages.html"><span>⭐</span> প্যাকেজ</a>
+    <div class="sidebar-divider"></div>
+    <div class="sidebar-admin" id="adminLink" style="display:none" onclick="window.location.href='admin/index.html'">
+      👑 Admin Panel
+    </div>
+    <div class="sidebar-logout" onclick="Auth.logout()">
+      <span>🚪</span> Logout
+    </div>
+  </nav>
+</div>
+
+<!-- ══ MAIN ══ -->
+<main style="padding-bottom:16px">
+
+  <!-- Page Header -->
+  <div class="page-bar">
+    <button class="back-btn" onclick="goBack()" aria-label="পেছনে যাও">←</button>
+    <div class="page-title-block">
+      <div class="page-subject-name" id="pageTitle">PDF</div>
+      <div class="page-subject-meta" id="pageMeta">লোড হচ্ছে...</div>
+    </div>
+  </div>
+
+  <!-- Breadcrumb -->
+  <div class="breadcrumb" id="breadcrumb"></div>
+
+  <!-- Search -->
+  <div class="search-wrap">
+    <span class="search-icon">🔍</span>
+    <input
+      type="search"
+      class="search-input"
+      id="searchInput"
+      placeholder="PDF খুঁজুন..."
+      oninput="filterPdfs()"
+      autocomplete="off"
+    >
+  </div>
+
+  <!-- Count -->
+  <div class="count-bar" id="countBar" style="display:none">
+    মোট <span id="countNum">0</span>টি PDF
+  </div>
+
+  <!-- PDF Area -->
+  <div id="pdfArea"></div>
+
+</main>
+
+<!-- ══ FLOATING BUTTONS ══ -->
+<div class="float-btns">
+  <a class="float-btn float-wa" href="https://wa.me/8801999681290" target="_blank" rel="noopener" title="WhatsApp">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="white">
+      <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+    </svg>
+  </a>
+  <a class="float-btn float-tg" href="https://t.me/rafi_somc" target="_blank" rel="noopener" title="Telegram">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="white">
+      <path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/>
+    </svg>
+  </a>
+</div>
+
+<!-- ══ BOTTOM NAV ══ -->
+<nav class="bottom-nav">
+  <a class="nav-item" href="index.html"><span class="nav-icon">🏠</span>হোম</a>
+  <a class="nav-item active" href="index.html"><span class="nav-icon">📚</span>বিষয়</a>
+  <a class="nav-item" href="profile.html#history"><span class="nav-icon">📝</span>এক্সাম</a>
+  <a class="nav-item" href="focus.html"><span class="nav-icon">⏱️</span>টাইমার</a>
+  <a class="nav-item" href="profile.html"><span class="nav-icon">👤</span>প্রোফাইল</a>
+</nav>
+
+<!-- ══ TOAST ══ -->
+<div class="toast" id="toast"></div>
+
+<script src="js/config.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/theme.js"></script>
+<script>
+// ── URL Params ──
+const params       = new URLSearchParams(location.search);
+const CHAPTER_ID   = params.get('chapter_id')   || '';
+const CHAPTER_NAME = params.get('name')          || 'PDF';
+const SUBJECT_NAME = params.get('subject_name')  || '';
+const SUBJECT_ICON = params.get('icon')          || '📚';
+const SUBJECT_ID   = params.get('subject_id')    || '';
+
+// ── State ──
+let allPdfs = [];
+
+// ── Sidebar ──
+function toggleSidebar() {
+  document.getElementById('sidebar').classList.toggle('open');
+  document.getElementById('sidebarOverlay').classList.toggle('open');
+}
+function closeSidebar() {
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('sidebarOverlay').classList.remove('open');
+}
+
+// ── Toast ──
+function showToast(msg, duration = 2500) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), duration);
+}
+
+// ── Back ──
+function goBack() {
+  if (document.referrer && document.referrer.includes(location.hostname)) {
+    history.back();
+  } else {
+    const q = new URLSearchParams({
+      subject_id: SUBJECT_ID,
+      name: SUBJECT_NAME,
+      icon: SUBJECT_ICON,
+    });
+    window.location.href = `chapters.html?${q}`;
+  }
+}
+
+// ── Init ──
+function initHeader() {
+  const name      = Auth.getUserName();
+  const isAdmin   = Auth.isAdmin();
+  const isPremium = localStorage.getItem('is_premium') === 'true';
+  const initial   = name ? name[0].toUpperCase() : 'A';
+
+  document.getElementById('avatarBtn').textContent     = initial;
+  document.getElementById('sidebarAvatar').textContent = initial;
+  document.getElementById('sidebarName').textContent   = name || 'Guest';
+
+  if (isPremium) {
+    const b = document.getElementById('sidebarBadge');
+    b.className   = 'sidebar-badge badge-premium';
+    b.textContent = '⭐ Premium';
+  }
+  if (isAdmin) document.getElementById('adminLink').style.display = 'flex';
+
+  document.getElementById('pageTitle').textContent = CHAPTER_NAME;
+
+  // Breadcrumb
+  const bc = document.getElementById('breadcrumb');
+  if (SUBJECT_NAME) {
+    const subjectHref = `chapters.html?subject_id=${SUBJECT_ID}&name=${encodeURIComponent(SUBJECT_NAME)}&icon=${encodeURIComponent(SUBJECT_ICON)}`;
+    bc.innerHTML = `
+      <a href="index.html">হোম</a>
+      <span>›</span>
+      <a href="${subjectHref}">${SUBJECT_ICON} ${escHtml(SUBJECT_NAME)}</a>
+      <span>›</span>
+      <span>${escHtml(CHAPTER_NAME)}</span>`;
+  }
+}
+
+// ── Skeleton ──
+function showSkeleton() {
+  document.getElementById('pdfArea').innerHTML = `
+    <div class="pdf-list">
+      ${Array.from({ length: 5 }, () => `
+        <div class="skeleton-card">
+          <div class="skel skel-rect"></div>
+          <div class="skel-lines">
+            <div class="skel skel-line-lg"></div>
+            <div class="skel skel-line-sm"></div>
+          </div>
+          <div class="skel skel-arrow"></div>
+        </div>`).join('')}
+    </div>`;
+}
+
+// ── Build Card ──
+function buildCard(pdf, idx) {
+  const isPremiumUser = localStorage.getItem('is_premium') === 'true';
+  const isLocked      = pdf.is_premium && !isPremiumUser;
+  const pageCount     = pdf.page_count ?? pdf.pageCount ?? 0;
+  const isNew         = pdf.is_new || false;
+  const delay         = Math.min(idx * 50, 500);
+
+  const pagesBadge = pageCount > 0
+    ? `<span class="badge badge-pages">📄 ${pageCount} পৃষ্ঠা</span>`
+    : '';
+  const lockBadge = isLocked
+    ? `<span class="badge badge-lock">🔒 Premium</span>`
+    : '';
+  const newBadge = isNew
+    ? `<span class="badge badge-new">✨ নতুন</span>`
+    : '';
+
+  if (isLocked) {
+    return `
+      <div class="pdf-card locked" onclick="showToast('⭐ এই PDF টি Premium-only। Upgrade করো!')" style="animation-delay:${delay}ms">
+        <div class="pdf-icon-box locked-icon">🔒</div>
+        <div class="pdf-body">
+          <div class="pdf-name">${escHtml(pdf.title || pdf.name)}</div>
+          <div class="pdf-badges">${pagesBadge}${lockBadge}${newBadge}</div>
+        </div>
+        <div class="pdf-arrow">›</div>
+      </div>`;
+  }
+
+  const href = `pdf-viewer.html?pdf_id=${pdf.id}&name=${encodeURIComponent(pdf.title || pdf.name)}&chapter_id=${CHAPTER_ID}&chapter_name=${encodeURIComponent(CHAPTER_NAME)}&subject_name=${encodeURIComponent(SUBJECT_NAME)}&icon=${encodeURIComponent(SUBJECT_ICON)}&pages=${pageCount}`;
+
+  return `
+    <a class="pdf-card" href="${href}" style="animation-delay:${delay}ms">
+      <div class="pdf-icon-box">📄</div>
+      <div class="pdf-body">
+        <div class="pdf-name">${escHtml(pdf.title || pdf.name)}</div>
+        <div class="pdf-badges">${pagesBadge}${lockBadge}${newBadge}</div>
+      </div>
+      <div class="pdf-arrow">›</div>
+    </a>`;
+}
+
+// ── Render ──
+function renderPdfs(list) {
+  const area = document.getElementById('pdfArea');
+  if (!list.length) {
+    document.getElementById('countBar').style.display = 'none';
+    area.innerHTML = `
+      <div class="state-box">
+        <div class="state-icon">📂</div>
+        <div class="state-title">কোনো PDF নেই</div>
+        <div class="state-text">এই অধ্যায়ে এখনো কোনো PDF যোগ করা হয়নি</div>
+      </div>`;
+    return;
+  }
+
+  document.getElementById('countBar').style.display = 'block';
+  document.getElementById('countNum').textContent   = list.length;
+  area.innerHTML = `<div class="pdf-list">${list.map((p, i) => buildCard(p, i)).join('')}</div>`;
+}
+
+// ── Filter ──
+function filterPdfs() {
+  const q      = document.getElementById('searchInput').value.trim().toLowerCase();
+  const filtered = q
+    ? allPdfs.filter(p => (p.title || p.name || '').toLowerCase().includes(q))
+    : allPdfs;
+
+  const area = document.getElementById('pdfArea');
+  if (!filtered.length) {
+    document.getElementById('countBar').style.display = 'none';
+    area.innerHTML = `
+      <div class="no-results">
+        <div class="no-results-icon">🔍</div>
+        <div class="no-results-text">"${escHtml(q)}" এর জন্য কোনো PDF পাওয়া যায়নি</div>
+      </div>`;
+    return;
+  }
+
+  document.getElementById('countBar').style.display = 'block';
+  document.getElementById('countNum').textContent   = filtered.length;
+  area.innerHTML = `<div class="pdf-list">${filtered.map((p, i) => buildCard(p, i)).join('')}</div>`;
+}
+
+// ── Load ──
+async function loadPdfs(retry = false) {
+  if (!CHAPTER_ID) {
+    renderError('chapter_id নেই — সঠিক URL দিয়ে আসুন');
+    return;
+  }
+  if (!retry) showSkeleton();
+
+  const headers = Auth.isLoggedIn() ? Auth.headers() : {};
+  let res;
+  try {
+    res = await fetch(`${CONFIG.workerUrl}/api/pdfs?chapter_id=${CHAPTER_ID}`, { headers });
+  } catch {
+    renderError('নেটওয়ার্ক সমস্যা — ইন্টারনেট চেক করুন');
+    return;
+  }
+
+  if (!res.ok) {
+    renderError(`সার্ভার সমস্যা (${res.status})`);
+    return;
+  }
+
+  let data;
+  try { data = await res.json(); } catch { renderError('ডেটা পড়তে সমস্যা'); return; }
+
+  allPdfs = data.pdfs || data.data || [];
+  document.getElementById('pageMeta').textContent = `${allPdfs.length}টি PDF`;
+  renderPdfs(allPdfs);
+}
+
+// ── Error ──
+function renderError(msg) {
+  document.getElementById('pageMeta').textContent          = 'লোড ব্যর্থ';
+  document.getElementById('countBar').style.display        = 'none';
+  document.getElementById('pdfArea').innerHTML = `
+    <div class="state-box">
+      <div class="state-icon">⚠️</div>
+      <div class="state-title">লোড করা যায়নি</div>
+      <div class="state-text">${escHtml(msg)}</div>
+      <button class="btn btn-outline" onclick="loadPdfs(true)">↻ আবার চেষ্টা করুন</button>
+    </div>`;
+}
+
+// ── Helpers ──
+function escHtml(str) {
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+// ── Boot ──
+document.addEventListener('DOMContentLoaded', () => {
+  initHeader();
+  loadPdfs();
+});
+</script>
+</body>
+</html>
