@@ -98,12 +98,16 @@ export default {
         return json({ message: 'Session ended' });
       }
 
-      // Get active students (full list with details)
+      // Get active students (full list with details + today total + ranking)
       if (path === '/api/focus/active' && method === 'GET') {
         const { results } = await env.DB.prepare(`
           SELECT fs.id, fs.status, fs.study_seconds, fs.breaks_used,
-            u.name, u.profile_pic, u.gender, u.hsc_batch, u.college_name,
-            CAST((julianday('now') - julianday(fs.started_at)) * 86400 AS INTEGER) as total_elapsed
+            u.id as user_id, u.name, u.profile_pic, u.gender, u.hsc_batch, u.college_name,
+            CAST((julianday('now') - julianday(fs.started_at)) * 86400 AS INTEGER) as total_elapsed,
+            COALESCE((
+              SELECT SUM(study_seconds) FROM focus_sessions
+              WHERE user_id=u.id AND status='ended' AND date(started_at)=date('now')
+            ), 0) as today_ended_secs
           FROM focus_sessions fs
           JOIN users u ON fs.user_id = u.id
           WHERE fs.status IN ('active', 'break')
@@ -111,25 +115,39 @@ export default {
           ORDER BY fs.started_at DESC
         `).all();
 
-        const students = results.map(s => ({
-          ...s,
-          study_seconds: s.status === 'active'
-            ? (s.study_seconds || 0) + (s.total_elapsed - (s.study_seconds || 0))
-            : (s.study_seconds || 0),
-        }));
+        const students = results.map(s => {
+          const curStudy = s.status === 'active'
+            ? (s.study_seconds || 0) + Math.max(0, (s.total_elapsed || 0) - (s.study_seconds || 0))
+            : (s.study_seconds || 0);
+          return {
+            ...s,
+            study_seconds: curStudy,
+            today_total: (s.today_ended_secs || 0) + curStudy,
+          };
+        }).sort((a, b) => {
+          if (b.today_total !== a.today_total) return b.today_total - a.today_total;
+          return (a.breaks_used || 0) - (b.breaks_used || 0);
+        });
 
-        return json({ students });
+        const activeCount  = students.filter(s => s.status === 'active').length;
+        const breakCount   = students.filter(s => s.status === 'break').length;
+        const topStudent   = students[0] || null;
+
+        return json({ students, active: activeCount, on_break: breakCount, top: topStudent?.name || null });
       }
 
-      // Active count — returns just the number of active/break sessions in last 12 hours
+      // Active count — returns counts for active/break sessions
       if (path === '/api/focus/active-count' && method === 'GET') {
         const row = await env.DB.prepare(`
-          SELECT COUNT(*) as count
+          SELECT
+            COUNT(*) as total,
+            SUM(CASE WHEN status='active' THEN 1 ELSE 0 END) as active_count,
+            SUM(CASE WHEN status='break'  THEN 1 ELSE 0 END) as break_count
           FROM focus_sessions
           WHERE status IN ('active', 'break')
             AND started_at > datetime('now', '-12 hours')
         `).first();
-        return json({ count: row?.count || 0 });
+        return json({ count: row?.total || 0, active: row?.active_count || 0, on_break: row?.break_count || 0 });
       }
 
       // ===== PROFILE =====

@@ -8,135 +8,249 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Bengali:wght@400;600;700;900&family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
 <style>
-/* ── Timer Ring ── */
-.timer-section {
-  display:flex; flex-direction:column; align-items:center;
-  padding:24px 14px 16px;
+/* ── Intro Screen ── */
+.intro-wrap {
+  min-height: calc(100vh - 60px);
+  display: flex; flex-direction: column;
+  padding: 20px 16px 100px;
 }
-.timer-ring-wrap {
-  position:relative; width:220px; height:220px; margin-bottom:16px;
+.intro-hero {
+  text-align: center; padding: 24px 0 20px;
 }
-.timer-svg { transform:rotate(-90deg); }
-.timer-track  { fill:none; stroke:var(--border); stroke-width:10; }
-.timer-ring   { fill:none; stroke:var(--primary); stroke-width:10; stroke-linecap:round;
-  stroke-dasharray:628; stroke-dashoffset:628; transition:stroke-dashoffset 0.9s linear,stroke 0.4s; }
+.intro-icon {
+  font-size: 52px; margin-bottom: 10px;
+  animation: float 3s ease-in-out infinite;
+}
+@keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-8px)} }
+.intro-title {
+  font-size: 22px; font-weight: 900; letter-spacing: 1px;
+  background: linear-gradient(135deg, #818CF8, #C4B5FD, #F472B6);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.intro-sub { font-size: 12px; color: var(--text3); margin-top: 4px; }
+
+.premium-box {
+  background: linear-gradient(135deg, rgba(108,99,255,.12), rgba(196,181,253,.06));
+  border: 1.5px solid rgba(108,99,255,.3);
+  border-radius: var(--radius); padding: 18px 16px;
+  margin-bottom: 14px;
+  box-shadow: 0 4px 24px rgba(108,99,255,.15);
+}
+.premium-box-title {
+  font-size: 13px; font-weight: 800; color: var(--accent); margin-bottom: 12px;
+  display: flex; align-items: center; gap: 6px;
+}
+.feature-list { list-style: none; display: flex; flex-direction: column; gap: 8px; }
+.feature-list li {
+  font-size: 12px; color: var(--text2); display: flex; gap: 8px; align-items: flex-start;
+}
+.feature-list li::before { content:'✅'; flex-shrink:0; }
+
+.how-box {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 14px 16px; margin-bottom: 20px;
+}
+.how-title { font-size: 12px; font-weight: 800; color: var(--text2); margin-bottom: 10px; }
+.how-steps { display: flex; flex-direction: column; gap: 8px; counter-reset: step; }
+.how-step {
+  font-size: 12px; color: var(--text2);
+  display: flex; gap: 8px; align-items: flex-start;
+}
+.how-step-num {
+  width: 20px; height: 20px; border-radius: 50%;
+  background: var(--primary-light); border: 1px solid rgba(108,99,255,.3);
+  color: var(--primary); font-size: 10px; font-weight: 900;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+
+.intro-start-btn {
+  width: 100%; padding: 16px;
+  background: linear-gradient(135deg, var(--primary), #8B5CF6);
+  border: none; border-radius: var(--radius); color: #fff;
+  font-size: 16px; font-weight: 900; cursor: pointer;
+  font-family: inherit; letter-spacing: .5px;
+  box-shadow: 0 6px 24px rgba(108,99,255,.4);
+  transition: all .2s; display: flex; align-items: center; justify-content: center; gap: 8px;
+}
+.intro-start-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 28px rgba(108,99,255,.5); }
+.intro-start-btn:active { transform: translateY(0); }
+
+/* ── Timer Screen ── */
+.timer-screen { display: none; flex-direction: column; min-height: calc(100vh - 60px); }
+.timer-screen.show { display: flex; }
+
+/* Stats bar (below header) */
+.stats-bar {
+  display: flex; align-items: center; gap: 0;
+  background: var(--bg2); border-bottom: 1px solid var(--border);
+  padding: 8px 14px; font-size: 11px; flex-wrap: wrap; gap: 6px;
+}
+.stat-pill {
+  display: flex; align-items: center; gap: 4px;
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: 20px; padding: 4px 10px;
+  font-size: 11px; font-weight: 700;
+}
+.stat-pill.green  { background:rgba(16,185,129,.1); border-color:rgba(16,185,129,.3); color:var(--green); }
+.stat-pill.amber  { background:rgba(245,158,11,.1); border-color:rgba(245,158,11,.3); color:var(--amber); }
+.stat-pill.purple { background:var(--primary-light); border-color:rgba(108,99,255,.3); color:var(--primary); }
+.stat-pill .dot   { width:6px; height:6px; border-radius:50%; background:currentColor; }
+
+/* Timer main area */
+.timer-main {
+  flex: 0 0 auto; display: flex; flex-direction: column;
+  align-items: center; padding: 20px 14px 16px;
+  position: relative;
+}
+.timer-fab-row {
+  position: absolute; top: 16px; right: 14px;
+  display: flex; flex-direction: column; gap: 8px;
+}
+.fab {
+  display: flex; align-items: center; gap: 5px;
+  padding: 8px 12px; border-radius: 10px;
+  font-size: 11px; font-weight: 800; cursor: pointer;
+  border: none; font-family: inherit; transition: all .2s;
+  white-space: nowrap;
+}
+.fab-break {
+  background: linear-gradient(135deg, var(--amber), #F59E0B);
+  color: #fff; box-shadow: 0 3px 12px rgba(245,158,11,.35);
+}
+.fab-break:hover { transform: translateY(-1px); }
+.fab-break:disabled { opacity: .45; cursor: not-allowed; transform: none !important; }
+.fab-end {
+  background: var(--card); color: var(--text2);
+  border: 1.5px solid var(--border);
+}
+.fab-end:hover { border-color: var(--red); color: var(--red); }
+
+/* Ring */
+.timer-ring-wrap { position: relative; width: 190px; height: 190px; margin-bottom: 12px; }
+.timer-svg { transform: rotate(-90deg); }
+.t-track { fill:none; stroke:var(--border); stroke-width:10; }
+.t-ring  {
+  fill:none; stroke:var(--primary); stroke-width:10; stroke-linecap:round;
+  stroke-dasharray:565; stroke-dashoffset:565;
+  transition: stroke-dashoffset .9s linear, stroke .4s;
+}
 .timer-center {
   position:absolute; inset:0;
-  display:flex; flex-direction:column; align-items:center; justify-content:center; gap:5px;
+  display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px;
 }
-.timer-display {
-  font-size:52px; font-weight:900;
-  font-family:'Inter',monospace; letter-spacing:2px;
-  color:var(--text); line-height:1;
+.t-display {
+  font-size: 44px; font-weight: 900; font-family:'Inter',monospace;
+  letter-spacing: 2px; color: var(--text); line-height: 1;
 }
-.timer-sub { font-size:11px; color:var(--text3); font-weight:700; letter-spacing:1px; text-transform:uppercase; }
+.t-label { font-size: 10px; color: var(--text3); font-weight: 700; text-transform: uppercase; letter-spacing: 1px; }
 
-/* ── Status badge ── */
-.state-badge {
-  display:inline-flex; align-items:center; gap:5px;
-  padding:5px 14px; border-radius:20px;
-  font-size:12px; font-weight:700;
-  background:var(--card); color:var(--text3); border:1px solid var(--border);
-  transition:all 0.3s;
+/* Break dots */
+.break-track {
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
 }
-.state-badge.active  { background:rgba(108,99,255,0.15); color:var(--primary); border-color:rgba(108,99,255,0.3); }
-.state-badge.break   { background:rgba(245,158,11,0.15); color:var(--amber);   border-color:rgba(245,158,11,0.3); }
-.state-badge.ended   { background:rgba(16,185,129,0.15); color:var(--green);   border-color:rgba(16,185,129,0.3); }
+.break-dots { display: flex; gap: 8px; }
+.bd {
+  width: 12px; height: 12px; border-radius: 50%; transition: all .3s;
+  background: var(--border);
+}
+.bd.used  { background: var(--amber); box-shadow: 0 0 6px rgba(245,158,11,.4); }
+.bd.avail { background: rgba(245,158,11,.2); border: 1.5px solid var(--amber); }
+.break-lbl { font-size: 10px; color: var(--text3); }
 
-/* ── Break dots ── */
-.break-row { display:flex; flex-direction:column; align-items:center; gap:4px; margin-top:10px; }
-.break-dots { display:flex; gap:8px; }
-.break-dot {
-  width:12px; height:12px; border-radius:50%;
-  background:var(--border); transition:all 0.3s;
+/* Break warning */
+.break-warn-bar {
+  margin: 0 14px 8px; padding: 8px 14px;
+  background: rgba(245,158,11,.1); border: 1px solid rgba(245,158,11,.35);
+  border-radius: var(--radius-sm); font-size: 12px; color: var(--amber);
+  text-align: center; font-weight: 600; display: none;
 }
-.break-dot.used  { background:var(--amber); box-shadow:0 0 6px rgba(245,158,11,0.4); }
-.break-dot.avail { background:rgba(245,158,11,0.25); border:1.5px solid var(--amber); }
-.break-label { font-size:11px; color:var(--text3); }
+.break-warn-bar.show { display: block; animation: pulse 1s ease-in-out infinite alternate; }
+@keyframes pulse { from{opacity:.7} to{opacity:1} }
 
-/* ── Break warning bar ── */
-.break-warn {
-  margin:0 14px 8px; padding:9px 14px;
-  background:rgba(245,158,11,0.1); border:1px solid rgba(245,158,11,0.35);
-  border-radius:var(--radius-sm); font-size:12px; color:var(--amber);
-  display:none; text-align:center; font-weight:600;
+/* Resume button (break state) */
+.resume-btn {
+  display: none; margin: 0 14px 10px;
+  width: calc(100% - 28px); padding: 14px;
+  background: linear-gradient(135deg, var(--green), #059669);
+  border: none; border-radius: var(--radius); color: #fff;
+  font-size: 15px; font-weight: 800; cursor: pointer; font-family: inherit;
+  box-shadow: 0 4px 16px rgba(16,185,129,.35); transition: all .2s;
 }
-.break-warn.show { display:block; }
+.resume-btn.show { display: block; }
+.resume-btn:hover { transform: translateY(-1px); }
 
-/* ── Controls ── */
-.ctrl-area { display:flex; gap:8px; flex-wrap:wrap; justify-content:center; margin-top:16px; }
-.ctrl-btn {
-  height:50px; padding:0 22px; border-radius:12px;
-  font-size:14px; font-weight:700; border:none; cursor:pointer;
-  font-family:inherit; transition:all 0.2s;
-  display:flex; align-items:center; gap:7px;
+/* ── Active Students ── */
+.students-section { flex: 1; padding: 0 0 80px; }
+.students-header {
+  padding: 10px 14px 8px;
+  display: flex; flex-direction: column; gap: 2px;
 }
-.btn-green  { background:var(--primary); color:#fff; }
-.btn-green:hover  { background:#5A52E0; }
-.btn-amber  { background:var(--amber);   color:#fff; }
-.btn-amber:hover  { background:#D97706; }
-.btn-teal   { background:var(--green);   color:#fff; }
-.btn-teal:hover   { background:#059669; }
-.btn-ghost  {
-  background:var(--card); color:var(--text2);
-  border:1.5px solid var(--border); height:50px;
-  padding:0 18px; border-radius:12px; font-size:14px; font-weight:700;
-  cursor:pointer; font-family:inherit; transition:all 0.2s;
-  display:flex; align-items:center; gap:7px;
+.sh-title { font-size: 14px; font-weight: 800; }
+.sh-top {
+  font-size: 11px; color: var(--amber); font-weight: 700;
+  display: flex; align-items: center; gap: 4px;
 }
-.btn-ghost:hover  { border-color:var(--red); color:var(--red); }
+.students-list { display: flex; flex-direction: column; gap: 6px; padding: 0 14px; }
+.s-card {
+  display: flex; align-items: center; gap: 10px;
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: 14px; padding: 10px 12px;
+  transition: border-color .2s;
+}
+.s-card:first-child { border-color: rgba(245,158,11,.4); background: rgba(245,158,11,.05); }
+.s-card:nth-child(2) { border-color: rgba(148,163,184,.3); }
+.s-card:nth-child(3) { border-color: rgba(180,140,100,.3); }
+.s-rank { font-size: 18px; flex-shrink: 0; width: 24px; text-align: center; }
+.s-photo {
+  width: 42px; height: 42px; border-radius: 50%; flex-shrink: 0;
+  object-fit: cover; border: 2px solid rgba(108,99,255,.3);
+  background: var(--primary-light);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 20px; overflow: hidden;
+}
+.s-photo img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
+.s-info { flex: 1; min-width: 0; }
+.s-name { font-size: 13px; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.s-session { font-size: 11px; color: var(--green); font-weight: 700; margin-top: 1px; }
+.s-today { font-size: 10px; color: var(--text3); }
+.s-right { display: flex; flex-direction: column; align-items: flex-end; gap: 3px; flex-shrink: 0; }
+.live-badge {
+  display: flex; align-items: center; gap: 4px;
+  background: rgba(16,185,129,.15); border: 1px solid rgba(16,185,129,.3);
+  border-radius: 20px; padding: 3px 9px;
+  font-size: 10px; font-weight: 800; color: var(--green);
+}
+.live-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); animation: blink 1.2s ease-in-out infinite; }
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:.3} }
+.break-badge {
+  font-size: 9px; color: var(--amber); font-weight: 700;
+  background: rgba(245,158,11,.12); border-radius: 10px; padding: 2px 6px;
+}
 
-/* ── Active students ── */
-.active-wrap {
-  margin:4px 14px 14px; background:var(--card);
-  border:1px solid var(--border); border-radius:var(--radius); padding:14px;
+/* ── End Modal ── */
+.modal-bg {
+  position: fixed; inset: 0; background: rgba(0,0,0,.75);
+  z-index: 500; display: none; align-items: center; justify-content: center; padding: 20px;
 }
-.active-top { display:flex; align-items:baseline; gap:8px; margin-bottom:4px; }
-.active-num { font-size:30px; font-weight:900; color:var(--green); line-height:1; }
-.active-lbl { font-size:12px; color:var(--text3); }
-.active-up  { font-size:10px; color:var(--text3); margin-left:auto; }
-.student-list { display:flex; flex-direction:column; gap:6px; margin-top:10px; }
-.student-card {
-  display:flex; align-items:center; gap:10px;
-  padding:8px 10px; border-radius:10px;
-  background:var(--bg2); border:1px solid var(--border);
-}
-.stu-avatar {
-  width:36px; height:36px; border-radius:50%; flex-shrink:0;
-  background:var(--primary-light); border:1.5px solid rgba(108,99,255,0.3);
-  display:flex; align-items:center; justify-content:center; font-size:18px;
-}
-.stu-avatar.female { background:rgba(244,114,182,0.12); border-color:rgba(244,114,182,0.35); }
-.stu-info  { flex:1; min-width:0; }
-.stu-name  { font-size:13px; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-.stu-meta  { font-size:10px; color:var(--text3); margin-top:1px; }
-.stu-time  { font-size:12px; font-weight:700; color:var(--primary); flex-shrink:0; }
-.stu-break { font-size:10px; color:var(--amber); }
-
-/* ── Confirm overlay ── */
-.overlay {
-  position:fixed; inset:0; background:rgba(0,0,0,0.72);
-  z-index:400; display:none; align-items:center; justify-content:center; padding:20px;
-}
-.overlay.show { display:flex; animation:fadeIn .2s; }
+.modal-bg.show { display: flex; animation: fadeIn .2s; }
 @keyframes fadeIn { from{opacity:0;transform:scale(.95)} to{opacity:1;transform:scale(1)} }
-.modal-card {
-  background:var(--card); border:1px solid var(--border);
-  border-radius:var(--radius); padding:24px; width:100%; max-width:320px;
-  text-align:center;
+.modal {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 24px; width: 100%; max-width: 320px;
+  text-align: center;
 }
-.modal-icon  { font-size:36px; margin-bottom:8px; }
-.modal-title { font-size:17px; font-weight:900; margin-bottom:6px; }
-.modal-text  { font-size:12px; color:var(--text2); line-height:1.6; margin-bottom:16px; }
+.modal h3 { font-size: 18px; font-weight: 900; margin-bottom: 6px; }
+.modal p  { font-size: 12px; color: var(--text2); line-height: 1.6; margin-bottom: 16px; }
 .modal-stats {
-  display:grid; grid-template-columns:1fr 1fr;
-  gap:6px; margin-bottom:18px;
-  background:var(--bg2); border-radius:var(--radius-sm); padding:12px;
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 6px; margin-bottom: 18px;
+  background: var(--bg2); border-radius: var(--radius-sm); padding: 12px;
 }
-.mstat-val { font-size:22px; font-weight:900; color:var(--primary); }
-.mstat-lbl { font-size:10px; color:var(--text3); }
-.modal-btns { display:flex; gap:8px; }
-.modal-btns button { flex:1; }
+.ms-val { font-size: 22px; font-weight: 900; color: var(--primary); }
+.ms-lbl { font-size: 10px; color: var(--text3); margin-top: 1px; }
+.modal-row { display: flex; gap: 8px; }
+.modal-row button { flex: 1; }
 </style>
 </head>
 <body>
@@ -183,76 +297,116 @@
 </div>
 
 <!-- End Confirm Modal -->
-<div class="overlay" id="endOverlay">
-  <div class="modal-card">
-    <div class="modal-icon">⏹</div>
-    <div class="modal-title">Session শেষ করবে?</div>
-    <div class="modal-text">এই session টি বন্ধ হয়ে যাবে। পড়াশোনার সময় সেভ হবে।</div>
+<div class="modal-bg" id="endModal">
+  <div class="modal">
+    <h3>⏹ Session শেষ করবে?</h3>
+    <p>Timer বন্ধ হবে এবং পড়াশোনার সময় সেভ হবে।</p>
     <div class="modal-stats">
       <div>
-        <div class="mstat-val" id="mStudyTime">0:00</div>
-        <div class="mstat-lbl">পড়ার সময়</div>
+        <div class="ms-val" id="ms-time">0:00</div>
+        <div class="ms-lbl">পড়ার সময়</div>
       </div>
       <div>
-        <div class="mstat-val" id="mBreaks">0/3</div>
-        <div class="mstat-lbl">বিরতি নেওয়া</div>
+        <div class="ms-val" id="ms-breaks">0/3</div>
+        <div class="ms-lbl">বিরতি ব্যবহার</div>
       </div>
     </div>
-    <div class="modal-btns">
-      <button class="btn btn-outline" onclick="hideEndModal()">বাতিল</button>
-      <button class="btn btn-primary" id="confirmEndBtn"
-              onclick="doEndSession()" style="background:var(--red)">শেষ করো</button>
+    <div class="modal-row">
+      <button class="btn btn-outline" onclick="closeModal()">← ফিরে যাও</button>
+      <button class="btn btn-primary" onclick="confirmEnd()" style="background:var(--red)">শেষ করো</button>
     </div>
   </div>
 </div>
 
-<main style="padding-bottom:16px">
+<!-- ═══ INTRO SCREEN ═══ -->
+<div id="introScreen">
+  <div class="intro-wrap">
+    <div class="intro-hero">
+      <div class="intro-icon">⏱️</div>
+      <div class="intro-title">ATLAS Focus Timer</div>
+      <div class="intro-sub">মনোযোগী পড়াশোনার জন্য বাংলাদেশের সেরা টাইমার</div>
+    </div>
 
-  <!-- Timer -->
-  <div class="timer-section">
-    <div class="timer-ring-wrap">
-      <svg class="timer-svg" width="220" height="220" viewBox="0 0 220 220">
-        <circle class="timer-track" cx="110" cy="110" r="100"/>
-        <circle class="timer-ring"  cx="110" cy="110" r="100" id="timerRing"/>
-      </svg>
-      <div class="timer-center">
-        <div class="timer-display" id="timerDisplay">00:00</div>
-        <div class="timer-sub" id="timerSub">focus timer</div>
+    <div class="premium-box">
+      <div class="premium-box-title">✨ কেন ব্যবহার করবে?</div>
+      <ul class="feature-list">
+        <li>পড়াশোনার সময় track করো এবং নিজেকে motivate রাখো</li>
+        <li>Live দেখো কতজন student এই মুহূর্তে পড়ছে</li>
+        <li>Top Focused Student হওয়ার সুযোগ পাও</li>
+        <li>Break নিলেও study time count হতে থাকে সঠিকভাবে</li>
+        <li>Profile এ আজকের পড়ার সময় দেখা যাবে</li>
+      </ul>
+    </div>
+
+    <div class="how-box">
+      <div class="how-title">📋 কীভাবে ব্যবহার করবে?</div>
+      <div class="how-steps">
+        <div class="how-step"><div class="how-step-num">১</div><span>"পড়াশোনা শুরু করো" বাটনে চাপো — timer শুরু হবে</span></div>
+        <div class="how-step"><div class="how-step-num">২</div><span>পড়াশোনা করো — timer count করতে থাকবে</span></div>
+        <div class="how-step"><div class="how-step-num">৩</div><span>ক্লান্ত হলে "★ Break নাও" — সর্বোচ্চ ১ ঘণ্টা, মোট ৩ বার</span></div>
+        <div class="how-step"><div class="how-step-num">৪</div><span>Break শেষে "আবার শুরু করো" — study timer resume হবে</span></div>
+        <div class="how-step"><div class="how-step-num">৫</div><span>পড়া শেষে "টাইমার বন্ধ করো" — সময় সেভ হবে</span></div>
       </div>
     </div>
 
-    <span class="state-badge" id="stateBadge">⏸ শুরু হয়নি</span>
+    <button class="intro-start-btn" onclick="startSession()">▶ পড়াশোনা শুরু করো</button>
+  </div>
+</div>
 
-    <!-- Break dots (3 slots) -->
-    <div class="break-row">
-      <div class="break-dots" id="breakDots"></div>
-      <div class="break-label" id="breakLabel">বিরতি ৩টি পর্যন্ত নেওয়া যাবে (প্রতিটি সর্বোচ্চ ১ ঘণ্টা)</div>
+<!-- ═══ TIMER SCREEN ═══ -->
+<div class="timer-screen" id="timerScreen">
+
+  <!-- Stats bar -->
+  <div class="stats-bar">
+    <span class="stat-pill green"><span class="dot"></span><span id="sbActive">0</span> পড়ছে</span>
+    <span class="stat-pill amber"><span class="dot"></span><span id="sbBreak">0</span> বিরতিতে</span>
+    <span class="stat-pill purple">🏆 <span id="sbTop">—</span></span>
+  </div>
+
+  <!-- Timer -->
+  <div class="timer-main">
+    <!-- FAB buttons top-right -->
+    <div class="timer-fab-row" id="fabRow">
+      <button class="fab fab-break" id="fabBreak" onclick="takeBreak()">★ Break নাও</button>
+      <button class="fab fab-end"   onclick="showModal()">⏹ বন্ধ করো</button>
     </div>
 
-    <!-- Controls -->
-    <div class="ctrl-area" id="ctrlArea">
-      <button class="ctrl-btn btn-green" onclick="startSession()">▶ পড়াশোনা শুরু করো</button>
+    <div class="timer-ring-wrap">
+      <svg class="timer-svg" width="190" height="190" viewBox="0 0 190 190">
+        <circle class="t-track" cx="95" cy="95" r="90"/>
+        <circle class="t-ring"  cx="95" cy="95" r="90" id="tRing"/>
+      </svg>
+      <div class="timer-center">
+        <div class="t-display" id="tDisplay">00:00</div>
+        <div class="t-label"   id="tLabel">পড়াশোনা</div>
+      </div>
+    </div>
+
+    <!-- Break tracker dots -->
+    <div class="break-track">
+      <div class="break-dots" id="breakDots"></div>
+      <div class="break-lbl" id="breakLbl">বিরতি ৩টি পর্যন্ত (প্রতিটি সর্বোচ্চ ১ ঘণ্টা)</div>
     </div>
   </div>
 
   <!-- Break warning -->
-  <div class="break-warn" id="breakWarn"></div>
+  <div class="break-warn-bar" id="breakWarn"></div>
+
+  <!-- Resume button (shown during break) -->
+  <button class="resume-btn" id="resumeBtn" onclick="resumeStudy()">▶ আবার শুরু করো</button>
 
   <!-- Active Students -->
-  <div class="section-label" style="padding:0 14px 8px">
-    <span class="section-title">🟢 এখন পড়ছে</span>
-    <span style="font-size:10px;color:var(--text3)" id="activeUpdated"></span>
-  </div>
-  <div class="active-wrap">
-    <div class="active-top">
-      <div class="active-num" id="activeNum">—</div>
-      <div class="active-lbl">জন পড়ছে</div>
+  <div class="students-section">
+    <div class="students-header">
+      <div class="sh-title" id="shTitle">🟢 এখন পড়ছে — <span id="shCount">0</span> জন</div>
+      <div class="sh-top" id="shTop" style="display:none">🏆 Top Focused: <span id="shTopName"></span></div>
     </div>
-    <div class="student-list" id="studentList"></div>
+    <div class="students-list" id="studentsList"></div>
   </div>
 
-</main>
+</div>
 
+<!-- Bottom nav -->
 <nav class="bottom-nav">
   <a class="nav-item" href="index.html"><span class="nav-icon">🏠</span>হোম</a>
   <a class="nav-item" href="index.html"><span class="nav-icon">📚</span>বিষয়</a>
@@ -277,307 +431,264 @@
 <script>
 // ── Sidebar / Toast ──
 function toggleSidebar() { document.getElementById('sidebar').classList.toggle('open'); document.getElementById('sidebarOverlay').classList.toggle('open'); }
-function closeSidebar()  { document.getElementById('sidebar').classList.remove('open');  document.getElementById('sidebarOverlay').classList.remove('open'); }
-function showToast(msg, d=2800) { const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); clearTimeout(t._t); t._t=setTimeout(()=>t.classList.remove('show'),d); }
+function closeSidebar()  { document.getElementById('sidebar').classList.remove('open'); document.getElementById('sidebarOverlay').classList.remove('open'); }
+function showToast(msg, d=3000) { const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); clearTimeout(t._t); t._t=setTimeout(()=>t.classList.remove('show'),d); }
 
-// ── Session State ──
+// ── Constants ──
 const MAX_BREAKS    = 3;
-const MAX_BREAK_SEC = 60 * 60; // 1 hour
-const CIRC          = 2 * Math.PI * 100; // SVG circumference (r=100)
+const MAX_BREAK_SEC = 3600; // 1 hour
+const CIRC          = 2 * Math.PI * 90; // r=90
 
-let state       = 'idle';   // idle | active | break | ended
-let sessionId   = null;
-let studySecs   = 0;        // accumulated study seconds
-let breakSecs   = 0;        // current break seconds
-let breaksUsed  = 0;
-let ticker      = null;
+// ── State ──
+let state      = 'idle';
+let sessionId  = null;
+let studySecs  = 0;
+let breakSecs  = 0;
+let breaksUsed = 0;
+let ticker     = null;
 
-// ── Format helpers ──
-function fmt(secs) {
-  const h = Math.floor(secs / 3600);
-  const m = Math.floor((secs % 3600) / 60);
-  const s = secs % 60;
-  if (h > 0) return `${h}:${pad(m)}:${pad(s)}`;
-  return `${pad(m)}:${pad(s)}`;
-}
+// ── Helpers ──
 function pad(n) { return String(n).padStart(2,'0'); }
+function fmt(s) {
+  const h=Math.floor(s/3600), m=Math.floor((s%3600)/60), sec=s%60;
+  return h>0 ? `${h}:${pad(m)}:${pad(sec)}` : `${pad(m)}:${pad(sec)}`;
+}
+function fmtShort(s) {
+  const h=Math.floor(s/3600), m=Math.floor((s%3600)/60);
+  if(h>0) return `${h}h ${m}m`;
+  return `${m}m`;
+}
 
-// ── Render ──
-function render() {
-  const display = document.getElementById('timerDisplay');
-  const sub     = document.getElementById('timerSub');
-  const badge   = document.getElementById('stateBadge');
-  const ring    = document.getElementById('timerRing');
-  const ctrl    = document.getElementById('ctrlArea');
+// ── Screens ──
+function showTimerScreen() {
+  document.getElementById('introScreen').style.display = 'none';
+  document.getElementById('timerScreen').classList.add('show');
+}
+function showIntroScreen() {
+  document.getElementById('introScreen').style.display = '';
+  document.getElementById('timerScreen').classList.remove('show');
+}
+
+// ── Render timer ──
+function renderTimer() {
+  const display = document.getElementById('tDisplay');
+  const label   = document.getElementById('tLabel');
+  const ring    = document.getElementById('tRing');
   const warn    = document.getElementById('breakWarn');
+  const resume  = document.getElementById('resumeBtn');
+  const fab     = document.getElementById('fabBreak');
+  const dots    = document.getElementById('breakDots');
+  const lbl     = document.getElementById('breakLbl');
+  const fabRow  = document.getElementById('fabRow');
 
-  // Ring + display
-  if (state === 'break') {
-    display.textContent = fmt(breakSecs);
-    sub.textContent = 'বিরতির সময়';
-    ring.style.stroke = 'var(--amber)';
-    const offset = CIRC - (CIRC * (breakSecs / MAX_BREAK_SEC));
-    ring.style.strokeDashoffset = Math.max(0, offset);
-    badge.textContent = '☕ বিরতিতে আছো';
-    badge.className = 'state-badge break';
-
-    // Warning at 50min
-    const remaining = MAX_BREAK_SEC - breakSecs;
-    if (remaining <= 600 && remaining > 0) {
-      warn.textContent = `⚠️ বিরতি শেষ হতে ${fmt(remaining)} বাকি — তারপর session auto-end হবে!`;
-      warn.classList.add('show');
-    } else {
-      warn.classList.remove('show');
-    }
-  } else if (state === 'active') {
+  if (state === 'active') {
     display.textContent = fmt(studySecs);
-    sub.textContent = 'পড়াশোনার সময়';
-    ring.style.stroke = 'var(--primary)';
-    const seg = studySecs % 3600;
-    ring.style.strokeDashoffset = CIRC - (CIRC * (seg / 3600));
-    badge.textContent = '📚 পড়াশোনা চলছে';
-    badge.className = 'state-badge active';
+    label.textContent   = 'পড়াশোনা চলছে';
+    ring.style.stroke   = 'var(--primary)';
+    ring.style.strokeDashoffset = CIRC - (CIRC * ((studySecs % 3600) / 3600));
     warn.classList.remove('show');
-  } else if (state === 'ended') {
-    display.textContent = fmt(studySecs);
-    sub.textContent = 'মোট পড়ার সময়';
-    ring.style.stroke = 'var(--green)';
-    ring.style.strokeDashoffset = 0;
-    badge.textContent = '✅ Session শেষ';
-    badge.className = 'state-badge ended';
-    warn.classList.remove('show');
-  } else {
-    display.textContent = '00:00';
-    sub.textContent = 'focus timer';
-    ring.style.stroke = 'var(--primary)';
-    ring.style.strokeDashoffset = CIRC;
-    badge.textContent = '⏸ শুরু হয়নি';
-    badge.className = 'state-badge';
-    warn.classList.remove('show');
-  }
-
-  // Controls
-  let html = '';
-  if (state === 'idle') {
-    html = `<button class="ctrl-btn btn-green" onclick="startSession()">▶ পড়াশোনা শুরু করো</button>`;
-  } else if (state === 'active') {
-    const canBreak = breaksUsed < MAX_BREAKS;
-    html = `
-      ${canBreak
-        ? `<button class="ctrl-btn btn-amber" onclick="takeBreak()">☕ বিরতি নাও</button>`
-        : `<button class="ctrl-btn btn-amber" disabled style="opacity:.5;cursor:not-allowed">☕ বিরতি শেষ</button>`}
-      <button class="btn-ghost" onclick="showEndModal()">⏹ শেষ করো</button>`;
+    resume.classList.remove('show');
+    fab.disabled = breaksUsed >= MAX_BREAKS;
+    fabRow.style.display = '';
   } else if (state === 'break') {
-    html = `
-      <button class="ctrl-btn btn-teal" onclick="resumeStudy()">▶ ফিরে আসি</button>
-      <button class="btn-ghost" onclick="showEndModal()">⏹ শেষ করো</button>`;
-  } else if (state === 'ended') {
-    html = `<button class="ctrl-btn btn-green" onclick="restartSession()">🔄 আবার শুরু করো</button>`;
+    display.textContent = fmt(breakSecs);
+    label.textContent   = 'বিরতি চলছে';
+    ring.style.stroke   = 'var(--amber)';
+    ring.style.strokeDashoffset = CIRC - (CIRC * (breakSecs / MAX_BREAK_SEC));
+    const rem = MAX_BREAK_SEC - breakSecs;
+    if (rem <= 600) {
+      warn.textContent = `⚠️ বিরতি শেষ হতে ${fmt(rem)} বাকি — তারপর session auto-end!`;
+      warn.classList.add('show');
+    } else { warn.classList.remove('show'); }
+    resume.classList.add('show');
+    fabRow.style.display = 'none';
   }
-  ctrl.innerHTML = html;
 
   // Break dots
-  const dotsEl = document.getElementById('breakDots');
-  const labelEl= document.getElementById('breakLabel');
-  let dots = '';
-  for (let i = 0; i < MAX_BREAKS; i++) {
-    if (i < breaksUsed)       dots += `<div class="break-dot used" title="বিরতি ${i+1} নেওয়া হয়েছে"></div>`;
-    else if (state !== 'ended') dots += `<div class="break-dot avail"></div>`;
-    else                        dots += `<div class="break-dot"></div>`;
+  let d = '';
+  for(let i=0;i<MAX_BREAKS;i++){
+    d += i < breaksUsed ? '<div class="bd used"></div>' : '<div class="bd avail"></div>';
   }
-  dotsEl.innerHTML = dots;
-  labelEl.textContent = state === 'idle'
-    ? 'বিরতি ৩টি পর্যন্ত নেওয়া যাবে (প্রতিটি সর্বোচ্চ ১ ঘণ্টা)'
-    : `${breaksUsed}/${MAX_BREAKS} বিরতি ব্যবহার হয়েছে`;
+  dots.innerHTML = d;
+  lbl.textContent = `${breaksUsed}/${MAX_BREAKS} বিরতি ব্যবহার হয়েছে`;
 }
 
-// ── Timer tick ──
+// ── Tick ──
 function tick() {
   if (state === 'active') {
     studySecs++;
   } else if (state === 'break') {
     breakSecs++;
     if (breakSecs >= MAX_BREAK_SEC) {
-      // Auto-end session when break exceeds 1hr
       clearInterval(ticker);
-      showToast('⏰ বিরতির সময় শেষ! Session auto-end হয়েছে।', 4000);
+      showToast('⏰ ১ ঘণ্টা বিরতি শেষ! Session auto-end হয়েছে।', 4000);
       beep();
-      endSession(true);
+      doEnd(true);
       return;
     }
   }
-  render();
+  renderTimer();
 }
 
-// ── Session Actions ──
+// ── Session actions ──
 async function startSession() {
-  state     = 'active';
-  studySecs = 0;
-  breakSecs = 0;
-  breaksUsed= 0;
-  sessionId = null;
-  render();
+  state = 'active'; studySecs = 0; breakSecs = 0; breaksUsed = 0; sessionId = null;
+  showTimerScreen();
+  renderTimer();
+  renderStudents();
   ticker = setInterval(tick, 1000);
-  showToast('📚 পড়াশোনা শুরু হয়েছে! মনোযোগ দাও।');
+  showToast('📚 পড়াশোনা শুরু হয়েছে!');
   beep();
   if (Auth.isLoggedIn()) {
     try {
-      const res  = await Auth.api('/api/focus/start', { method:'POST' });
-      const data = await res.json();
-      sessionId  = data.session_id || null;
-    } catch(_) {}
+      const r = await Auth.api('/api/focus/start', {method:'POST'});
+      const d = await r.json();
+      sessionId = d.session_id || null;
+    } catch(_){}
   }
 }
 
 async function takeBreak() {
-  if (breaksUsed >= MAX_BREAKS) { showToast('❌ সর্বোচ্চ ৩টি বিরতি শেষ।'); return; }
-  state     = 'break';
-  breakSecs = 0;
-  breaksUsed++;
-  render();
-  showToast(`☕ বিরতি ${breaksUsed}/3 — সর্বোচ্চ ১ ঘণ্টা বিরতি নিতে পারবে।`);
+  if (breaksUsed >= MAX_BREAKS) { showToast('❌ সর্বোচ্চ ৩টি বিরতি শেষ হয়ে গেছে।'); return; }
+  state = 'break'; breakSecs = 0; breaksUsed++;
+  renderTimer();
+  showToast(`☕ বিরতি ${breaksUsed}/3 শুরু হয়েছে — সর্বোচ্চ ১ ঘণ্টা।`);
   if (Auth.isLoggedIn() && sessionId) {
-    try { await Auth.api('/api/focus/break', { method:'POST', body: JSON.stringify({ session_id: sessionId }) }); }
-    catch(_) {}
+    try { await Auth.api('/api/focus/break', {method:'POST', body:JSON.stringify({session_id:sessionId})}); } catch(_){}
   }
 }
 
 async function resumeStudy() {
-  state     = 'active';
-  breakSecs = 0;
-  render();
-  showToast('📚 ফিরে এসেছো! পড়াশোনা চালিয়ে যাও।');
+  state = 'active'; breakSecs = 0;
+  renderTimer();
+  showToast('📚 আবার শুরু! পড়াশোনা continue করো।');
   if (Auth.isLoggedIn() && sessionId) {
-    try { await Auth.api('/api/focus/resume', { method:'POST', body: JSON.stringify({ session_id: sessionId }) }); }
-    catch(_) {}
+    try { await Auth.api('/api/focus/resume', {method:'POST', body:JSON.stringify({session_id:sessionId})}); } catch(_){}
   }
 }
 
-async function endSession(auto = false) {
+async function doEnd(auto=false) {
   clearInterval(ticker);
   state = 'ended';
-  render();
-  if (!auto) showToast(`✅ দারুণ! ${fmt(studySecs)} পড়েছো। 🎉`);
+  if (!auto) showToast(`✅ দারুণ! ${fmt(studySecs)} পড়েছো! 🎉`, 4000);
+  beep();
   if (Auth.isLoggedIn() && sessionId) {
     try {
-      await Auth.api('/api/focus/end', {
-        method: 'POST',
-        body: JSON.stringify({ session_id: sessionId, study_seconds: studySecs, breaks_used: breaksUsed }),
-      });
-    } catch(_) {}
+      await Auth.api('/api/focus/end', {method:'POST', body:JSON.stringify({
+        session_id: sessionId, study_seconds: studySecs, breaks_used: breaksUsed
+      })});
+    } catch(_){}
   }
+  // Show ended state briefly, then go back to intro
+  setTimeout(() => { showIntroScreen(); }, 2500);
 }
 
-function restartSession() {
-  clearInterval(ticker);
-  state = 'idle'; render();
+// ── Modal ──
+function showModal() {
+  document.getElementById('ms-time').textContent   = fmt(studySecs);
+  document.getElementById('ms-breaks').textContent = `${breaksUsed}/${MAX_BREAKS}`;
+  document.getElementById('endModal').classList.add('show');
 }
-
-// ── End Modal ──
-function showEndModal() {
-  document.getElementById('mStudyTime').textContent = fmt(studySecs);
-  document.getElementById('mBreaks').textContent    = `${breaksUsed}/${MAX_BREAKS}`;
-  document.getElementById('endOverlay').classList.add('show');
-}
-function hideEndModal() {
-  document.getElementById('endOverlay').classList.remove('show');
-}
-async function doEndSession() {
-  hideEndModal();
-  clearInterval(ticker);
-  await endSession(false);
-}
+function closeModal() { document.getElementById('endModal').classList.remove('show'); }
+async function confirmEnd() { closeModal(); await doEnd(false); }
 
 // ── Back button intercept ──
 history.pushState(null, '', location.href);
 window.addEventListener('popstate', () => {
   if (state === 'active' || state === 'break') {
     history.pushState(null, '', location.href);
-    showEndModal();
+    showModal();
   }
 });
 
 // ── Active Students ──
-function genderAvatar(gender) {
-  if (gender === 'female') return '👩';
-  if (gender === 'male')   return '👨';
-  return '🧑';
+const MEDALS = ['🥇','🥈','🥉'];
+function avatar(student) {
+  if (student.profile_pic) {
+    return `<div class="s-photo"><img src="${student.profile_pic}" onerror="this.parentElement.innerHTML='${student.gender==='female'?'👩':'👨'}'"></div>`;
+  }
+  return `<div class="s-photo">${student.gender === 'female' ? '👩' : '👨'}</div>`;
 }
-function genderClass(gender) { return gender === 'female' ? 'female' : ''; }
 
-async function loadActiveStudents() {
+async function renderStudents() {
   try {
-    let students = [], count = 0;
+    let students=[], active=0, onBreak=0, top=null;
     if (Auth.isLoggedIn()) {
-      const res = await Auth.api('/api/focus/active');
-      if (res.ok) {
-        const d = await res.json();
+      const r = await Auth.api('/api/focus/active');
+      if (r.ok) {
+        const d = await r.json();
         students = d.students || [];
-        count    = students.length;
+        active   = d.active   || 0;
+        onBreak  = d.on_break || 0;
+        top      = d.top      || null;
       }
-    } else {
-      const res = await fetch(CONFIG.workerUrl + '/api/focus/active-count');
-      if (res.ok) { const d = await res.json(); count = d.count || 0; }
     }
 
-    document.getElementById('activeNum').textContent = count;
-    document.getElementById('activeUpdated').textContent = 'এইমাত্র';
+    // Stats bar
+    document.getElementById('sbActive').textContent = active;
+    document.getElementById('sbBreak').textContent  = onBreak;
+    document.getElementById('sbTop').textContent    = top || '—';
 
-    const list = document.getElementById('studentList');
+    // Header
+    document.getElementById('shCount').textContent = active + onBreak;
+    const shTop = document.getElementById('shTop');
+    if (top) { shTop.style.display='flex'; document.getElementById('shTopName').textContent=top; }
+    else { shTop.style.display='none'; }
+
+    // List
+    const list = document.getElementById('studentsList');
     if (!students.length) {
-      list.innerHTML = count > 0
-        ? `<div style="text-align:center;padding:10px;color:var(--text3);font-size:12px">লগইন করলে সবার নাম দেখতে পাবে</div>`
-        : `<div style="text-align:center;padding:10px;color:var(--text3);font-size:12px">এখন কেউ পড়ছে না</div>`;
+      list.innerHTML = `<div style="text-align:center;padding:20px;color:var(--text3);font-size:12px">
+        ${Auth.isLoggedIn() ? 'এখন কেউ পড়ছে না' : 'লগইন করলে সবার নাম দেখতে পাবে'}
+      </div>`;
       return;
     }
-
-    const shown = students.slice(0, 8);
-    list.innerHTML = shown.map(s => {
-      const secs    = s.study_seconds || 0;
-      const onBreak = s.status === 'break';
-      return `
-        <div class="student-card">
-          <div class="stu-avatar ${genderClass(s.gender)}">${genderAvatar(s.gender)}</div>
-          <div class="stu-info">
-            <div class="stu-name">${s.name || 'Unknown'}</div>
-            <div class="stu-meta">${s.hsc_batch ? `HSC ${s.hsc_batch}` : ''}${s.college_name ? ` · ${s.college_name}` : ''}</div>
-            ${onBreak ? `<div class="stu-break">☕ বিরতিতে আছে</div>` : ''}
-          </div>
-          <div class="stu-time">${fmt(secs)}</div>
-        </div>`;
-    }).join('') + (students.length > 8 ? `<div style="text-align:center;font-size:11px;color:var(--text3);padding:8px">+${students.length - 8} জন আরো পড়ছে</div>` : '');
+    list.innerHTML = students.map((s, i) => `
+      <div class="s-card">
+        <div class="s-rank">${i < 3 ? MEDALS[i] : `<span style="font-size:12px;font-weight:800;color:var(--text3)">${i+1}</span>`}</div>
+        ${avatar(s)}
+        <div class="s-info">
+          <div class="s-name">${s.name || 'Unknown'}</div>
+          <div class="s-session">${fmtShort(s.study_seconds || 0)} this session</div>
+          <div class="s-today">Today: ${fmtShort(s.today_total || 0)}</div>
+        </div>
+        <div class="s-right">
+          <span class="live-badge"><span class="live-dot"></span>LIVE</span>
+          ${s.status === 'break' ? '<span class="break-badge">☕ Break</span>' : ''}
+        </div>
+      </div>`).join('');
   } catch(_) {}
 }
 
 // ── Beep ──
 function beep() {
   try {
-    const ctx = new (window.AudioContext || window.webkitAudioContext)();
-    const osc = ctx.createOscillator(), gain = ctx.createGain();
-    osc.connect(gain); gain.connect(ctx.destination);
-    osc.frequency.value = 880; osc.type = 'sine';
-    gain.gain.setValueAtTime(0.3, ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.8);
-    osc.start(); osc.stop(ctx.currentTime + 0.8);
-  } catch(_) {}
+    const ctx = new (window.AudioContext||window.webkitAudioContext)();
+    const osc = ctx.createOscillator(), g = ctx.createGain();
+    osc.connect(g); g.connect(ctx.destination);
+    osc.frequency.value=880; osc.type='sine';
+    g.gain.setValueAtTime(0.3,ctx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+0.8);
+    osc.start(); osc.stop(ctx.currentTime+0.8);
+  } catch(_){}
 }
 
-// ── Header init ──
+// ── Header ──
 function initHeader() {
-  const name = Auth.getUserName(), isAdmin = Auth.isAdmin(), isPremium = localStorage.getItem('is_premium') === 'true';
-  const init = name ? name[0].toUpperCase() : 'A';
-  document.getElementById('avatarBtn').textContent   = init;
-  document.getElementById('sidebarAvatar').textContent = init;
-  document.getElementById('sidebarName').textContent   = name || 'Guest';
-  if (isPremium) { const b = document.getElementById('sidebarBadge'); b.className = 'sidebar-badge badge-premium'; b.textContent = '⭐ Premium'; }
-  if (isAdmin) document.getElementById('adminLink').style.display = 'flex';
+  const name=Auth.getUserName(), isAdmin=Auth.isAdmin(), isPremium=localStorage.getItem('is_premium')==='true';
+  const i=name?name[0].toUpperCase():'A';
+  document.getElementById('avatarBtn').textContent=i;
+  document.getElementById('sidebarAvatar').textContent=i;
+  document.getElementById('sidebarName').textContent=name||'Guest';
+  if(isPremium){const b=document.getElementById('sidebarBadge');b.className='sidebar-badge badge-premium';b.textContent='⭐ Premium';}
+  if(isAdmin) document.getElementById('adminLink').style.display='flex';
 }
 
 document.addEventListener('DOMContentLoaded', () => {
   initHeader();
-  render();
-  loadActiveStudents();
-  setInterval(loadActiveStudents, 30000);
+  // Poll active students every 30s even on intro screen
+  renderStudents();
+  setInterval(renderStudents, 30000);
 });
 </script>
 </body>
