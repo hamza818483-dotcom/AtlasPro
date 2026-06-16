@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="bn" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ফলাফল — AtlasPro</title>
+<link rel="stylesheet" href="css/style.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Bengali:wght@400;600;700;900&family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
+<style>
+/* ── Result Header ── */
+.result-header {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  height: 52px;
+  background: var(--bg2);
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center;
+  padding: 0 14px; gap: 10px;
+  z-index: 100;
+}
+.result-header-title { font-size: 15px; font-weight: 900; flex: 1; }
+body { padding-top: 52px; padding-bottom: var(--nav-h); }
+
+/* ── Score Card ── */
+.score-card {
+  margin: 14px;
+  border-radius: var(--radius);
+  padding: 24px;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+.score-card::before {
+  content: '';
+  position: absolute; inset: 0;
+  background: linear-gradient(135deg, rgba(108,99,255,0.15), rgba(244,114,182,0.1));
+  border-radius: inherit;
+}
+.score-card-content { position: relative; z-index: 1; }
+.score-big {
+  font-size: 60px;
+  font-weight: 900;
+  font-family: 'Inter', sans-serif;
+  line-height: 1;
+  margin-bottom: 4px;
+}
+.score-out { font-size: 18px; color: var(--text2); font-weight: 600; }
+.score-grade {
+  display: inline-block;
+  margin-top: 12px;
+  font-size: 14px; font-weight: 900;
+  padding: 6px 20px;
+  border-radius: 30px;
+}
+.grade-a  { background: rgba(16,185,129,0.15); color: var(--green); border: 1.5px solid rgba(16,185,129,0.3); }
+.grade-b  { background: rgba(59,130,246,0.15); color: #60A5FA;      border: 1.5px solid rgba(59,130,246,0.3); }
+.grade-c  { background: rgba(245,158,11,0.15); color: var(--amber);  border: 1.5px solid rgba(245,158,11,0.3); }
+.grade-d  { background: rgba(239,68,68,0.15);  color: var(--red);    border: 1.5px solid rgba(239,68,68,0.3); }
+
+.score-meta {
+  display: flex; gap: 0;
+  margin-top: 16px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+.score-meta-item {
+  flex: 1;
+  padding: 10px 8px;
+  text-align: center;
+  border-right: 1px solid var(--border);
+}
+.score-meta-item:last-child { border-right: none; }
+.meta-val { font-size: 18px; font-weight: 900; }
+.meta-lbl { font-size: 9px; color: var(--text3); font-weight: 600; letter-spacing: 0.5px; margin-top: 2px; }
+.c-green { color: var(--green); }
+.c-red   { color: var(--red); }
+.c-amber { color: var(--amber); }
+.c-blue  { color: #60A5FA; }
+
+/* ── Time taken ── */
+.time-taken {
+  font-size: 11px;
+  color: var(--text3);
+  margin-top: 10px;
+}
+
+/* ── GPA Calculator ── */
+.gpa-card {
+  margin: 0 14px 14px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.gpa-header {
+  display: flex; align-items: center;
+  padding: 14px;
+  cursor: pointer;
+  gap: 10px;
+  border-bottom: 1px solid var(--border);
+}
+.gpa-header-title { flex: 1; font-size: 14px; font-weight: 700; }
+.gpa-toggle { font-size: 18px; color: var(--text3); transition: transform 0.3s; }
+.gpa-body {
+  padding: 14px;
+  display: none;
+}
+.gpa-body.open { display: block; }
+.gpa-row {
+  display: flex; align-items: center; gap: 10px;
+  margin-bottom: 10px;
+}
+.gpa-label { font-size: 12px; color: var(--text2); min-width: 70px; }
+.gpa-input {
+  flex: 1; height: 40px;
+  background: var(--bg2);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 0 12px;
+  font-size: 14px;
+  color: var(--text);
+  outline: none;
+  transition: border-color 0.2s;
+  font-family: inherit;
+}
+.gpa-input:focus { border-color: var(--primary); }
+.gpa-result {
+  margin-top: 12px;
+  padding: 14px;
+  background: var(--bg2);
+  border-radius: var(--radius-sm);
+  text-align: center;
+}
+.gpa-score-val { font-size: 28px; font-weight: 900; color: var(--primary); }
+.gpa-score-lbl { font-size: 11px; color: var(--text3); margin-top: 4px; }
+
+/* ── Filter Tabs ── */
+.filter-tabs {
+  display: flex;
+  padding: 0 14px;
+  gap: 6px;
+  margin-bottom: 4px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.filter-tabs::-webkit-scrollbar { display: none; }
+.filter-tab {
+  padding: 7px 14px;
+  border-radius: 30px;
+  font-size: 12px; font-weight: 700;
+  border: 1.5px solid var(--border);
+  background: var(--card);
+  color: var(--text2);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s;
+  font-family: inherit;
+}
+.filter-tab.active {
+  border-color: var(--primary);
+  background: var(--primary-light);
+  color: var(--primary);
+}
+
+/* ── Question Review Cards ── */
+.review-list { padding: 0 14px 20px; display: flex; flex-direction: column; gap: 10px; }
+.review-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  animation: fadeUp 0.3s ease both;
+}
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.review-card.r-correct { border-left: 3px solid var(--green); }
+.review-card.r-wrong   { border-left: 3px solid var(--red); }
+.review-card.r-skip    { border-left: 3px solid var(--text3); }
+.review-q {
+  padding: 14px 14px 10px;
+  display: flex; gap: 10px; align-items: flex-start;
+}
+.review-status {
+  width: 24px; height: 24px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px;
+  flex-shrink: 0;
+}
+.status-correct { background: rgba(16,185,129,0.15); color: var(--green); }
+.status-wrong   { background: rgba(239,68,68,0.15);  color: var(--red);   }
+.status-skip    { background: rgba(255,255,255,0.06); color: var(--text3); }
+.review-q-text { font-size: 13px; font-weight: 600; line-height: 1.6; flex: 1; }
+.review-q-page { font-size: 10px; color: var(--text3); margin-top: 2px; }
+
+.review-opts { padding: 0 14px 12px; display: flex; flex-direction: column; gap: 5px; }
+.review-opt {
+  display: flex; align-items: flex-start; gap: 8px;
+  padding: 8px 10px;
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  background: var(--bg2);
+  border: 1px solid transparent;
+}
+.review-opt.opt-correct { background: rgba(16,185,129,0.1); border-color: rgba(16,185,129,0.3); }
+.review-opt.opt-wrong   { background: rgba(239,68,68,0.1);  border-color: rgba(239,68,68,0.3); }
+.opt-icon { font-size: 12px; flex-shrink: 0; margin-top: 1px; }
+
+/* ── AI Explanation ── */
+.ai-section { padding: 0 14px 12px; }
+.btn-ai {
+  width: 100%;
+  height: 40px;
+  border-radius: 10px;
+  background: rgba(108,99,255,0.1);
+  border: 1.5px solid rgba(108,99,255,0.3);
+  color: var(--primary);
+  font-size: 12px; font-weight: 700;
+  cursor: pointer; font-family: inherit;
+  transition: all 0.2s;
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+}
+.btn-ai:hover { background: var(--primary-light); }
+.btn-ai:disabled { opacity: 0.5; cursor: not-allowed; }
+.ai-response {
+  margin-top: 10px;
+  padding: 12px;
+  background: var(--bg2);
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  line-height: 1.7;
+  color: var(--text2);
+  border: 1px solid var(--border);
+}
+.ai-loading { text-align: center; padding: 10px; color: var(--text3); font-size: 12px; }
+
+/* ── Action Buttons ── */
+.action-row {
+  display: flex; gap: 8px;
+  padding: 0 14px 14px;
+}
+.btn-action {
+  flex: 1; height: 46px;
+  border-radius: 10px;
+  font-size: 13px; font-weight: 700;
+  border: none; cursor: pointer;
+  font-family: inherit;
+  transition: all 0.2s;
+}
+.btn-home  { background: var(--card); color: var(--text); border: 1.5px solid var(--border); }
+.btn-retry { background: var(--primary); color: #fff; }
+.btn-home:hover  { border-color: var(--primary); }
+.btn-retry:hover { background: #5A52E0; }
+
+/* ── Bottom Nav ── */
+.bottom-nav .nav-item.active { color: var(--primary); }
+</style>
+</head>
+<body>
+
+<!-- ══ HEADER ══ -->
+<header class="result-header">
+  <a href="index.html" aria-label="হোম">
+    <img src="img/logo-icon.svg" alt="ATLAS" width="28" height="28">
+  </a>
+  <div class="result-header-title">পরীক্ষার ফলাফল</div>
+  <button class="icon-btn" id="themeToggle" onclick="Theme.toggle()">☀️</button>
+</header>
+
+<!-- ══ MAIN ══ -->
+<main style="padding-bottom:20px">
+
+  <!-- Score Card -->
+  <div class="score-card" id="scoreCard">
+    <div class="score-card-content">
+      <div class="score-big" id="bigMarks">—</div>
+      <div class="score-out" id="scoreOut"></div>
+      <div class="score-grade" id="scoreGrade"></div>
+      <div class="score-meta">
+        <div class="score-meta-item">
+          <div class="meta-val c-green" id="metaCorrect">0</div>
+          <div class="meta-lbl">✅ সঠিক</div>
+        </div>
+        <div class="score-meta-item">
+          <div class="meta-val c-red" id="metaWrong">0</div>
+          <div class="meta-lbl">❌ ভুল</div>
+        </div>
+        <div class="score-meta-item">
+          <div class="meta-val c-amber" id="metaSkip">0</div>
+          <div class="meta-lbl">⏭️ বাদ</div>
+        </div>
+        <div class="score-meta-item">
+          <div class="meta-val c-blue" id="metaTotal">0</div>
+          <div class="meta-lbl">📝 মোট</div>
+        </div>
+      </div>
+      <div class="time-taken" id="timeTaken"></div>
+    </div>
+  </div>
+
+  <!-- GPA Calculator -->
+  <div class="gpa-card">
+    <div class="gpa-header" onclick="toggleGpa()">
+      <span>🎓</span>
+      <span class="gpa-header-title">GPA Calculator</span>
+      <span class="gpa-toggle" id="gpaToggle">▾</span>
+    </div>
+    <div class="gpa-body" id="gpaBody">
+      <div class="gpa-row">
+        <span class="gpa-label">SSC GPA</span>
+        <input type="number" class="gpa-input" id="sscGpa" placeholder="0.00" min="0" max="5" step="0.01" oninput="calcGpa()">
+      </div>
+      <div class="gpa-row">
+        <span class="gpa-label">HSC GPA</span>
+        <input type="number" class="gpa-input" id="hscGpa" placeholder="0.00" min="0" max="5" step="0.01" oninput="calcGpa()">
+      </div>
+      <div class="gpa-result" id="gpaResult" style="display:none">
+        <div class="gpa-score-val" id="gpaScore">—</div>
+        <div class="gpa-score-lbl">SSC×8 + HSC×12 ফর্মুলা অনুযায়ী</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Action Buttons -->
+  <div class="action-row">
+    <button class="btn-action btn-home" onclick="window.location.href='index.html'">🏠 হোম</button>
+    <button class="btn-action btn-retry" onclick="retryExam()">🔄 আবার দাও</button>
+  </div>
+
+  <!-- Filter Tabs -->
+  <div class="filter-tabs">
+    <button class="filter-tab active" onclick="filterReview('all', this)">সব</button>
+    <button class="filter-tab" onclick="filterReview('correct', this)">✅ সঠিক</button>
+    <button class="filter-tab" onclick="filterReview('wrong', this)">❌ ভুল</button>
+    <button class="filter-tab" onclick="filterReview('skip', this)">⏭️ বাদ</button>
+  </div>
+
+  <!-- Review List -->
+  <div class="review-list" id="reviewList"></div>
+
+</main>
+
+<!-- ══ BOTTOM NAV ══ -->
+<nav class="bottom-nav">
+  <a class="nav-item" href="index.html"><span class="nav-icon">🏠</span>হোম</a>
+  <a class="nav-item" href="index.html"><span class="nav-icon">📚</span>বিষয়</a>
+  <a class="nav-item active" href="profile.html#history"><span class="nav-icon">📝</span>এক্সাম</a>
+  <a class="nav-item" href="focus.html"><span class="nav-icon">⏱️</span>টাইমার</a>
+  <a class="nav-item" href="profile.html"><span class="nav-icon">👤</span>প্রোফাইল</a>
+</nav>
+
+<div class="toast" id="toast"></div>
+
+<script src="js/config.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/theme.js"></script>
+<script>
+// ── URL Params ──
+const params       = new URLSearchParams(location.search);
+const CORRECT      = parseInt(params.get('correct')   || '0', 10);
+const WRONG        = parseInt(params.get('wrong')     || '0', 10);
+const SKIP         = parseInt(params.get('skip')      || '0', 10);
+const MARKS        = parseFloat(params.get('marks')   || '0');
+const TOTAL        = parseInt(params.get('total')     || '0', 10);
+const TIME_TAKEN   = parseInt(params.get('time_taken')|| '0', 10);
+const PDF_ID       = params.get('pdf_id')       || '';
+const PDF_NAME     = params.get('pdf_name')     || '';
+const PAGES_STR    = params.get('pages')        || '';
+const CHAPTER_ID   = params.get('chapter_id')  || '';
+const CHAPTER_NAME = params.get('chapter_name')|| '';
+const SUBJECT_NAME = params.get('subject_name')|| '';
+const ICON         = params.get('icon')         || '';
+
+const BN_LABELS = ['ক', 'খ', 'গ', 'ঘ'];
+
+let allQuestions = [];
+let currentFilter = 'all';
+const aiCache = {};
+
+// ── Toast ──
+function showToast(msg, d = 2500) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), d);
+}
+
+// ── Grade ──
+function getGrade(pct) {
+  if (pct >= 80) return { text: '🏆 A+ অসাধারণ!',     cls: 'grade-a' };
+  if (pct >= 65) return { text: '🎯 A ভালো করেছো',    cls: 'grade-a' };
+  if (pct >= 50) return { text: '📘 B ঠিকঠাক',        cls: 'grade-b' };
+  if (pct >= 33) return { text: '📙 C আরো পড়তে হবে', cls: 'grade-c' };
+  return           { text: '📕 D আরো চেষ্টা করো',    cls: 'grade-d' };
+}
+
+// ── Format time ──
+function fmtTime(secs) {
+  const m = Math.floor(secs / 60), s = secs % 60;
+  return `${m} মিনিট ${s} সেকেন্ড`;
+}
+
+// ── Render score card ──
+function renderScoreCard() {
+  const maxMarks = TOTAL;
+  const pct      = maxMarks > 0 ? Math.round((MARKS / maxMarks) * 100) : 0;
+  const grade    = getGrade(pct);
+
+  document.getElementById('bigMarks').textContent  = MARKS.toFixed(2);
+  document.getElementById('scoreOut').textContent  = `/ ${maxMarks} নম্বর (${pct}%)`;
+  const gradeEl = document.getElementById('scoreGrade');
+  gradeEl.textContent  = grade.text;
+  gradeEl.className    = `score-grade ${grade.cls}`;
+
+  document.getElementById('metaCorrect').textContent = CORRECT;
+  document.getElementById('metaWrong').textContent   = WRONG;
+  document.getElementById('metaSkip').textContent    = SKIP;
+  document.getElementById('metaTotal').textContent   = TOTAL;
+
+  if (TIME_TAKEN > 0) {
+    document.getElementById('timeTaken').textContent = `⏱️ সময় লেগেছে: ${fmtTime(TIME_TAKEN)}`;
+  }
+}
+
+// ── GPA Calculator ──
+function toggleGpa() {
+  const body   = document.getElementById('gpaBody');
+  const toggle = document.getElementById('gpaToggle');
+  const open   = body.classList.toggle('open');
+  toggle.style.transform = open ? 'rotate(180deg)' : '';
+}
+
+function calcGpa() {
+  const ssc = parseFloat(document.getElementById('sscGpa').value) || 0;
+  const hsc = parseFloat(document.getElementById('hscGpa').value) || 0;
+  const res = document.getElementById('gpaResult');
+
+  if (ssc > 0 || hsc > 0) {
+    const score = (ssc * 8) + (hsc * 12);
+    document.getElementById('gpaScore').textContent = score.toFixed(2);
+    res.style.display = 'block';
+  } else {
+    res.style.display = 'none';
+  }
+}
+
+// ── Retry exam ──
+function retryExam() {
+  const q = new URLSearchParams({
+    pdf_id: PDF_ID, pdf_name: PDF_NAME,
+    pages: PAGES_STR, chapter_id: CHAPTER_ID,
+    chapter_name: CHAPTER_NAME, subject_name: SUBJECT_NAME, icon: ICON,
+  });
+  window.location.href = `exam.html?${q}`;
+}
+
+// ── Build review card ──
+function buildReviewCard(q, idx, delay) {
+  const ua      = q.user_answer;
+  const correct = q.correct_index;
+  const status  = ua === null || ua === undefined ? 'skip'
+                : ua === correct ? 'correct' : 'wrong';
+
+  const statusIcon = status === 'correct' ? '✅' : status === 'wrong' ? '❌' : '⏭️';
+  const statusCls  = `status-${status}`;
+  const cardCls    = `r-${status}`;
+
+  const opts = (q.options || []).map((opt, oi) => {
+    let cls = '', icon = '';
+    if (oi === correct)           { cls = 'opt-correct'; icon = '✅'; }
+    else if (oi === ua && ua !== correct) { cls = 'opt-wrong';   icon = '❌'; }
+    return `
+      <div class="review-opt ${cls}">
+        <span class="opt-icon">${icon || BN_LABELS[oi] || (oi+1)}</span>
+        <span>${escHtml(opt)}</span>
+      </div>`;
+  }).join('');
+
+  const hasExp = q.explanation && q.explanation.trim();
+
+  return `
+    <div class="review-card ${cardCls}" style="animation-delay:${Math.min(delay*50,400)}ms">
+      <div class="review-q">
+        <div class="review-status ${statusCls}">${statusIcon}</div>
+        <div>
+          <div class="review-q-text">${idx + 1}. ${escHtml(q.question)}</div>
+          ${q.page ? `<div class="review-q-page">পৃষ্ঠা ${q.page}</div>` : ''}
+        </div>
+      </div>
+      <div class="review-opts">${opts}</div>
+      <div class="ai-section">
+        <button class="btn-ai" id="aiBtn_${idx}" onclick="loadAiExplanation(${idx})"
+          ${status === 'correct' && !hasExp ? 'style="display:none"' : ''}>
+          🤖 AI ব্যাখ্যা দেখো
+        </button>
+        <div id="aiResponse_${idx}"></div>
+      </div>
+    </div>`;
+}
+
+// ── AI Explanation ──
+async function loadAiExplanation(idx) {
+  const btn = document.getElementById(`aiBtn_${idx}`);
+  const res = document.getElementById(`aiResponse_${idx}`);
+  if (!btn || !res) return;
+
+  // Show cached
+  if (aiCache[idx]) {
+    res.innerHTML = `<div class="ai-response">${aiCache[idx]}</div>`;
+    return;
+  }
+
+  btn.disabled = true;
+  btn.innerHTML = '🤖 ব্যাখ্যা লোড হচ্ছে...';
+  res.innerHTML = `<div class="ai-loading">⏳ AI ভাবছে...</div>`;
+
+  const q = allQuestions[idx];
+  try {
+    const r = await Auth.api('/api/ai/explain', {
+      method: 'POST',
+      body: JSON.stringify({
+        question:      q.question,
+        options:       q.options,
+        correct_index: q.correct_index,
+        user_answer:   q.user_answer,
+      }),
+    });
+    if (!r.ok) throw new Error(`${r.status}`);
+    const data = await r.json();
+    const text = data.explanation || 'ব্যাখ্যা পাওয়া যায়নি';
+    aiCache[idx] = escHtml(text);
+    res.innerHTML = `<div class="ai-response">${aiCache[idx]}</div>`;
+    btn.innerHTML = '✅ ব্যাখ্যা দেখা হয়েছে';
+  } catch {
+    res.innerHTML = `<div class="ai-response" style="color:var(--red)">AI ব্যাখ্যা লোড হয়নি। পরে আবার চেষ্টা করো।</div>`;
+    btn.disabled  = false;
+    btn.innerHTML = '🤖 AI ব্যাখ্যা দেখো';
+  }
+}
+
+// ── Filter ──
+function filterReview(filter, tabEl) {
+  currentFilter = filter;
+  document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
+  if (tabEl) tabEl.classList.add('active');
+
+  let list;
+  if (filter === 'correct') list = allQuestions.filter(q => q.user_answer === q.correct_index);
+  else if (filter === 'wrong')  list = allQuestions.filter(q => q.user_answer !== undefined && q.user_answer !== null && q.user_answer !== q.correct_index);
+  else if (filter === 'skip')   list = allQuestions.filter(q => q.user_answer === null || q.user_answer === undefined);
+  else list = allQuestions;
+
+  renderReviewList(list);
+}
+
+function renderReviewList(list) {
+  const el = document.getElementById('reviewList');
+  if (!list.length) {
+    el.innerHTML = `<div style="text-align:center;padding:30px;color:var(--text3);font-size:13px">কিছু নেই</div>`;
+    return;
+  }
+  el.innerHTML = list.map((q, i) => buildReviewCard(q, allQuestions.indexOf(q), i)).join('');
+}
+
+// ── Init ──
+function init() {
+  renderScoreCard();
+
+  // Parse result data
+  try {
+    const raw = params.get('result_data');
+    if (raw) allQuestions = JSON.parse(decodeURIComponent(raw));
+  } catch { allQuestions = []; }
+
+  renderReviewList(allQuestions);
+}
+
+function escHtml(str) {
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>
