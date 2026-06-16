@@ -1,5 +1,5 @@
-// home-pdf-worker.js — Batch 12
-// Routes: /api/subjects, /api/chapters, /api/pdfs, /api/pdf/download/:id
+// home-pdf-worker.js
+// Routes: /api/subjects, /api/chapters, /api/pdfs, /api/pdf-url, /api/pdf/download/:id
 
 export default {
   async fetch(request, env) {
@@ -147,6 +147,17 @@ export default {
         ).bind(pdfId, pageNumber, type).all();
 
         return json({ mcqs: assignUniqueSubset(newMcqs, user.id, examCount), from_cache: false });
+      }
+
+      // ===== PDF URL (for viewer) =====
+      if (path === '/api/pdf-url' && method === 'GET') {
+        const pdfId = url.searchParams.get('pdf_id');
+        if (!pdfId) return json({ error: 'pdf_id required' }, 400);
+        const pdf = await env.DB.prepare(
+          'SELECT id, title, r2_url, page_count FROM pdfs WHERE id=?'
+        ).bind(pdfId).first();
+        if (!pdf) return json({ error: 'PDF not found' }, 404);
+        return json({ url: pdf.r2_url, title: pdf.title, page_count: pdf.page_count || 0 });
       }
 
       return json({ error: 'Not found' }, 404);

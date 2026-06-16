@@ -1,4 +1,4 @@
-// admin-worker.js — AtlasPro Admin API (Batch 07)
+// admin-worker.js — AtlasPro Admin API
 // Handles: subjects, chapters, pdfs, mcq, users, announcements, packages, owner, settings
 
 export default {
@@ -31,7 +31,85 @@ export default {
     ).bind(token).first();
     if (!userRow) return json({ error: 'Admin only' }, 403);
 
+    // Helper: relative time string
+    const relativeTime = (dateStr) => {
+      if (!dateStr) return 'অজানা';
+      const diff = Date.now() - new Date(dateStr).getTime();
+      const mins = Math.floor(diff / 60000);
+      if (mins < 1) return 'এইমাত্র';
+      if (mins < 60) return `${mins} মিনিট আগে`;
+      const hrs = Math.floor(mins / 60);
+      if (hrs < 24) return `${hrs} ঘণ্টা আগে`;
+      const days = Math.floor(hrs / 24);
+      return `${days} দিন আগে`;
+    };
+
     try {
+      // ===== STATS =====
+      if (path === '/api/admin/stats' && method === 'GET') {
+        const totalUsers = await env.DB.prepare(
+          'SELECT COUNT(*) as cnt FROM users WHERE is_admin=0'
+        ).first();
+        const totalPdfs = await env.DB.prepare(
+          'SELECT COUNT(*) as cnt FROM pdfs'
+        ).first();
+        const totalMcq = await env.DB.prepare(
+          'SELECT COUNT(*) as cnt FROM mcqs'
+        ).first();
+        const activeToday = await env.DB.prepare(
+          "SELECT COUNT(DISTINCT user_id) as cnt FROM page_views WHERE date(created_at)=date('now')"
+        ).first();
+        return json({
+          total_users: totalUsers?.cnt ?? 0,
+          total_pdfs: totalPdfs?.cnt ?? 0,
+          total_mcq: totalMcq?.cnt ?? 0,
+          active_today: activeToday?.cnt ?? 0,
+        });
+      }
+
+      // ===== ACTIVITY =====
+      if (path === '/api/admin/activity' && method === 'GET') {
+        const { results: newUsers } = await env.DB.prepare(
+          'SELECT name, created_at FROM users WHERE is_admin=0 ORDER BY created_at DESC LIMIT 5'
+        ).all();
+        const { results: examResults } = await env.DB.prepare(
+          'SELECT u.name, er.created_at FROM exam_results er LEFT JOIN users u ON er.user_id=u.id ORDER BY er.created_at DESC LIMIT 5'
+        ).all();
+
+        const activities = [
+          ...newUsers.map(u => ({
+            icon: '👤',
+            message: `নতুন user নিবন্ধন: ${u.name || 'অজানা'}`,
+            time: relativeTime(u.created_at),
+            _ts: new Date(u.created_at).getTime(),
+          })),
+          ...examResults.map(r => ({
+            icon: '📝',
+            message: `${r.name || 'অজানা'} পরীক্ষা দিয়েছে`,
+            time: relativeTime(r.created_at),
+            _ts: new Date(r.created_at).getTime(),
+          })),
+        ];
+
+        activities.sort((a, b) => b._ts - a._ts);
+        const trimmed = activities.slice(0, 10).map(({ _ts, ...rest }) => rest);
+        return json({ activities: trimmed });
+      }
+
+      // ===== USER STATS =====
+      if (path === '/api/admin/user-stats' && method === 'GET') {
+        const premium = await env.DB.prepare(
+          "SELECT COUNT(*) as cnt FROM users WHERE access_type='premium' AND is_admin=0"
+        ).first();
+        const total = await env.DB.prepare(
+          'SELECT COUNT(*) as cnt FROM users WHERE is_admin=0'
+        ).first();
+        return json({
+          premium: premium?.cnt ?? 0,
+          total: total?.cnt ?? 0,
+        });
+      }
+
       // ===== SUBJECTS =====
       if (path === '/api/admin/subjects' && method === 'GET') {
         const { results } = await env.DB.prepare(
@@ -213,18 +291,15 @@ export default {
         ).bind(pdf_id, page_number, type).first();
 
         if (existing?.count >= 2) {
-          // Already 2 sets — return from cache
           const { results } = await env.DB.prepare(
             'SELECT * FROM mcqs WHERE pdf_id=? AND page_number=? AND type=? LIMIT 10'
           ).bind(pdf_id, page_number, type).all();
           return json({ mcqs: results, from_cache: true });
         }
 
-        // Get PDF page text from R2
         const pdf = await env.DB.prepare('SELECT r2_url FROM pdfs WHERE id=?').bind(pdf_id).first();
         if (!pdf) return json({ error: 'PDF not found' }, 404);
 
-        // Call Gemini API
         const geminiPrompt = `${prompt}\n\nContent: Page ${page_number} of the educational PDF.\n\nReturn ONLY a JSON array like: [{"question":"...","option_a":"...","option_b":"...","option_c":"...","option_d":"...","correct_answer":"A","explanation":"..."}]`;
 
         let mcqs = [];
@@ -245,7 +320,6 @@ export default {
           const jsonMatch = text.match(/\[[\s\S]*\]/);
           if (jsonMatch) mcqs = JSON.parse(jsonMatch[0]);
         } catch (e) {
-          // Fallback to Groq
           try {
             const groqRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
               method: 'POST',
@@ -266,10 +340,8 @@ export default {
           } catch (_) {}
         }
 
-        // Save MCQs to DB
-        const insertedIds = [];
         for (const mcq of mcqs) {
-          const res = await env.DB.prepare(`
+          await env.DB.prepare(`
             INSERT INTO mcqs (pdf_id, type, question, option_a, option_b, option_c, option_d, correct_answer, explanation, page_number)
             VALUES (?,?,?,?,?,?,?,?,?,?)
           `).bind(
@@ -278,7 +350,6 @@ export default {
             mcq.option_c || '', mcq.option_d || '',
             mcq.correct_answer || 'A', mcq.explanation || '', page_number
           ).run();
-          insertedIds.push(res.meta.last_row_id);
         }
 
         return json({ count: mcqs.length, mcqs });
@@ -322,7 +393,7 @@ export default {
       // ===== USERS =====
       if (path === '/api/admin/users' && method === 'GET') {
         const { results } = await env.DB.prepare(`
-          SELECT u.*, 
+          SELECT u.*,
             COALESCE(ul.pages_used, 0) as pages_used_today
           FROM users u
           LEFT JOIN (
@@ -355,13 +426,31 @@ export default {
         return json({ message: 'Updated' });
       }
 
+      // Fix #7: Toggle premium status for a user
+      if (path.match(/^\/api\/admin\/users\/\d+\/premium$/) && method === 'PUT') {
+        const id = path.split('/')[4];
+        const body = await request.json();
+        const isPremium = body.is_premium === true || body.is_premium === 1;
+        const accessType = isPremium ? 'premium' : 'free';
+        const pageLimit = isPremium ? 1000 : 10;
+        await env.DB.prepare(
+          'UPDATE users SET access_type=?, daily_page_limit=? WHERE id=?'
+        ).bind(accessType, pageLimit, id).run();
+        return json({ message: 'Updated' });
+      }
+
       // ===== GLOBAL SETTINGS =====
       if (path === '/api/admin/settings/limits' && method === 'GET') {
         const settings = await env.DB.prepare('SELECT * FROM site_settings WHERE key IN (?,?)')
           .bind('free_daily_limit', 'premium_daily_limit').all();
         const mapped = {};
         (settings.results || []).forEach(s => mapped[s.key] = s.value);
-        return json({ settings: { free_daily_limit: parseInt(mapped.free_daily_limit || '5'), premium_daily_limit: parseInt(mapped.premium_daily_limit || '100') } });
+        return json({
+          settings: {
+            free_daily_limit: parseInt(mapped.free_daily_limit || '5'),
+            premium_daily_limit: parseInt(mapped.premium_daily_limit || '100'),
+          },
+        });
       }
 
       if (path === '/api/admin/settings/limits' && method === 'PUT') {
@@ -379,28 +468,52 @@ export default {
       }
 
       // ===== ANNOUNCEMENTS =====
+      // Fix #8: Accept both `content` and `body` from frontend; return both fields in GET
       if (path === '/api/admin/announcements' && method === 'GET') {
         const { results } = await env.DB.prepare(
           'SELECT * FROM announcements ORDER BY sort_order ASC, created_at DESC'
         ).all();
-        return json({ announcements: results.map(r => ({ ...r, active: r.active === 1 })) });
+        return json({
+          announcements: results.map(r => ({
+            ...r,
+            active: r.active === 1,
+            content: r.body,   // alias for frontend compatibility
+          })),
+        });
       }
 
       if (path === '/api/admin/announcements' && method === 'POST') {
         const body = await request.json();
+        const bodyText = body.content ?? body.body ?? '';
         const res = await env.DB.prepare(`
           INSERT INTO announcements (title, body, link, emoji, color, active)
           VALUES (?,?,?,?,?,?)
-        `).bind(body.title, body.body || '', body.link || '', body.emoji || '📢', body.color || '#6C63FF', body.active ? 1 : 0).run();
+        `).bind(
+          body.title,
+          bodyText,
+          body.link || '',
+          body.emoji || '📢',
+          body.color || '#6C63FF',
+          body.active ? 1 : 0
+        ).run();
         return json({ id: res.meta.last_row_id }, 201);
       }
 
       if (path.match(/^\/api\/admin\/announcements\/\d+$/) && method === 'PUT') {
         const id = path.split('/').pop();
         const body = await request.json();
+        const bodyText = body.content ?? body.body ?? '';
         await env.DB.prepare(`
           UPDATE announcements SET title=?, body=?, link=?, emoji=?, color=?, active=? WHERE id=?
-        `).bind(body.title, body.body || '', body.link || '', body.emoji || '📢', body.color || '#6C63FF', body.active ? 1 : 0, id).run();
+        `).bind(
+          body.title,
+          bodyText,
+          body.link || '',
+          body.emoji || '📢',
+          body.color || '#6C63FF',
+          body.active ? 1 : 0,
+          id
+        ).run();
         return json({ message: 'Updated' });
       }
 
@@ -420,19 +533,71 @@ export default {
       }
 
       // ===== PACKAGES =====
+      // Fix #4: Return structured {free, premium} object instead of list
       if (path === '/api/admin/packages' && method === 'GET') {
-        const { results } = await env.DB.prepare(
-          'SELECT * FROM packages ORDER BY created_at DESC'
-        ).all();
-        return json({ packages: results });
+        const freeRow = await env.DB.prepare(
+          "SELECT * FROM packages WHERE type='free' LIMIT 1"
+        ).first();
+        const premiumRow = await env.DB.prepare(
+          "SELECT * FROM packages WHERE type='premium' LIMIT 1"
+        ).first();
+
+        const parseFeatures = (val) => {
+          if (!val) return [];
+          try { return JSON.parse(val); } catch (_) { return []; }
+        };
+
+        return json({
+          free: {
+            name: freeRow?.name || 'Free Plan',
+            page_limit: freeRow?.page_limit ?? freeRow?.price ?? 10,
+            features: parseFeatures(freeRow?.features),
+          },
+          premium: {
+            name: premiumRow?.name || 'Premium Plan',
+            price: premiumRow?.price || '',
+            features: parseFeatures(premiumRow?.features),
+          },
+        });
       }
 
+      // Fix #5: PUT /api/admin/packages/free — upsert free plan
+      if (path === '/api/admin/packages/free' && method === 'PUT') {
+        const body = await request.json();
+        const featuresJson = JSON.stringify(Array.isArray(body.features) ? body.features : []);
+        const pageLimit = body.page_limit ?? 10;
+        await env.DB.prepare(`
+          INSERT INTO packages (name, page_limit, features, type, price)
+          VALUES (?, ?, ?, 'free', ?)
+          ON CONFLICT(type) DO UPDATE SET name=excluded.name, page_limit=excluded.page_limit, features=excluded.features, price=excluded.price
+        `).bind(body.name || 'Free Plan', pageLimit, featuresJson, String(pageLimit)).run();
+        return json({ message: 'Updated' });
+      }
+
+      // Fix #6: PUT /api/admin/packages/premium — upsert premium plan
+      if (path === '/api/admin/packages/premium' && method === 'PUT') {
+        const body = await request.json();
+        const featuresJson = JSON.stringify(Array.isArray(body.features) ? body.features : []);
+        await env.DB.prepare(`
+          INSERT INTO packages (name, price, features, type, page_limit)
+          VALUES (?, ?, ?, 'premium', 1000)
+          ON CONFLICT(type) DO UPDATE SET name=excluded.name, price=excluded.price, features=excluded.features
+        `).bind(body.name || 'Premium Plan', String(body.price || ''), featuresJson).run();
+        return json({ message: 'Updated' });
+      }
+
+      // Legacy package routes (kept for backward compatibility)
       if (path === '/api/admin/packages' && method === 'POST') {
         const body = await request.json();
         const res = await env.DB.prepare(`
           INSERT INTO packages (name, price, description, youtube_url, features, type)
           VALUES (?,?,?,?,?,?)
-        `).bind(body.name, body.price || '', body.description || '', body.youtube_url || '', body.features || '', body.type || 'premium').run();
+        `).bind(
+          body.name, body.price || '', body.description || '',
+          body.youtube_url || '',
+          typeof body.features === 'object' ? JSON.stringify(body.features) : (body.features || ''),
+          body.type || 'premium'
+        ).run();
         return json({ id: res.meta.last_row_id }, 201);
       }
 
@@ -441,7 +606,12 @@ export default {
         const body = await request.json();
         await env.DB.prepare(`
           UPDATE packages SET name=?, price=?, description=?, youtube_url=?, features=?, type=? WHERE id=?
-        `).bind(body.name, body.price || '', body.description || '', body.youtube_url || '', body.features || '', body.type || 'premium', id).run();
+        `).bind(
+          body.name, body.price || '', body.description || '',
+          body.youtube_url || '',
+          typeof body.features === 'object' ? JSON.stringify(body.features) : (body.features || ''),
+          body.type || 'premium', id
+        ).run();
         return json({ message: 'Updated' });
       }
 
@@ -452,23 +622,43 @@ export default {
       }
 
       // ===== OWNER =====
+      // Fix #9: Map frontend fields (role, photo_url, social_url, social_label) to DB columns
       if (path === '/api/admin/owner' && method === 'GET') {
         const owner = await env.DB.prepare('SELECT * FROM owner_profile LIMIT 1').first();
-        return json({ owner: owner || {} });
+        if (!owner) return json({ owner: {} });
+        return json({
+          owner: {
+            ...owner,
+            // Expose both original and aliased field names for full frontend compatibility
+            role: owner.title,
+            photo_url: owner.image_url,
+            social_url: owner.facebook,
+            social_label: owner.email,
+          },
+        });
       }
 
       if (path === '/api/admin/owner' && method === 'PUT') {
         const body = await request.json();
+        // Map frontend field names to DB column names
+        const name = body.name || '';
+        const title = body.role ?? body.title ?? '';
+        const bio = body.bio || '';
+        const emailVal = body.social_label ?? body.email ?? '';   // social_label stored as email
+        const phone = body.phone || '';
+        const facebook = body.social_url ?? body.facebook ?? '';  // social_url stored as facebook
+        const imageUrl = body.photo_url ?? body.image_url ?? '';
+
         const existing = await env.DB.prepare('SELECT id FROM owner_profile LIMIT 1').first();
         if (existing) {
           await env.DB.prepare(`
             UPDATE owner_profile SET name=?, title=?, bio=?, email=?, phone=?, facebook=?, image_url=? WHERE id=?
-          `).bind(body.name, body.title, body.bio, body.email, body.phone, body.facebook, body.image_url, existing.id).run();
+          `).bind(name, title, bio, emailVal, phone, facebook, imageUrl, existing.id).run();
         } else {
           await env.DB.prepare(`
             INSERT INTO owner_profile (name, title, bio, email, phone, facebook, image_url)
             VALUES (?,?,?,?,?,?,?)
-          `).bind(body.name, body.title, body.bio, body.email, body.phone, body.facebook, body.image_url).run();
+          `).bind(name, title, bio, emailVal, phone, facebook, imageUrl).run();
         }
         return json({ message: 'Saved' });
       }
@@ -482,8 +672,8 @@ export default {
         await env.R2.put(key, buffer, {
           httpMetadata: { contentType: file.type || 'image/jpeg' },
         });
-        const url2 = `https://${env.R2_PUBLIC_DOMAIN}/${key}`;
-        return json({ url: url2 });
+        const imageUrl = `https://${env.R2_PUBLIC_DOMAIN}/${key}`;
+        return json({ url: imageUrl });
       }
 
       return json({ error: 'Not found' }, 404);

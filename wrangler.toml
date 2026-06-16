@@ -1,0 +1,24 @@
+name = "atlaspro-db"
+main = "workers/main-worker.js"
+compatibility_date = "2024-09-23"
+compatibility_flags = ["nodejs_compat"]
+
+# D1 Database — replace YOUR_D1_DATABASE_ID with the actual ID from Cloudflare dashboard
+# Get it with: wrangler d1 list
+[[d1_databases]]
+binding = "DB"
+database_name = "atlaspro"
+database_id = "YOUR_D1_DATABASE_ID"
+
+# R2 Bucket for PDF and image storage
+[[r2_buckets]]
+binding = "R2"
+bucket_name = "atlaspro-files"
+
+# Public variables (non-secret)
+[vars]
+R2_PUBLIC_DOMAIN = "pub-files.atlaspractice.pages.dev"
+
+# Secrets (set via: wrangler secret put GEMINI_KEY / GROQ_KEY)
+# GEMINI_KEY — Google Gemini API key for MCQ generation and AI explanations
+# GROQ_KEY   — Groq API key (fallback for Gemini)
