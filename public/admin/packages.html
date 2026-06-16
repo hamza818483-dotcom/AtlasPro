@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="bn" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>প্যাকেজ — Admin</title>
+<link rel="stylesheet" href="../css/style.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Bengali:wght@400;600;700;900&family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
+<style>
+body{padding-top:56px;padding-bottom:20px;}
+.admin-header{position:fixed;top:0;left:0;right:0;height:56px;background:var(--bg2);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px;padding:0 14px;z-index:100;}
+.back-btn{width:36px;height:36px;border-radius:50%;background:var(--card);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:16px;cursor:pointer;color:var(--text);text-decoration:none;transition:all 0.2s;flex-shrink:0;}
+.admin-header-title{flex:1;font-size:15px;font-weight:900;}
+.stats-row{display:flex;border-bottom:1px solid var(--border);}
+.st-item{flex:1;padding:12px 8px;text-align:center;border-right:1px solid var(--border);}
+.st-item:last-child{border-right:none;}
+.st-val{font-size:20px;font-weight:900;color:var(--primary);}
+.st-lbl{font-size:9px;color:var(--text3);font-weight:600;text-transform:uppercase;}
+.plan-edit-section{margin:14px;background:var(--card);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;}
+.plan-edit-header{padding:14px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--border);}
+.plan-edit-icon{font-size:22px;}
+.plan-edit-title{font-size:15px;font-weight:900;flex:1;}
+.plan-edit-body{padding:14px;}
+.form-group{margin-bottom:12px;}
+.form-label{font-size:11px;font-weight:700;color:var(--text2);margin-bottom:5px;display:block;}
+.form-input{width:100%;height:44px;background:var(--bg2);border:1.5px solid var(--border);border-radius:var(--radius-sm);padding:0 12px;font-size:14px;color:var(--text);outline:none;transition:border-color 0.2s;font-family:inherit;}
+.form-input:focus{border-color:var(--primary);}
+.form-textarea{width:100%;min-height:120px;background:var(--bg2);border:1.5px solid var(--border);border-radius:var(--radius-sm);padding:10px 12px;font-size:13px;color:var(--text);outline:none;resize:vertical;font-family:inherit;transition:border-color 0.2s;}
+.form-textarea:focus{border-color:var(--primary);}
+.form-hint{font-size:10px;color:var(--text3);margin-top:4px;}
+.plan-save-btn{width:100%;height:44px;border-radius:10px;font-size:14px;font-weight:700;border:none;cursor:pointer;font-family:inherit;transition:all 0.2s;margin-top:4px;}
+.save-free{background:rgba(99,179,237,0.15);color:#63B3ED;border:1.5px solid rgba(99,179,237,0.3);}
+.save-premium{background:var(--primary);color:#fff;}
+.save-premium:hover{background:#5A52E0;}
+.premium-border{border-color:var(--primary);}
+</style>
+</head>
+<body>
+<header class="admin-header">
+  <a class="back-btn" href="index.html">←</a>
+  <div class="admin-header-title">📦 প্যাকেজ ব্যবস্থাপনা</div>
+  <button class="icon-btn" id="themeToggle" onclick="Theme.toggle()">☀️</button>
+</header>
+<main>
+  <div class="stats-row" id="pkgStats">
+    <div class="st-item"><div class="st-val" id="stPremium">—</div><div class="st-lbl">Premium Users</div></div>
+    <div class="st-item"><div class="st-val" id="stFree">—</div><div class="st-lbl">Free Users</div></div>
+    <div class="st-item"><div class="st-val" id="stRevenue">—</div><div class="st-lbl">এই মাসে</div></div>
+  </div>
+
+  <!-- Free Plan Edit -->
+  <div class="plan-edit-section">
+    <div class="plan-edit-header">
+      <div class="plan-edit-icon">🆓</div>
+      <div class="plan-edit-title">Free Plan সেটিংস</div>
+    </div>
+    <div class="plan-edit-body">
+      <div class="form-group">
+        <label class="form-label">Plan নাম</label>
+        <input type="text" class="form-input" id="freeName" value="Free Plan">
+      </div>
+      <div class="form-group">
+        <label class="form-label">দৈনিক Page Limit</label>
+        <input type="number" class="form-input" id="freePageLimit" value="10" min="1">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Features (এক লাইনে একটি)</label>
+        <textarea class="form-textarea" id="freeFeatures" placeholder="সব বিষয় দেখা&#10;দিনে ১০ পৃষ্ঠা PDF&#10;MCQ Exam (limited)&#10;Focus Timer"></textarea>
+        <div class="form-hint">প্রতিটি feature এক লাইনে লিখুন। ❌ দিয়ে শুরু করলে unavailable দেখাবে।</div>
+      </div>
+      <button class="plan-save-btn save-free" onclick="savePlan('free')">💾 Free Plan সেভ</button>
+    </div>
+  </div>
+
+  <!-- Premium Plan Edit -->
+  <div class="plan-edit-section premium-border">
+    <div class="plan-edit-header">
+      <div class="plan-edit-icon">👑</div>
+      <div class="plan-edit-title">Premium Plan সেটিংস</div>
+    </div>
+    <div class="plan-edit-body">
+      <div class="form-group">
+        <label class="form-label">Plan নাম</label>
+        <input type="text" class="form-input" id="premiumName" value="Premium Plan">
+      </div>
+      <div class="form-group">
+        <label class="form-label">মূল্য (টাকা/মাস)</label>
+        <input type="number" class="form-input" id="premiumPrice" value="99" min="0">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Features (এক লাইনে একটি)</label>
+        <textarea class="form-textarea" id="premiumFeatures" placeholder="Unlimited PDF পড়া&#10;সব MCQ Exam&#10;AI ব্যাখ্যা&#10;Offline cache&#10;Priority support"></textarea>
+        <div class="form-hint">প্রতিটি feature এক লাইনে লিখুন।</div>
+      </div>
+      <button class="plan-save-btn save-premium" onclick="savePlan('premium')">💾 Premium Plan সেভ</button>
+    </div>
+  </div>
+
+  <div style="padding:0 14px 14px;font-size:12px;color:var(--text3);text-align:center">
+    প্যাকেজ সেটিংস পরিবর্তনের পর packages.html এ দেখা যাবে
+  </div>
+</main>
+<div class="toast" id="toast"></div>
+<script src="../js/config.js"></script>
+<script src="../js/auth.js"></script>
+<script src="../js/theme.js"></script>
+<script>
+if(!Auth.isAdmin()) window.location.href='../index.html';
+function showToast(msg,d=2500){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),d);}
+
+async function loadPackages(){
+  try{
+    const res=await Auth.api('/api/admin/packages');
+    if(!res.ok) return;
+    const d=await res.json();
+    if(d.free){
+      document.getElementById('freeName').value=d.free.name||'Free Plan';
+      document.getElementById('freePageLimit').value=d.free.page_limit||10;
+      document.getElementById('freeFeatures').value=(d.free.features||[]).join('\n');
+    }
+    if(d.premium){
+      document.getElementById('premiumName').value=d.premium.name||'Premium Plan';
+      document.getElementById('premiumPrice').value=d.premium.price||99;
+      document.getElementById('premiumFeatures').value=(d.premium.features||[]).join('\n');
+    }
+  }catch{}
+
+  try{
+    const res=await Auth.api('/api/admin/user-stats');
+    if(!res.ok) return;
+    const d=await res.json();
+    document.getElementById('stPremium').textContent=d.premium??'—';
+    document.getElementById('stFree').textContent=(d.total&&d.premium)?d.total-d.premium:'—';
+    document.getElementById('stRevenue').textContent=d.premium?'৳'+(d.premium*99):'—';
+  }catch{}
+}
+
+async function savePlan(type){
+  const body = type==='free' ? {
+    name:document.getElementById('freeName').value.trim(),
+    page_limit:parseInt(document.getElementById('freePageLimit').value)||10,
+    features:document.getElementById('freeFeatures').value.split('\n').map(s=>s.trim()).filter(Boolean),
+  } : {
+    name:document.getElementById('premiumName').value.trim(),
+    price:parseInt(document.getElementById('premiumPrice').value)||99,
+    features:document.getElementById('premiumFeatures').value.split('\n').map(s=>s.trim()).filter(Boolean),
+  };
+  try{
+    const res=await Auth.api('/api/admin/packages/'+type,{method:'PUT',body:JSON.stringify(body)});
+    if(!res.ok) throw new Error();
+    showToast('✅ সেভ হয়েছে');
+  }catch{showToast('❌ সেভ হয়নি');}
+}
+
+document.addEventListener('DOMContentLoaded',loadPackages);
+</script>
+</body>
+</html>

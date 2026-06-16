@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="bn" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ঘোষণা — Admin</title>
+<link rel="stylesheet" href="../css/style.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Bengali:wght@400;600;700;900&family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
+<style>
+body{padding-top:56px;padding-bottom:66px;}
+.admin-header{position:fixed;top:0;left:0;right:0;height:56px;background:var(--bg2);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px;padding:0 14px;z-index:100;}
+.back-btn{width:36px;height:36px;border-radius:50%;background:var(--card);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:16px;cursor:pointer;color:var(--text);text-decoration:none;transition:all 0.2s;flex-shrink:0;}
+.admin-header-title{flex:1;font-size:15px;font-weight:900;}
+.add-btn{height:36px;padding:0 16px;border-radius:10px;background:var(--primary);color:#fff;font-size:13px;font-weight:700;border:none;cursor:pointer;font-family:inherit;white-space:nowrap;}
+.announce-list{padding:10px 14px;display:flex;flex-direction:column;gap:10px;}
+.announce-card{border-radius:var(--radius);overflow:hidden;border:1px solid var(--border);animation:fadeUp 0.3s ease both;}
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.announce-preview{padding:16px;position:relative;}
+.announce-title{font-size:14px;font-weight:700;margin-bottom:4px;}
+.announce-content{font-size:12px;color:rgba(255,255,255,0.7);line-height:1.5;}
+.announce-actions{display:flex;gap:8px;padding:10px 14px;background:var(--bg2);border-top:1px solid var(--border);}
+.a-btn{flex:1;height:34px;border-radius:8px;font-size:12px;font-weight:700;border:none;cursor:pointer;font-family:inherit;transition:all 0.2s;}
+.a-btn-edit{background:var(--primary-light);color:var(--primary);border:1px solid rgba(108,99,255,0.3);}
+.a-btn-del{background:rgba(239,68,68,0.1);color:var(--red);border:1px solid rgba(239,68,68,0.2);}
+.a-toggle{height:34px;padding:0 14px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;transition:all 0.2s;border:1px solid;}
+.a-on{background:rgba(16,185,129,0.1);color:var(--green);border-color:rgba(16,185,129,0.3);}
+.a-off{background:rgba(255,255,255,0.05);color:var(--text3);border-color:var(--border);}
+/* Modal */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:500;display:flex;align-items:flex-end;justify-content:center;opacity:0;pointer-events:none;transition:opacity 0.25s;}
+.modal-overlay.open{opacity:1;pointer-events:all;}
+.modal{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius) var(--radius) 0 0;padding:20px;width:100%;max-width:480px;transform:translateY(100%);transition:transform 0.3s cubic-bezier(.4,0,.2,1);}
+.modal-overlay.open .modal{transform:translateY(0);}
+.modal-title{font-size:16px;font-weight:900;margin-bottom:16px;}
+.form-group{margin-bottom:12px;}
+.form-label{font-size:11px;font-weight:700;color:var(--text2);margin-bottom:5px;display:block;}
+.form-input{width:100%;height:44px;background:var(--card);border:1.5px solid var(--border);border-radius:var(--radius-sm);padding:0 12px;font-size:14px;color:var(--text);outline:none;transition:border-color 0.2s;font-family:inherit;}
+.form-input:focus{border-color:var(--primary);}
+.form-textarea{width:100%;min-height:80px;background:var(--card);border:1.5px solid var(--border);border-radius:var(--radius-sm);padding:10px 12px;font-size:14px;color:var(--text);outline:none;resize:vertical;font-family:inherit;}
+.form-textarea:focus{border-color:var(--primary);}
+.color-swatches{display:flex;gap:8px;flex-wrap:wrap;}
+.color-swatch{width:32px;height:32px;border-radius:50%;cursor:pointer;border:3px solid transparent;transition:all 0.2s;}
+.color-swatch.selected{border-color:var(--text);transform:scale(1.1);}
+.toggle-row{display:flex;align-items:center;justify-content:space-between;padding:10px 0;}
+.toggle-label{font-size:13px;font-weight:600;}
+.toggle-switch{width:44px;height:24px;border-radius:30px;background:var(--border);position:relative;cursor:pointer;transition:background 0.3s;}
+.toggle-switch.on{background:var(--green);}
+.toggle-switch::after{content:'';position:absolute;width:18px;height:18px;border-radius:50%;background:#fff;top:3px;left:3px;transition:left 0.3s;}
+.toggle-switch.on::after{left:23px;}
+.modal-actions{display:flex;gap:8px;margin-top:4px;}
+.confirm-del{border:1px solid rgba(239,68,68,0.3);background:rgba(239,68,68,0.08);border-radius:var(--radius-sm);padding:12px;margin-bottom:12px;font-size:13px;color:var(--red);}
+.admin-nav{position:fixed;bottom:0;left:0;right:0;height:60px;background:var(--bg2);border-top:1px solid var(--border);display:flex;z-index:100;}
+.admin-nav-item{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;color:var(--text3);font-size:10px;text-decoration:none;transition:color 0.2s;}
+.admin-nav-item.active{color:var(--primary);}
+.admin-nav-icon{font-size:20px;}
+</style>
+</head>
+<body>
+<header class="admin-header">
+  <a class="back-btn" href="index.html">←</a>
+  <div class="admin-header-title">📢 ঘোষণা ব্যবস্থাপনা</div>
+  <button class="add-btn" onclick="openModal()">+ নতুন</button>
+  <button class="icon-btn" id="themeToggle" onclick="Theme.toggle()">☀️</button>
+</header>
+<main>
+  <div class="announce-list" id="announceList">
+    <div style="text-align:center;padding:40px 20px;color:var(--text3)">লোড হচ্ছে...</div>
+  </div>
+</main>
+<!-- Modal -->
+<div class="modal-overlay" id="modal">
+  <div class="modal">
+    <div class="modal-title" id="modalTitle">নতুন ঘোষণা</div>
+    <input type="hidden" id="editId">
+    <div class="form-group">
+      <label class="form-label">শিরোনাম *</label>
+      <input type="text" class="form-input" id="annTitle" placeholder="ঘোষণার শিরোনাম">
+    </div>
+    <div class="form-group">
+      <label class="form-label">বিবরণ *</label>
+      <textarea class="form-textarea" id="annContent" placeholder="ঘোষণার বিবরণ লিখুন..."></textarea>
+    </div>
+    <div class="form-group">
+      <label class="form-label">রঙ বেছে নাও</label>
+      <div class="color-swatches" id="colorSwatches"></div>
+    </div>
+    <div class="toggle-row">
+      <span class="toggle-label">সক্রিয়</span>
+      <div class="toggle-switch on" id="annActive" onclick="this.classList.toggle('on')"></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeModal()">বাতিল</button>
+      <button class="btn btn-primary" onclick="saveAnnouncement()">💾 সেভ</button>
+    </div>
+  </div>
+</div>
+<nav class="admin-nav">
+  <a class="admin-nav-item" href="index.html"><span class="admin-nav-icon">📊</span>Dashboard</a>
+  <a class="admin-nav-item" href="subjects.html"><span class="admin-nav-icon">📚</span>বিষয়</a>
+  <a class="admin-nav-item" href="mcq.html"><span class="admin-nav-icon">❓</span>MCQ</a>
+  <a class="admin-nav-item" href="users.html"><span class="admin-nav-icon">👥</span>Users</a>
+  <a class="admin-nav-item active" href="announcements.html"><span class="admin-nav-icon">📢</span>ঘোষণা</a>
+</nav>
+<div class="toast" id="toast"></div>
+<script src="../js/config.js"></script>
+<script src="../js/auth.js"></script>
+<script src="../js/theme.js"></script>
+<script>
+if(!Auth.isAdmin()) window.location.href='../index.html';
+function showToast(msg,d=2500){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),d);}
+function escHtml(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+
+const COLORS=['#6C63FF','#10B981','#3B82F6','#F59E0B','#EF4444','#EC4899','#8B5CF6','#F97316'];
+let selectedColor=COLORS[0];
+
+function initSwatches(){
+  document.getElementById('colorSwatches').innerHTML=COLORS.map(c=>`
+    <div class="color-swatch${c===selectedColor?' selected':''}" style="background:${c}" onclick="selectColor('${c}',this)" title="${c}"></div>`).join('');
+}
+function selectColor(c,el){
+  selectedColor=c;
+  document.querySelectorAll('.color-swatch').forEach(s=>s.classList.remove('selected'));
+  el.classList.add('selected');
+}
+
+function openModal(ann=null){
+  document.getElementById('modalTitle').textContent=ann?'ঘোষণা সম্পাদনা':'নতুন ঘোষণা';
+  document.getElementById('editId').value=ann?.id||'';
+  document.getElementById('annTitle').value=ann?.title||'';
+  document.getElementById('annContent').value=ann?.content||'';
+  selectedColor=ann?.color||COLORS[0];
+  const active=document.getElementById('annActive');
+  ann?.active===false?active.classList.remove('on'):active.classList.add('on');
+  initSwatches();
+  document.getElementById('modal').classList.add('open');
+}
+function closeModal(){document.getElementById('modal').classList.remove('open');}
+
+async function saveAnnouncement(){
+  const title=document.getElementById('annTitle').value.trim();
+  const content=document.getElementById('annContent').value.trim();
+  if(!title||!content){showToast('শিরোনাম ও বিবরণ দাও');return;}
+  const id=document.getElementById('editId').value;
+  const isActive=document.getElementById('annActive').classList.contains('on');
+  const body={title,content,color:selectedColor,active:isActive};
+  try{
+    const res=await Auth.api(id?'/api/admin/announcements/'+id:'/api/admin/announcements',{method:id?'PUT':'POST',body:JSON.stringify(body)});
+    if(!res.ok) throw new Error();
+    showToast(id?'✅ আপডেট হয়েছে':'✅ যোগ হয়েছে');
+    closeModal(); loadAnnouncements();
+  }catch{showToast('❌ সমস্যা হয়েছে');}
+}
+
+let deleteId=null;
+function confirmDelete(id,title){
+  deleteId=id;
+  if(!confirm(`"${title}" মুছে ফেলবে?`)) return;
+  deleteAnnouncement(id);
+}
+async function deleteAnnouncement(id){
+  try{
+    const res=await Auth.api('/api/admin/announcements/'+id,{method:'DELETE'});
+    if(!res.ok) throw new Error();
+    showToast('🗑️ মুছে ফেলা হয়েছে'); loadAnnouncements();
+  }catch{showToast('❌ মুছতে সমস্যা');}
+}
+
+async function toggleActive(id,current){
+  try{
+    const res=await Auth.api('/api/admin/announcements/'+id,{method:'PUT',body:JSON.stringify({active:!current})});
+    if(!res.ok) throw new Error();
+    loadAnnouncements();
+  }catch{showToast('❌ সমস্যা');}
+}
+
+async function loadAnnouncements(){
+  const list=document.getElementById('announceList');
+  try{
+    const res=await Auth.api('/api/admin/announcements');
+    if(!res.ok) throw new Error();
+    const data=await res.json();
+    const items=data.announcements||[];
+    if(!items.length){list.innerHTML='<div style="text-align:center;padding:40px;color:var(--text3)"><div style="font-size:40px;margin-bottom:10px">📢</div><div>কোনো ঘোষণা নেই</div></div>';return;}
+    list.innerHTML=items.map((a,i)=>`
+      <div class="announce-card" style="animation-delay:${i*50}ms">
+        <div class="announce-preview" style="background:linear-gradient(135deg,${a.color||'var(--card)'},var(--bg2))">
+          <div class="announce-title">${escHtml(a.title||'')}</div>
+          <div class="announce-content">${escHtml(a.content||'')}</div>
+        </div>
+        <div class="announce-actions">
+          <div class="a-toggle ${a.active===false?'a-off':'a-on'}" onclick="toggleActive('${a.id}',${a.active!==false})">${a.active===false?'অফ':'চালু'}</div>
+          <button class="a-btn a-btn-edit" onclick='openModal(${JSON.stringify(a)})'>✏️ Edit</button>
+          <button class="a-btn a-btn-del" onclick="confirmDelete('${a.id}','${escHtml(a.title||'')}')">🗑️ মুছো</button>
+        </div>
+      </div>`).join('');
+  }catch{list.innerHTML='<div style="text-align:center;padding:40px;color:var(--red)">লোড হয়নি <button class="btn btn-outline" style="margin-top:10px" onclick="loadAnnouncements()">↻ আবার</button></div>';}
+}
+
+document.addEventListener('DOMContentLoaded',()=>{ initSwatches(); loadAnnouncements(); });
+document.getElementById('modal').addEventListener('click',e=>{if(e.target===document.getElementById('modal'))closeModal();});
+</script>
+</body>
+</html>

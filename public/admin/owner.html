@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="bn" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Owner Info — Admin</title>
+<link rel="stylesheet" href="../css/style.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Bengali:wght@400;600;700;900&family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
+<style>
+body{padding-top:56px;padding-bottom:20px;}
+.admin-header{position:fixed;top:0;left:0;right:0;height:56px;background:var(--bg2);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px;padding:0 14px;z-index:100;}
+.back-btn{width:36px;height:36px;border-radius:50%;background:var(--card);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:16px;cursor:pointer;color:var(--text);text-decoration:none;transition:all 0.2s;flex-shrink:0;}
+.admin-header-title{flex:1;font-size:15px;font-weight:900;}
+/* Flip card preview */
+.preview-section{padding:14px;background:var(--bg2);border-bottom:1px solid var(--border);}
+.preview-label{font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:12px;}
+.flip-card{width:100%;height:180px;perspective:1000px;cursor:pointer;}
+.flip-card-inner{position:relative;width:100%;height:100%;transition:transform 0.7s cubic-bezier(.4,.2,.2,1);transform-style:preserve-3d;}
+.flip-card.flipped .flip-card-inner{transform:rotateY(180deg);}
+.flip-front,.flip-back{position:absolute;width:100%;height:100%;backface-visibility:hidden;border-radius:var(--radius);border:1px solid var(--border);overflow:hidden;display:flex;align-items:center;justify-content:center;}
+.flip-front{background:var(--card);flex-direction:column;gap:10px;}
+.flip-back{background:linear-gradient(135deg,var(--card),var(--bg2));transform:rotateY(180deg);padding:20px;flex-direction:column;align-items:flex-start;gap:8px;}
+.prev-photo{width:72px;height:72px;border-radius:50%;object-fit:cover;border:3px solid var(--primary);}
+.prev-photo-placeholder{width:72px;height:72px;border-radius:50%;background:var(--primary-light);border:3px solid var(--primary);display:flex;align-items:center;justify-content:center;font-size:28px;color:var(--primary);}
+.prev-name{font-size:16px;font-weight:900;}
+.prev-title{font-size:11px;color:var(--text2);}
+.prev-bio{font-size:12px;color:var(--text2);line-height:1.6;}
+.prev-social{font-size:12px;color:var(--primary);font-weight:700;}
+.flip-hint{text-align:center;font-size:10px;color:var(--text3);margin-top:8px;}
+/* Form */
+.form-section{padding:14px;}
+.form-group{margin-bottom:14px;}
+.form-label{font-size:11px;font-weight:700;color:var(--text2);margin-bottom:5px;display:block;}
+.form-input{width:100%;height:44px;background:var(--card);border:1.5px solid var(--border);border-radius:var(--radius-sm);padding:0 12px;font-size:14px;color:var(--text);outline:none;transition:border-color 0.2s;font-family:inherit;}
+.form-input:focus{border-color:var(--primary);}
+.form-textarea{width:100%;min-height:90px;background:var(--card);border:1.5px solid var(--border);border-radius:var(--radius-sm);padding:10px 12px;font-size:14px;color:var(--text);outline:none;resize:vertical;font-family:inherit;transition:border-color 0.2s;}
+.form-textarea:focus{border-color:var(--primary);}
+.char-count{font-size:10px;color:var(--text3);text-align:right;margin-top:4px;}
+.photo-preview{margin-top:8px;display:flex;align-items:center;gap:12px;}
+.photo-preview img{width:52px;height:52px;border-radius:50%;object-fit:cover;border:2px solid var(--primary);}
+</style>
+</head>
+<body>
+<header class="admin-header">
+  <a class="back-btn" href="index.html">←</a>
+  <div class="admin-header-title">👤 Owner তথ্য</div>
+  <button class="icon-btn" id="themeToggle" onclick="Theme.toggle()">☀️</button>
+</header>
+<main>
+  <!-- Live Preview -->
+  <div class="preview-section">
+    <div class="preview-label">Live Preview (ট্যাপ করলে উল্টে যাবে)</div>
+    <div class="flip-card" id="previewCard" onclick="this.classList.toggle('flipped')">
+      <div class="flip-card-inner">
+        <div class="flip-front">
+          <div id="prevPhotoWrap"><div class="prev-photo-placeholder">👤</div></div>
+          <div class="prev-name" id="prevName">Owner এর নাম</div>
+          <div class="prev-title" id="prevTitle">পদবী</div>
+        </div>
+        <div class="flip-back">
+          <div class="prev-name" id="prevName2">Owner এর নাম</div>
+          <div class="prev-bio" id="prevBio">Bio এখানে দেখাবে...</div>
+          <div class="prev-social" id="prevSocial">যোগাযোগ →</div>
+        </div>
+      </div>
+    </div>
+    <div class="flip-hint">↩️ ট্যাপ করলে উল্টে যাবে</div>
+  </div>
+
+  <!-- Form -->
+  <div class="form-section">
+    <div class="form-group">
+      <label class="form-label">নাম *</label>
+      <input type="text" class="form-input" id="ownerName" placeholder="Owner এর পূর্ণ নাম" oninput="updatePreview()">
+    </div>
+    <div class="form-group">
+      <label class="form-label">পদবী / ভূমিকা</label>
+      <input type="text" class="form-input" id="ownerRole" placeholder="প্রতিষ্ঠাতা, Educator..." oninput="updatePreview()">
+    </div>
+    <div class="form-group">
+      <label class="form-label">ছবির URL</label>
+      <input type="url" class="form-input" id="ownerPhoto" placeholder="https://..." oninput="updatePreview()">
+      <div class="photo-preview" id="photoPreviewWrap" style="display:none">
+        <img id="photoPreviewImg" src="" alt="preview" onerror="this.parentElement.style.display='none'">
+        <span style="font-size:11px;color:var(--text2)">Preview</span>
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Bio (সংক্ষিপ্ত পরিচয়)</label>
+      <textarea class="form-textarea" id="ownerBio" placeholder="Owner সম্পর্কে সংক্ষিপ্ত পরিচয় লিখুন..." maxlength="200" oninput="updatePreview();updateCharCount()"></textarea>
+      <div class="char-count" id="charCount">0 / 200</div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Social Link (URL)</label>
+      <input type="url" class="form-input" id="ownerSocialUrl" placeholder="https://facebook.com/..." oninput="updatePreview()">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Social Link Label</label>
+      <input type="text" class="form-input" id="ownerSocialLabel" placeholder="Facebook এ যোগাযোগ করো" oninput="updatePreview()">
+    </div>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-outline" onclick="loadOwner()">↻ রিসেট</button>
+      <button class="btn btn-primary btn-full" onclick="saveOwner()">💾 সেভ করো</button>
+    </div>
+  </div>
+</main>
+<div class="toast" id="toast"></div>
+<script src="../js/config.js"></script>
+<script src="../js/auth.js"></script>
+<script src="../js/theme.js"></script>
+<script>
+if(!Auth.isAdmin()) window.location.href='../index.html';
+function showToast(msg,d=2500){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),d);}
+
+function updatePreview(){
+  const name=document.getElementById('ownerName').value||'Owner এর নাম';
+  const role=document.getElementById('ownerRole').value||'পদবী';
+  const photo=document.getElementById('ownerPhoto').value;
+  const bio=document.getElementById('ownerBio').value||'Bio এখানে দেখাবে...';
+  const socialLabel=document.getElementById('ownerSocialLabel').value||'যোগাযোগ →';
+
+  document.getElementById('prevName').textContent=name;
+  document.getElementById('prevName2').textContent=name;
+  document.getElementById('prevTitle').textContent=role;
+  document.getElementById('prevBio').textContent=bio;
+  document.getElementById('prevSocial').textContent=socialLabel;
+
+  const wrap=document.getElementById('prevPhotoWrap');
+  if(photo){
+    wrap.innerHTML=`<img class="prev-photo" src="${photo}" alt="" onerror="this.outerHTML='<div class=prev-photo-placeholder>👤</div>'">`;
+    document.getElementById('photoPreviewWrap').style.display='flex';
+    document.getElementById('photoPreviewImg').src=photo;
+  } else {
+    wrap.innerHTML='<div class="prev-photo-placeholder">👤</div>';
+    document.getElementById('photoPreviewWrap').style.display='none';
+  }
+}
+
+function updateCharCount(){
+  const l=document.getElementById('ownerBio').value.length;
+  document.getElementById('charCount').textContent=`${l} / 200`;
+  document.getElementById('charCount').style.color=l>180?'var(--red)':l>160?'var(--amber)':'var(--text3)';
+}
+
+async function loadOwner(){
+  try{
+    const res=await Auth.api('/api/admin/owner');
+    if(!res.ok) return;
+    const d=await res.json();
+    document.getElementById('ownerName').value=d.name||'';
+    document.getElementById('ownerRole').value=d.role||'';
+    document.getElementById('ownerPhoto').value=d.photo_url||'';
+    document.getElementById('ownerBio').value=d.bio||'';
+    document.getElementById('ownerSocialUrl').value=d.social_url||'';
+    document.getElementById('ownerSocialLabel').value=d.social_label||'';
+    updatePreview(); updateCharCount();
+  }catch{}
+}
+
+async function saveOwner(){
+  const name=document.getElementById('ownerName').value.trim();
+  if(!name){showToast('নাম দাও');return;}
+  const body={
+    name, role:document.getElementById('ownerRole').value.trim(),
+    photo_url:document.getElementById('ownerPhoto').value.trim(),
+    bio:document.getElementById('ownerBio').value.trim(),
+    social_url:document.getElementById('ownerSocialUrl').value.trim(),
+    social_label:document.getElementById('ownerSocialLabel').value.trim(),
+  };
+  try{
+    const res=await Auth.api('/api/admin/owner',{method:'PUT',body:JSON.stringify(body)});
+    if(!res.ok) throw new Error();
+    showToast('✅ Owner তথ্য সেভ হয়েছে');
+  }catch{showToast('❌ সেভ হয়নি');}
+}
+
+document.addEventListener('DOMContentLoaded',loadOwner);
+</script>
+</body>
+</html>

@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="bn" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>প্রোফাইল — AtlasPro</title>
+<link rel="stylesheet" href="css/style.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Bengali:wght@400;600;700;900&family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
+<style>
+/* ── Profile Avatar ── */
+.profile-hero {
+  background: linear-gradient(135deg, rgba(108,99,255,0.15), rgba(196,181,253,0.08));
+  border-bottom: 1px solid var(--border);
+  padding: 24px 14px 20px;
+  text-align: center;
+}
+.profile-avatar-big {
+  width: 80px; height: 80px;
+  border-radius: 50%;
+  background: var(--primary-light);
+  border: 3px solid var(--primary);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 32px; font-weight: 900; color: var(--primary);
+  margin: 0 auto 12px;
+  box-shadow: 0 0 24px rgba(108,99,255,0.3);
+}
+.profile-name { font-size: 20px; font-weight: 900; margin-bottom: 4px; }
+.profile-batch { font-size: 12px; color: var(--text2); margin-bottom: 8px; }
+.profile-badges { display: flex; gap: 6px; justify-content: center; flex-wrap: wrap; }
+.profile-badge {
+  font-size: 11px; font-weight: 700;
+  padding: 3px 10px; border-radius: 20px;
+}
+.pb-free    { background: rgba(99,179,237,0.15); color: #63B3ED; }
+.pb-premium { background: rgba(245,158,11,0.15);  color: var(--amber); }
+.pb-batch   { background: rgba(108,99,255,0.12);  color: var(--accent); }
+.pb-college { background: rgba(16,185,129,0.12);  color: var(--green); }
+
+/* ── Stats Row ── */
+.stats-row {
+  display: flex;
+  border-bottom: 1px solid var(--border);
+}
+.stat-item {
+  flex: 1; padding: 14px 8px;
+  text-align: center;
+  border-right: 1px solid var(--border);
+}
+.stat-item:last-child { border-right: none; }
+.stat-val { font-size: 22px; font-weight: 900; color: var(--primary); }
+.stat-lbl { font-size: 9px; color: var(--text3); font-weight: 600; margin-top: 2px; text-transform: uppercase; letter-spacing: 0.5px; }
+
+/* ── Edit Form ── */
+.edit-section {
+  margin: 14px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.edit-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px;
+  cursor: pointer;
+  border-bottom: 1px solid var(--border);
+}
+.edit-header-title { font-size: 14px; font-weight: 700; }
+.edit-body { padding: 14px; display: none; }
+.edit-body.open { display: block; }
+.form-group { margin-bottom: 12px; }
+.form-label { font-size: 11px; font-weight: 700; color: var(--text2); margin-bottom: 5px; display: block; }
+.form-input {
+  width: 100%; height: 44px;
+  background: var(--bg2); border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm); padding: 0 12px;
+  font-size: 14px; color: var(--text); outline: none;
+  transition: border-color 0.2s; font-family: inherit;
+}
+.form-input:focus { border-color: var(--primary); }
+.form-row { display: flex; gap: 10px; }
+.form-row .form-group { flex: 1; }
+.form-actions { display: flex; gap: 8px; margin-top: 4px; }
+
+/* ── Exam History ── */
+.section-wrap { padding: 14px; }
+.section-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 10px;
+}
+.history-card {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 14px; margin-bottom: 8px;
+  cursor: pointer; transition: all 0.2s;
+  animation: fadeUp 0.3s ease both;
+}
+.history-card:hover { border-color: var(--primary); transform: translateX(2px); }
+@keyframes fadeUp { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
+.history-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; margin-bottom: 8px; }
+.history-name { font-size: 13px; font-weight: 700; line-height: 1.4; }
+.history-date { font-size: 10px; color: var(--text3); white-space: nowrap; }
+.history-score { font-size: 18px; font-weight: 900; color: var(--primary); }
+.history-badges { display: flex; gap: 6px; flex-wrap: wrap; }
+.hbadge {
+  font-size: 10px; font-weight: 700; padding: 2px 7px;
+  border-radius: 20px; display: inline-flex; align-items: center; gap: 3px;
+}
+.hb-correct { background: rgba(16,185,129,0.12); color: var(--green); }
+.hb-wrong   { background: rgba(239,68,68,0.12);  color: var(--red);   }
+.hb-skip    { background: rgba(255,255,255,0.06); color: var(--text3); }
+
+/* ── Mistake Practice ── */
+.mistake-btn {
+  width: calc(100% - 28px); margin: 0 14px 14px;
+  height: 50px; border-radius: var(--radius);
+  background: linear-gradient(135deg, rgba(239,68,68,0.12), rgba(245,158,11,0.1));
+  border: 1.5px solid rgba(239,68,68,0.3);
+  color: var(--red); font-size: 14px; font-weight: 700;
+  cursor: pointer; font-family: inherit; transition: all 0.2s;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+}
+.mistake-btn:hover { background: rgba(239,68,68,0.18); border-color: var(--red); }
+
+/* ── Logout ── */
+.logout-btn {
+  width: calc(100% - 28px); margin: 0 14px 20px;
+  height: 46px; border-radius: var(--radius);
+  background: rgba(239,68,68,0.08); border: 1.5px solid rgba(239,68,68,0.2);
+  color: var(--red); font-size: 14px; font-weight: 700;
+  cursor: pointer; font-family: inherit; transition: all 0.2s;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+}
+.logout-btn:hover { background: rgba(239,68,68,0.14); }
+
+/* Skeleton */
+.skel { background: linear-gradient(90deg, var(--border) 25%, var(--card-hover) 50%, var(--border) 75%); background-size:200% 100%; animation: shimmer 1.4s ease infinite; border-radius:6px; }
+@keyframes shimmer { 0% { background-position:200% 0; } 100% { background-position:-200% 0; } }
+.skel-card { height:90px; border-radius:var(--radius); margin-bottom:8px; }
+</style>
+</head>
+<body>
+
+<header class="header">
+  <button class="icon-btn menu-btn" onclick="toggleSidebar()">☰</button>
+  <a class="logo-link" href="index.html" aria-label="AtlasPro হোম">
+    <img class="logo-icon" src="img/logo-icon.svg" alt="ATLAS">
+    <div class="logo-text-block">
+      <span class="logo-name"><span class="logo-a">A</span>TLAS</span>
+      <span class="logo-sub">পড়াশোনা হোক গোছানো</span>
+    </div>
+  </a>
+  <div class="header-actions">
+    <button class="icon-btn" id="themeToggle" onclick="Theme.toggle()">☀️</button>
+    <button class="icon-btn" onclick="showToast('🔔 কোনো নতুন notification নেই')">🔔</button>
+    <div class="avatar-btn" id="avatarBtn">A</div>
+  </div>
+</header>
+
+<div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+<div class="sidebar" id="sidebar">
+  <div class="sidebar-header">
+    <span class="atlas-brand" style="font-size:22px">ATLAS</span>
+    <div style="font-size:10px;color:var(--text3);margin-top:2px">Educational Platform</div>
+  </div>
+  <div class="sidebar-user">
+    <div class="sidebar-avatar" id="sidebarAvatar">A</div>
+    <div>
+      <div class="sidebar-name" id="sidebarName">Guest</div>
+      <span class="sidebar-badge badge-free" id="sidebarBadge">🆓 Free</span>
+    </div>
+  </div>
+  <nav class="sidebar-nav">
+    <a class="sidebar-link" href="index.html"><span>🏠</span> হোম</a>
+    <a class="sidebar-link" href="index.html"><span>📚</span> বিষয়</a>
+    <a class="sidebar-link active" href="profile.html"><span>👤</span> প্রোফাইল</a>
+    <a class="sidebar-link" href="focus.html"><span>⏱️</span> Focus Timer</a>
+    <a class="sidebar-link" href="packages.html"><span>⭐</span> প্যাকেজ</a>
+    <div class="sidebar-divider"></div>
+    <div class="sidebar-admin" id="adminLink" style="display:none" onclick="window.location.href='admin/index.html'">👑 Admin Panel</div>
+    <div class="sidebar-logout" onclick="Auth.logout()"><span>🚪</span> Logout</div>
+  </nav>
+</div>
+
+<main style="padding-bottom:16px">
+
+  <!-- Profile Hero -->
+  <div class="profile-hero" id="profileHero">
+    <div class="profile-avatar-big" id="profileAvatar">A</div>
+    <div class="profile-name" id="profileName">লোড হচ্ছে...</div>
+    <div class="profile-batch" id="profileBatch"></div>
+    <div class="profile-badges" id="profileBadges"></div>
+  </div>
+
+  <!-- Stats -->
+  <div class="stats-row" id="statsRow">
+    <div class="stat-item"><div class="stat-val" id="statExams">—</div><div class="stat-lbl">পরীক্ষা</div></div>
+    <div class="stat-item"><div class="stat-val" id="statAvg">—</div><div class="stat-lbl">গড় নম্বর</div></div>
+    <div class="stat-item"><div class="stat-val" id="statBest">—</div><div class="stat-lbl">সেরা স্কোর</div></div>
+  </div>
+
+  <!-- Edit Profile -->
+  <div class="edit-section">
+    <div class="edit-header" onclick="toggleEdit()">
+      <span class="edit-header-title">✏️ প্রোফাইল সম্পাদনা</span>
+      <span id="editToggleIcon">▾</span>
+    </div>
+    <div class="edit-body" id="editBody">
+      <div class="form-group">
+        <label class="form-label">নাম</label>
+        <input type="text" class="form-input" id="editName" placeholder="তোমার নাম">
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">HSC Batch</label>
+          <input type="number" class="form-input" id="editBatch" placeholder="2024">
+        </div>
+        <div class="form-group">
+          <label class="form-label">কলেজ</label>
+          <input type="text" class="form-input" id="editCollege" placeholder="কলেজের নাম">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">SSC GPA</label>
+          <input type="number" class="form-input" id="editSsc" placeholder="0.00" step="0.01" min="0" max="5">
+        </div>
+        <div class="form-group">
+          <label class="form-label">HSC GPA</label>
+          <input type="number" class="form-input" id="editHsc" placeholder="0.00" step="0.01" min="0" max="5">
+        </div>
+      </div>
+      <div class="form-actions">
+        <button class="btn btn-outline" onclick="toggleEdit()">বাতিল</button>
+        <button class="btn btn-primary" onclick="saveProfile()">💾 সেভ করো</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Mistake Practice -->
+  <button class="mistake-btn" onclick="startMistakePractice()">
+    📊 ভুল থেকে Practice করো
+  </button>
+
+  <!-- Exam History -->
+  <div class="section-wrap" id="history">
+    <div class="section-header">
+      <span class="section-title">পরীক্ষার ইতিহাস</span>
+      <span id="historyCount" style="font-size:11px;color:var(--text3)"></span>
+    </div>
+    <div id="historyArea">
+      <div class="skel skel-card"></div>
+      <div class="skel skel-card"></div>
+      <div class="skel skel-card"></div>
+    </div>
+  </div>
+
+  <!-- Logout -->
+  <button class="logout-btn" onclick="Auth.logout()">🚪 লগআউট</button>
+
+</main>
+
+<div class="float-btns">
+  <a class="float-btn float-wa" href="https://wa.me/8801999681290" target="_blank" rel="noopener">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+  </a>
+  <a class="float-btn float-tg" href="https://t.me/rafi_somc" target="_blank" rel="noopener">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="white"><path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/></svg>
+  </a>
+</div>
+
+<nav class="bottom-nav">
+  <a class="nav-item" href="index.html"><span class="nav-icon">🏠</span>হোম</a>
+  <a class="nav-item" href="index.html"><span class="nav-icon">📚</span>বিষয়</a>
+  <a class="nav-item" href="profile.html#history"><span class="nav-icon">📝</span>এক্সাম</a>
+  <a class="nav-item" href="focus.html"><span class="nav-icon">⏱️</span>টাইমার</a>
+  <a class="nav-item active" href="profile.html"><span class="nav-icon">👤</span>প্রোফাইল</a>
+</nav>
+<div class="toast" id="toast"></div>
+
+<script src="js/config.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/theme.js"></script>
+<script>
+function toggleSidebar() { document.getElementById('sidebar').classList.toggle('open'); document.getElementById('sidebarOverlay').classList.toggle('open'); }
+function closeSidebar()  { document.getElementById('sidebar').classList.remove('open'); document.getElementById('sidebarOverlay').classList.remove('open'); }
+function showToast(msg, d=2500) { const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),d); }
+function escHtml(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+function toggleEdit() {
+  const body = document.getElementById('editBody');
+  const icon = document.getElementById('editToggleIcon');
+  const open = body.classList.toggle('open');
+  icon.style.transform = open ? 'rotate(180deg)' : '';
+}
+
+let profileData = {};
+
+async function loadProfile() {
+  const name      = Auth.getUserName();
+  const isPremium = localStorage.getItem('is_premium') === 'true';
+  const isAdmin   = Auth.isAdmin();
+  const initial   = name ? name[0].toUpperCase() : 'A';
+
+  document.getElementById('avatarBtn').textContent     = initial;
+  document.getElementById('sidebarAvatar').textContent = initial;
+  document.getElementById('sidebarName').textContent   = name || 'Guest';
+  document.getElementById('profileAvatar').textContent = initial;
+  if (isPremium) {
+    const b = document.getElementById('sidebarBadge');
+    b.className = 'sidebar-badge badge-premium'; b.textContent = '⭐ Premium';
+  }
+  if (isAdmin) document.getElementById('adminLink').style.display = 'flex';
+
+  if (!Auth.isLoggedIn()) {
+    document.getElementById('profileName').textContent = 'Guest';
+    document.getElementById('profileBatch').textContent = 'লগইন করোনি';
+    document.getElementById('historyArea').innerHTML = `<div class="empty"><div class="empty-icon">🔐</div><div class="empty-title">লগইন দরকার</div><div class="empty-text">ইতিহাস দেখতে লগইন করো</div><a href="auth.html" class="btn btn-primary" style="margin-top:12px">লগইন করো</a></div>`;
+    return;
+  }
+
+  try {
+    const res = await Auth.api('/api/user/profile');
+    if (res.ok) {
+      const data = await res.json();
+      profileData = data;
+      document.getElementById('profileName').textContent  = data.name || name;
+      document.getElementById('profileBatch').textContent = data.college || '';
+      const badges = [];
+      if (data.batch)   badges.push(`<span class="profile-badge pb-batch">HSC ${data.batch}</span>`);
+      if (data.college) badges.push(`<span class="profile-badge pb-college">${escHtml(data.college)}</span>`);
+      badges.push(isPremium ? '<span class="profile-badge pb-premium">⭐ Premium</span>' : '<span class="profile-badge pb-free">🆓 Free</span>');
+      document.getElementById('profileBadges').innerHTML = badges.join('');
+
+      document.getElementById('editName').value    = data.name || '';
+      document.getElementById('editBatch').value   = data.batch || '';
+      document.getElementById('editCollege').value = data.college || '';
+      document.getElementById('editSsc').value     = data.ssc_gpa || '';
+      document.getElementById('editHsc').value     = data.hsc_gpa || '';
+    }
+  } catch {}
+
+  loadStats();
+  loadHistory();
+}
+
+async function loadStats() {
+  try {
+    const res = await Auth.api('/api/user/stats');
+    if (res.ok) {
+      const d = await res.json();
+      document.getElementById('statExams').textContent = d.total_exams ?? '0';
+      document.getElementById('statAvg').textContent   = d.avg_score != null ? d.avg_score.toFixed(1) : '—';
+      document.getElementById('statBest').textContent  = d.best_score != null ? d.best_score.toFixed(1) : '—';
+    }
+  } catch {}
+}
+
+async function loadHistory() {
+  const area = document.getElementById('historyArea');
+  try {
+    const res = await Auth.api('/api/user/exam-history');
+    if (!res.ok) throw new Error(res.status);
+    const data = await res.json();
+    const list = data.history || [];
+    document.getElementById('historyCount').textContent = `${list.length}টি`;
+    if (!list.length) {
+      area.innerHTML = `<div class="empty"><div class="empty-icon">📝</div><div class="empty-title">কোনো পরীক্ষা নেই</div><div class="empty-text">এখনো কোনো MCQ পরীক্ষা দাওনি</div></div>`;
+      return;
+    }
+    area.innerHTML = list.map((h, i) => `
+      <div class="history-card" style="animation-delay:${i*40}ms">
+        <div class="history-top">
+          <div>
+            <div class="history-name">${escHtml(h.pdf_name || 'MCQ Exam')}</div>
+            <div style="font-size:10px;color:var(--text3);margin-top:2px">${h.subject_name ? escHtml(h.subject_name)+' · ' : ''}${formatDate(h.created_at)}</div>
+          </div>
+          <div class="history-score">${h.marks ?? '—'}<span style="font-size:11px;color:var(--text3)">/${h.total ?? '—'}</span></div>
+        </div>
+        <div class="history-badges">
+          <span class="hbadge hb-correct">✅ ${h.correct ?? 0} সঠিক</span>
+          <span class="hbadge hb-wrong">❌ ${h.wrong ?? 0} ভুল</span>
+          <span class="hbadge hb-skip">⏭️ ${h.skip ?? 0} বাদ</span>
+        </div>
+      </div>`).join('');
+  } catch {
+    area.innerHTML = `<div class="empty"><div class="empty-icon">⚠️</div><div class="empty-title">লোড হয়নি</div><button class="btn btn-outline" onclick="loadHistory()">↻ আবার</button></div>`;
+  }
+}
+
+function formatDate(iso) {
+  if (!iso) return '';
+  try { return new Date(iso).toLocaleDateString('bn-BD', { day:'numeric', month:'short', year:'numeric' }); } catch { return iso; }
+}
+
+async function saveProfile() {
+  const body = {
+    name:    document.getElementById('editName').value.trim(),
+    batch:   document.getElementById('editBatch').value,
+    college: document.getElementById('editCollege').value.trim(),
+    ssc_gpa: parseFloat(document.getElementById('editSsc').value) || 0,
+    hsc_gpa: parseFloat(document.getElementById('editHsc').value) || 0,
+  };
+  if (!body.name) { showToast('নাম দাও'); return; }
+  try {
+    const res = await Auth.api('/api/user/profile', { method:'PUT', body:JSON.stringify(body) });
+    if (res.ok) {
+      localStorage.setItem('user_name', body.name);
+      showToast('✅ প্রোফাইল সেভ হয়েছে');
+      toggleEdit();
+      loadProfile();
+    } else { showToast('❌ সেভ হয়নি'); }
+  } catch { showToast('❌ নেটওয়ার্ক সমস্যা'); }
+}
+
+async function startMistakePractice() {
+  showToast('ভুল প্রশ্ন লোড হচ্ছে...');
+  try {
+    const res = await Auth.api('/api/user/mistakes');
+    if (!res.ok) throw new Error();
+    const data = await res.json();
+    const qs = data.questions || [];
+    if (!qs.length) { showToast('দারুণ! কোনো ভুল নেই 🎉'); return; }
+    const q = new URLSearchParams({ pdf_name:'ভুল Practice', subject_name:'আমার ভুলগুলো' });
+    sessionStorage.setItem('practice_questions', JSON.stringify(qs));
+    window.location.href = `exam.html?${q}&practice=1`;
+  } catch { showToast('❌ লোড হয়নি'); }
+}
+
+document.addEventListener('DOMContentLoaded', loadProfile);
+</script>
+</body>
+</html>

@@ -1,0 +1,1150 @@
+<!DOCTYPE html>
+<html lang="bn" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>বিষয় ও অধ্যায় ব্যবস্থাপনা – AtlasPro Admin</title>
+<link rel="stylesheet" href="../css/style.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Bengali:wght@400;600;700;900&family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
+<style>
+/* ── Admin Layout ── */
+body { padding-bottom: 24px; }
+
+.admin-header {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  height: var(--header-h);
+  background: var(--bg2);
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center;
+  padding: 0 14px; gap: 10px;
+  z-index: 100;
+  backdrop-filter: blur(12px);
+}
+.admin-header-title {
+  flex: 1;
+  font-size: 15px; font-weight: 700;
+  color: var(--amber);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.back-btn {
+  display: flex; align-items: center; gap: 6px;
+  padding: 7px 12px;
+  border-radius: var(--radius-sm);
+  background: var(--card);
+  border: 1px solid var(--border);
+  font-size: 13px; font-weight: 600;
+  color: var(--text2);
+  cursor: pointer; transition: all 0.2s;
+  text-decoration: none;
+}
+.back-btn:hover { border-color: var(--primary); color: var(--primary); }
+
+/* ── Page Content ── */
+.page-content { padding: 16px 14px; }
+
+/* ── Panel Cards ── */
+.panel {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  margin-bottom: 12px;
+  overflow: hidden;
+}
+.panel-header {
+  display: flex; align-items: center;
+  padding: 14px 16px; gap: 10px;
+  cursor: pointer;
+  transition: background 0.2s;
+  user-select: none;
+}
+.panel-header:hover { background: var(--card-hover); }
+.panel-icon { font-size: 20px; flex-shrink: 0; }
+.panel-title { flex: 1; font-size: 14px; font-weight: 700; }
+.panel-meta { font-size: 11px; color: var(--text3); }
+.panel-chevron {
+  font-size: 12px; color: var(--text3);
+  transition: transform 0.25s;
+}
+.panel.open .panel-chevron { transform: rotate(90deg); }
+.panel-body {
+  display: none;
+  border-top: 1px solid var(--border);
+  padding: 14px;
+}
+.panel.open .panel-body { display: block; }
+
+/* ── Sub-panel (nested) ── */
+.sub-panel {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  margin-bottom: 10px;
+  overflow: hidden;
+}
+.sub-panel-header {
+  display: flex; align-items: center;
+  padding: 12px 14px; gap: 8px;
+  cursor: pointer; transition: background 0.2s;
+}
+.sub-panel-header:hover { background: var(--card); }
+.sub-panel-title { flex: 1; font-size: 13px; font-weight: 600; }
+.sub-panel-meta { font-size: 10px; color: var(--text3); }
+.sub-panel-chevron { font-size: 10px; color: var(--text3); transition: transform 0.25s; }
+.sub-panel.open .sub-panel-chevron { transform: rotate(90deg); }
+.sub-panel-body {
+  display: none;
+  border-top: 1px solid var(--border);
+  padding: 12px;
+}
+.sub-panel.open .sub-panel-body { display: block; }
+
+/* ── List items ── */
+.list-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 11px 12px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--card);
+  margin-bottom: 8px;
+  transition: border-color 0.2s;
+}
+.list-item:hover { border-color: rgba(108,99,255,0.3); }
+.list-item-icon { font-size: 18px; flex-shrink: 0; }
+.list-item-info { flex: 1; min-width: 0; }
+.list-item-name { font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.list-item-meta { font-size: 10px; color: var(--text3); margin-top: 2px; }
+.list-item-actions { display: flex; gap: 6px; flex-shrink: 0; }
+
+/* ── PDF list items ── */
+.pdf-item {
+  background: var(--bg);
+  border-color: var(--border);
+}
+.pdf-item-name { font-size: 12px; }
+
+/* ── Action buttons ── */
+.act-btn {
+  width: 30px; height: 30px;
+  border-radius: 6px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px; cursor: pointer;
+  border: 1px solid var(--border);
+  background: var(--bg2);
+  transition: all 0.2s;
+}
+.act-btn:hover { transform: scale(1.1); }
+.act-edit:hover { border-color: var(--primary); background: var(--primary-light); }
+.act-delete:hover { border-color: var(--red); background: rgba(239,68,68,0.1); }
+.act-ocr { border-color: rgba(16,185,129,0.4); }
+.act-ocr:hover { border-color: var(--green); background: rgba(16,185,129,0.1); }
+
+/* ── Add buttons ── */
+.add-btn {
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  width: 100%; padding: 10px;
+  border-radius: var(--radius-sm);
+  border: 1.5px dashed var(--border);
+  background: transparent;
+  color: var(--text3);
+  font-size: 13px; font-weight: 600;
+  cursor: pointer; transition: all 0.2s;
+  font-family: inherit;
+  margin-top: 8px;
+}
+.add-btn:hover { border-color: var(--primary); color: var(--primary); background: var(--primary-light); }
+
+/* ── Badges ── */
+.badge {
+  display: inline-flex; align-items: center;
+  padding: 2px 8px; border-radius: 20px;
+  font-size: 10px; font-weight: 700;
+}
+.badge-premium { background: rgba(245,158,11,0.15); color: var(--amber); border: 1px solid rgba(245,158,11,0.3); }
+.badge-free { background: rgba(99,179,237,0.12); color: #63B3ED; border: 1px solid rgba(99,179,237,0.25); }
+.badge-order { background: var(--primary-light); color: var(--accent); border: 1px solid rgba(108,99,255,0.3); }
+
+/* ── Skeleton ── */
+.skeleton {
+  background: linear-gradient(90deg, var(--card) 25%, var(--card-hover) 50%, var(--card) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.4s infinite;
+  border-radius: var(--radius-sm);
+}
+@keyframes shimmer { to { background-position: -200% 0; } }
+.skel-row { height: 52px; margin-bottom: 8px; }
+
+/* ── Modal ── */
+.modal-overlay {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.7);
+  z-index: 500;
+  display: flex; align-items: flex-end; justify-content: center;
+  opacity: 0; pointer-events: none;
+  transition: opacity 0.25s;
+}
+.modal-overlay.open { opacity: 1; pointer-events: all; }
+.modal-sheet {
+  width: 100%; max-width: 480px;
+  background: var(--bg2);
+  border-radius: 20px 20px 0 0;
+  border: 1px solid var(--border);
+  border-bottom: none;
+  padding: 20px 20px 32px;
+  transform: translateY(40px);
+  transition: transform 0.3s cubic-bezier(.4,0,.2,1);
+  max-height: 90vh; overflow-y: auto;
+}
+.modal-overlay.open .modal-sheet { transform: translateY(0); }
+.modal-title {
+  font-size: 16px; font-weight: 700;
+  margin-bottom: 16px;
+  display: flex; align-items: center; gap: 8px;
+}
+.modal-close {
+  margin-left: auto;
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  background: var(--card);
+  border: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; cursor: pointer; color: var(--text2);
+}
+.modal-close:hover { border-color: var(--red); color: var(--red); }
+
+/* ── Form fields ── */
+.form-group { margin-bottom: 14px; }
+.form-label {
+  display: block;
+  font-size: 12px; font-weight: 700;
+  color: var(--text2);
+  margin-bottom: 6px;
+  text-transform: uppercase; letter-spacing: 0.5px;
+}
+.form-input, .form-select, .form-textarea {
+  width: 100%;
+  background: var(--card);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  font-size: 14px;
+  padding: 10px 12px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+.form-input:focus, .form-select:focus, .form-textarea:focus {
+  border-color: var(--primary);
+}
+.form-textarea { resize: vertical; min-height: 80px; }
+.form-select option { background: var(--bg2); }
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+/* ── Toggle switch ── */
+.toggle-row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 0;
+}
+.toggle-label { font-size: 13px; color: var(--text2); }
+.toggle {
+  position: relative; width: 44px; height: 24px;
+  flex-shrink: 0;
+}
+.toggle input { opacity: 0; width: 0; height: 0; }
+.toggle-slider {
+  position: absolute; inset: 0;
+  background: var(--border);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: 0.2s;
+}
+.toggle-slider::before {
+  content: '';
+  position: absolute;
+  left: 3px; top: 3px;
+  width: 18px; height: 18px;
+  background: white;
+  border-radius: 50%;
+  transition: 0.2s;
+}
+.toggle input:checked + .toggle-slider { background: var(--primary); }
+.toggle input:checked + .toggle-slider::before { transform: translateX(20px); }
+
+/* ── File upload ── */
+.file-drop {
+  border: 2px dashed var(--border);
+  border-radius: var(--radius-sm);
+  padding: 20px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  position: relative;
+}
+.file-drop:hover, .file-drop.dragover { border-color: var(--primary); background: var(--primary-light); }
+.file-drop input[type=file] {
+  position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%;
+}
+.file-drop-icon { font-size: 28px; margin-bottom: 6px; }
+.file-drop-text { font-size: 12px; color: var(--text3); }
+.file-name {
+  margin-top: 8px; font-size: 12px;
+  color: var(--green); font-weight: 600;
+  word-break: break-all;
+}
+
+/* ── Modal actions ── */
+.modal-actions { display: flex; gap: 10px; margin-top: 20px; }
+.modal-actions .btn { flex: 1; }
+.btn-danger { background: rgba(239,68,68,0.12); color: var(--red); border: 1.5px solid rgba(239,68,68,0.3); }
+.btn-danger:hover { background: rgba(239,68,68,0.2); }
+.btn-sm { padding: 8px 16px; font-size: 12px; }
+.btn-green { background: var(--green); color: white; }
+.btn-green:hover { background: #0EA271; }
+
+/* ── Confirm dialog ── */
+.confirm-overlay {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.7);
+  z-index: 600;
+  display: flex; align-items: center; justify-content: center;
+  padding: 20px;
+  opacity: 0; pointer-events: none;
+  transition: opacity 0.2s;
+}
+.confirm-overlay.open { opacity: 1; pointer-events: all; }
+.confirm-box {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px;
+  max-width: 320px; width: 100%;
+  transform: scale(0.95);
+  transition: transform 0.2s;
+  text-align: center;
+}
+.confirm-overlay.open .confirm-box { transform: scale(1); }
+.confirm-icon { font-size: 36px; margin-bottom: 12px; }
+.confirm-title { font-size: 15px; font-weight: 700; margin-bottom: 6px; }
+.confirm-text { font-size: 12px; color: var(--text2); margin-bottom: 20px; line-height: 1.5; }
+.confirm-actions { display: flex; gap: 10px; }
+.confirm-actions .btn { flex: 1; }
+
+/* ── Toast (admin version - no bottom nav offset) ── */
+.toast { bottom: 24px !important; }
+
+/* ── Color picker row ── */
+.color-row {
+  display: flex; gap: 8px; flex-wrap: wrap; margin-top: 6px;
+}
+.color-swatch {
+  width: 28px; height: 28px; border-radius: 50%;
+  cursor: pointer;
+  border: 2px solid transparent;
+  transition: all 0.15s;
+  flex-shrink: 0;
+}
+.color-swatch.selected { border-color: white; transform: scale(1.15); box-shadow: 0 0 0 2px var(--primary); }
+.color-custom { width: 28px; height: 28px; border-radius: 50%; cursor: pointer; border: 2px solid var(--border); padding: 0; }
+
+/* ── OCR status ── */
+.ocr-status {
+  font-size: 10px; padding: 2px 8px;
+  border-radius: 20px;
+}
+.ocr-pending { background: rgba(245,158,11,0.12); color: var(--amber); border: 1px solid rgba(245,158,11,0.3); }
+.ocr-done { background: rgba(16,185,129,0.12); color: var(--green); border: 1px solid rgba(16,185,129,0.3); }
+
+/* ── Section add button ── */
+.section-add-btn {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 12px;
+}
+.section-add-label { font-size: 11px; font-weight: 700; color: var(--text3); text-transform: uppercase; letter-spacing: 1px; }
+
+/* ── URL / Upload tabs ── */
+.tab-row { display: flex; gap: 0; border: 1px solid var(--border); border-radius: var(--radius-sm); overflow: hidden; margin-bottom: 12px; }
+.tab-btn-sm {
+  flex: 1; padding: 8px; text-align: center;
+  font-size: 12px; font-weight: 600; cursor: pointer;
+  background: var(--card); color: var(--text3);
+  border: none; font-family: inherit;
+  transition: all 0.2s;
+}
+.tab-btn-sm.active { background: var(--primary); color: white; }
+</style>
+</head>
+<body>
+
+<!-- ══ ADMIN HEADER ══ -->
+<header class="admin-header">
+  <a class="back-btn" href="index.html">← ফিরে যাও</a>
+  <div class="admin-header-title">📚 বিষয় ও অধ্যায় ব্যবস্থাপনা</div>
+  <button class="icon-btn" id="themeToggle" onclick="Theme.toggle()" title="Theme">☀️</button>
+</header>
+
+<!-- ══ MAIN ══ -->
+<main class="page-content">
+
+  <!-- Subject Section Header -->
+  <div class="section-add-btn">
+    <span class="section-add-label">বিষয়সমূহ</span>
+    <button class="btn btn-primary btn-sm" onclick="openSubjectModal()">+ নতুন বিষয়</button>
+  </div>
+
+  <!-- Subject List -->
+  <div id="subjectList">
+    <div class="skeleton skel-row"></div>
+    <div class="skeleton skel-row"></div>
+    <div class="skeleton skel-row"></div>
+  </div>
+
+</main>
+
+<!-- ══ SUBJECT MODAL ══ -->
+<div class="modal-overlay" id="subjectModal">
+  <div class="modal-sheet">
+    <div class="modal-title">
+      <span id="subjectModalTitle">📚 নতুন বিষয়</span>
+      <button class="modal-close" onclick="closeModal('subjectModal')">✕</button>
+    </div>
+    <form id="subjectForm" onsubmit="saveSubject(event)">
+      <input type="hidden" id="subjectId">
+      <div class="form-group">
+        <label class="form-label">বিষয়ের নাম *</label>
+        <input class="form-input" id="subjectName" placeholder="যেমন: বাংলা, ইংরেজি, গণিত" required>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">আইকন (Emoji)</label>
+          <input class="form-input" id="subjectIcon" placeholder="📚" maxlength="4">
+        </div>
+        <div class="form-group">
+          <label class="form-label">ক্রম নম্বর</label>
+          <input class="form-input" type="number" id="subjectOrder" placeholder="1" min="1">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">রং</label>
+        <div class="color-row" id="colorSwatches"></div>
+        <input type="color" id="subjectColorPicker" class="color-custom" style="margin-top:8px" value="#6C63FF">
+        <input type="hidden" id="subjectColor" value="#6C63FF">
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-outline" onclick="closeModal('subjectModal')">বাতিল</button>
+        <button type="submit" class="btn btn-primary" id="subjectSaveBtn">সংরক্ষণ করো</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ══ CHAPTER MODAL ══ -->
+<div class="modal-overlay" id="chapterModal">
+  <div class="modal-sheet">
+    <div class="modal-title">
+      <span id="chapterModalTitle">📖 নতুন অধ্যায়</span>
+      <button class="modal-close" onclick="closeModal('chapterModal')">✕</button>
+    </div>
+    <form id="chapterForm" onsubmit="saveChapter(event)">
+      <input type="hidden" id="chapterId">
+      <input type="hidden" id="chapterSubjectId">
+      <div class="form-group">
+        <label class="form-label">অধ্যায়ের নাম *</label>
+        <input class="form-input" id="chapterName" placeholder="অধ্যায়ের নাম" required>
+      </div>
+      <div class="form-group">
+        <label class="form-label">ক্রম নম্বর</label>
+        <input class="form-input" type="number" id="chapterOrder" placeholder="1" min="1">
+      </div>
+      <div class="toggle-row">
+        <span class="toggle-label">⭐ Premium অধ্যায়</span>
+        <label class="toggle">
+          <input type="checkbox" id="chapterPremium">
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-outline" onclick="closeModal('chapterModal')">বাতিল</button>
+        <button type="submit" class="btn btn-primary" id="chapterSaveBtn">সংরক্ষণ করো</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ══ PDF MODAL ══ -->
+<div class="modal-overlay" id="pdfModal">
+  <div class="modal-sheet">
+    <div class="modal-title">
+      <span id="pdfModalTitle">📄 PDF যোগ করুন</span>
+      <button class="modal-close" onclick="closeModal('pdfModal')">✕</button>
+    </div>
+    <form id="pdfForm" onsubmit="savePdf(event)">
+      <input type="hidden" id="pdfId">
+      <input type="hidden" id="pdfChapterId">
+      <div class="form-group">
+        <label class="form-label">PDF শিরোনাম *</label>
+        <input class="form-input" id="pdfTitle" placeholder="PDF এর নাম" required>
+      </div>
+
+      <!-- Upload or URL tabs -->
+      <div class="form-group">
+        <label class="form-label">PDF যোগ করার পদ্ধতি</label>
+        <div class="tab-row">
+          <button type="button" class="tab-btn-sm active" id="tabUpload" onclick="switchPdfTab('upload')">📁 ফাইল আপলোড</button>
+          <button type="button" class="tab-btn-sm" id="tabUrl" onclick="switchPdfTab('url')">🔗 URL দিয়ে</button>
+        </div>
+
+        <!-- Upload panel -->
+        <div id="pdfUploadPanel">
+          <div class="file-drop" id="fileDrop" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event)">
+            <input type="file" id="pdfFileInput" accept=".pdf" onchange="handleFileSelect(event)">
+            <div class="file-drop-icon">📄</div>
+            <div class="file-drop-text">PDF ফাইল এখানে ড্র্যাগ করো বা ক্লিক করো</div>
+          </div>
+          <div class="file-name" id="selectedFileName" style="display:none"></div>
+        </div>
+
+        <!-- URL panel -->
+        <div id="pdfUrlPanel" style="display:none">
+          <input class="form-input" id="pdfUrl" placeholder="https://example.com/file.pdf" type="url">
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">পৃষ্ঠা সংখ্যা</label>
+          <input class="form-input" type="number" id="pdfPageCount" placeholder="স্বয়ংক্রিয়" min="1">
+        </div>
+        <div class="form-group" style="display:flex;align-items:flex-end">
+          <div class="toggle-row" style="padding:0;width:100%">
+            <span class="toggle-label" style="font-size:12px">⭐ Premium</span>
+            <label class="toggle">
+              <input type="checkbox" id="pdfPremium">
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <!-- Upload progress -->
+      <div id="uploadProgress" style="display:none;margin-bottom:12px">
+        <div style="font-size:12px;color:var(--text2);margin-bottom:6px">আপলোড হচ্ছে...</div>
+        <div style="background:var(--border);border-radius:4px;height:6px;overflow:hidden">
+          <div id="uploadBar" style="background:var(--primary);height:100%;width:0%;transition:width 0.3s;border-radius:4px"></div>
+        </div>
+      </div>
+
+      <div class="modal-actions">
+        <button type="button" class="btn btn-outline" onclick="closeModal('pdfModal')">বাতিল</button>
+        <button type="submit" class="btn btn-primary" id="pdfSaveBtn">সংরক্ষণ করো</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ══ CONFIRM DIALOG ══ -->
+<div class="confirm-overlay" id="confirmOverlay">
+  <div class="confirm-box">
+    <div class="confirm-icon" id="confirmIcon">🗑️</div>
+    <div class="confirm-title" id="confirmTitle">মুছে ফেলবে?</div>
+    <div class="confirm-text" id="confirmText">এই কাজটি পূর্বাবস্থায় ফেরানো যাবে না।</div>
+    <div class="confirm-actions">
+      <button class="btn btn-outline" onclick="closeConfirm()">বাতিল</button>
+      <button class="btn btn-danger" id="confirmOkBtn">মুছে ফেলো</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ TOAST ══ -->
+<div class="toast" id="toast"></div>
+
+<script src="../js/config.js"></script>
+<script src="../js/auth.js"></script>
+<script src="../js/theme.js"></script>
+<script>
+// ── Guard ──
+if (!Auth.isAdmin()) window.location.href = '../index.html';
+
+// ── XSS ──
+function escHtml(s) {
+  if (s == null) return '';
+  return String(s)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+// ── Toast ──
+function showToast(msg, type = 'info', duration = 3000) {
+  const t = document.getElementById('toast');
+  const colors = { success: 'var(--green)', error: 'var(--red)', info: 'var(--primary)' };
+  t.textContent = msg;
+  t.style.borderColor = colors[type] || colors.info;
+  t.classList.add('show');
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => t.classList.remove('show'), duration);
+}
+
+// ── Colors ──
+const COLORS = ['#6C63FF','#10B981','#EF4444','#F59E0B','#3A86FF','#F472B6','#8B5CF6','#EC4899','#00D4AA','#FF6B6B'];
+let selectedColor = '#6C63FF';
+
+function initColorSwatches() {
+  const row = document.getElementById('colorSwatches');
+  row.innerHTML = COLORS.map(c => `
+    <div class="color-swatch ${c === selectedColor ? 'selected' : ''}"
+      style="background:${c}" data-color="${c}"
+      onclick="selectColor('${c}')"></div>
+  `).join('');
+  document.getElementById('subjectColorPicker').addEventListener('input', function() {
+    selectColor(this.value, false);
+  });
+}
+
+function selectColor(c, updatePicker = true) {
+  selectedColor = c;
+  document.getElementById('subjectColor').value = c;
+  if (updatePicker) document.getElementById('subjectColorPicker').value = c;
+  document.querySelectorAll('.color-swatch').forEach(s => {
+    s.classList.toggle('selected', s.dataset.color === c);
+  });
+}
+
+// ── Modal helpers ──
+function openModal(id) {
+  document.getElementById(id).classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+function closeModal(id) {
+  document.getElementById(id).classList.remove('open');
+  document.body.style.overflow = '';
+  const form = document.querySelector(`#${id} form`);
+  if (form) form.reset();
+  selectedFile = null;
+  document.getElementById('selectedFileName') && (document.getElementById('selectedFileName').style.display = 'none');
+  document.getElementById('uploadProgress') && (document.getElementById('uploadProgress').style.display = 'none');
+}
+
+// ── Confirm dialog ──
+let confirmCallback = null;
+function showConfirm(title, text, icon, cb) {
+  document.getElementById('confirmTitle').textContent = title;
+  document.getElementById('confirmText').textContent = text;
+  document.getElementById('confirmIcon').textContent = icon || '🗑️';
+  confirmCallback = cb;
+  document.getElementById('confirmOverlay').classList.add('open');
+}
+function closeConfirm() {
+  document.getElementById('confirmOverlay').classList.remove('open');
+  confirmCallback = null;
+}
+document.getElementById('confirmOkBtn').onclick = () => {
+  if (confirmCallback) confirmCallback();
+  closeConfirm();
+};
+
+// ══════════════════════════════════════════
+// SUBJECTS
+// ══════════════════════════════════════════
+let subjects = [];
+
+async function loadSubjects() {
+  const list = document.getElementById('subjectList');
+  list.innerHTML = [1,2,3].map(() => '<div class="skeleton skel-row"></div>').join('');
+  try {
+    const res = await Auth.api('/api/admin/subjects');
+    if (!res.ok) throw new Error('Failed');
+    const data = await res.json();
+    subjects = data.subjects || [];
+    renderSubjects();
+  } catch (e) {
+    list.innerHTML = `<div class="empty"><div class="empty-icon">⚠️</div><div class="empty-title">লোড ব্যর্থ</div><button class="btn btn-outline mt-12" onclick="loadSubjects()">পুনরায় চেষ্টা</button></div>`;
+  }
+}
+
+function renderSubjects() {
+  const list = document.getElementById('subjectList');
+  if (!subjects.length) {
+    list.innerHTML = `<div class="empty"><div class="empty-icon">📚</div><div class="empty-title">কোনো বিষয় নেই</div><div class="empty-text">নতুন বিষয় যোগ করুন</div></div>`;
+    return;
+  }
+  list.innerHTML = subjects.map(s => `
+    <div class="panel" id="subject-${s.id}">
+      <div class="panel-header" onclick="togglePanel('subject-${s.id}')">
+        <div class="list-item-icon">${escHtml(s.icon) || '📚'}</div>
+        <div class="panel-title">${escHtml(s.name)}</div>
+        <span class="badge badge-order">#${s.display_order || 1}</span>
+        <div class="list-item-actions" onclick="event.stopPropagation()">
+          <button class="act-btn act-edit" title="সম্পাদনা" onclick="editSubject(${s.id})">✏️</button>
+          <button class="act-btn act-delete" title="মুছে ফেলো" onclick="deleteSubject(${s.id}, '${escHtml(s.name)}')">🗑️</button>
+        </div>
+        <span class="panel-chevron">▶</span>
+      </div>
+      <div class="panel-body" id="subject-body-${s.id}">
+        <div id="chapter-section-${s.id}">
+          <div class="section-add-btn">
+            <span class="section-add-label">অধ্যায়সমূহ</span>
+            <button class="btn btn-primary btn-sm" onclick="openChapterModal(${s.id})">+ অধ্যায়</button>
+          </div>
+          <div id="chapter-list-${s.id}">
+            <div class="skeleton skel-row"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function togglePanel(panelId) {
+  const panel = document.getElementById(panelId);
+  const wasOpen = panel.classList.contains('open');
+  panel.classList.toggle('open');
+  if (!wasOpen) {
+    // extract subject id
+    const sid = panelId.replace('subject-', '');
+    loadChapters(parseInt(sid));
+  }
+}
+
+function openSubjectModal(subjectData = null) {
+  initColorSwatches();
+  document.getElementById('subjectModalTitle').textContent = subjectData ? '✏️ বিষয় সম্পাদনা' : '📚 নতুন বিষয়';
+  document.getElementById('subjectId').value = subjectData ? subjectData.id : '';
+  document.getElementById('subjectName').value = subjectData ? subjectData.name : '';
+  document.getElementById('subjectIcon').value = subjectData ? (subjectData.icon || '') : '';
+  document.getElementById('subjectOrder').value = subjectData ? (subjectData.display_order || '') : '';
+  if (subjectData && subjectData.color) {
+    selectColor(subjectData.color);
+  } else {
+    selectColor('#6C63FF');
+  }
+  openModal('subjectModal');
+  setTimeout(() => document.getElementById('subjectName').focus(), 300);
+}
+
+function editSubject(id) {
+  const s = subjects.find(x => x.id === id);
+  if (s) openSubjectModal(s);
+}
+
+async function saveSubject(e) {
+  e.preventDefault();
+  const id = document.getElementById('subjectId').value;
+  const body = {
+    name: document.getElementById('subjectName').value.trim(),
+    icon: document.getElementById('subjectIcon').value.trim() || '📚',
+    color: document.getElementById('subjectColor').value,
+    display_order: parseInt(document.getElementById('subjectOrder').value) || 1,
+  };
+  if (!body.name) return showToast('নাম লিখুন', 'error');
+
+  const btn = document.getElementById('subjectSaveBtn');
+  btn.disabled = true; btn.textContent = 'সংরক্ষণ হচ্ছে...';
+
+  try {
+    const res = id
+      ? await Auth.api(`/api/admin/subjects/${id}`, { method: 'PUT', body: JSON.stringify(body) })
+      : await Auth.api('/api/admin/subjects', { method: 'POST', body: JSON.stringify(body) });
+    if (!res.ok) throw new Error((await res.json()).error || 'ব্যর্থ');
+    showToast(id ? 'বিষয় আপডেট হয়েছে ✓' : 'বিষয় যোগ হয়েছে ✓', 'success');
+    closeModal('subjectModal');
+    loadSubjects();
+  } catch (err) {
+    showToast('ত্রুটি: ' + err.message, 'error');
+  } finally {
+    btn.disabled = false; btn.textContent = 'সংরক্ষণ করো';
+  }
+}
+
+function deleteSubject(id, name) {
+  showConfirm(
+    `"${name}" মুছে ফেলবে?`,
+    'এই বিষয়ের সব অধ্যায় ও PDF মুছে যাবে। এটি পূর্বাবস্থায় ফেরানো যাবে না।',
+    '🗑️',
+    async () => {
+      try {
+        const res = await Auth.api(`/api/admin/subjects/${id}`, { method: 'DELETE' });
+        if (!res.ok) throw new Error('ব্যর্থ');
+        showToast('বিষয় মুছে গেছে', 'success');
+        loadSubjects();
+      } catch (err) {
+        showToast('মুছতে ব্যর্থ', 'error');
+      }
+    }
+  );
+}
+
+// ══════════════════════════════════════════
+// CHAPTERS
+// ══════════════════════════════════════════
+const chaptersCache = {};
+
+async function loadChapters(subjectId) {
+  const listEl = document.getElementById(`chapter-list-${subjectId}`);
+  if (!listEl) return;
+  listEl.innerHTML = '<div class="skeleton skel-row"></div>';
+  try {
+    const res = await Auth.api(`/api/admin/chapters?subject_id=${subjectId}`);
+    if (!res.ok) throw new Error('Failed');
+    const data = await res.json();
+    const chapters = data.chapters || [];
+    chaptersCache[subjectId] = chapters;
+    renderChapters(subjectId, chapters);
+  } catch (e) {
+    listEl.innerHTML = `<div class="empty"><div class="empty-icon">⚠️</div><div class="empty-title">লোড ব্যর্থ</div><button class="btn btn-outline btn-sm mt-12" onclick="loadChapters(${subjectId})">Retry</button></div>`;
+  }
+}
+
+function renderChapters(subjectId, chapters) {
+  const listEl = document.getElementById(`chapter-list-${subjectId}`);
+  if (!listEl) return;
+  if (!chapters.length) {
+    listEl.innerHTML = `<div class="empty"><div class="empty-icon">📖</div><div class="empty-title">কোনো অধ্যায় নেই</div></div>`;
+    return;
+  }
+  listEl.innerHTML = chapters.map(ch => `
+    <div class="sub-panel" id="chapter-${ch.id}">
+      <div class="sub-panel-header" onclick="toggleSubPanel('chapter-${ch.id}', ${ch.id})">
+        <span class="sub-panel-title">
+          ${ch.is_premium ? '<span class="badge badge-premium" style="margin-right:4px">⭐</span>' : ''}
+          ${escHtml(ch.name)}
+        </span>
+        <span class="sub-panel-meta">#${ch.display_order || 1}</span>
+        <div class="list-item-actions" style="margin-left:6px" onclick="event.stopPropagation()">
+          <button class="act-btn act-edit" title="সম্পাদনা" onclick="editChapter(${ch.id}, ${subjectId})">✏️</button>
+          <button class="act-btn act-delete" title="মুছো" onclick="deleteChapter(${ch.id}, '${escHtml(ch.name)}', ${subjectId})">🗑️</button>
+        </div>
+        <span class="sub-panel-chevron">▶</span>
+      </div>
+      <div class="sub-panel-body" id="chapter-body-${ch.id}">
+        <div id="pdf-section-${ch.id}">
+          <div class="section-add-btn">
+            <span class="section-add-label">PDF সমূহ</span>
+            <button class="btn btn-primary btn-sm" onclick="openPdfModal(${ch.id})">+ PDF</button>
+          </div>
+          <div id="pdf-list-${ch.id}">
+            <div class="skeleton skel-row" style="height:40px"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function toggleSubPanel(panelId, chapterId) {
+  const panel = document.getElementById(panelId);
+  const wasOpen = panel.classList.contains('open');
+  panel.classList.toggle('open');
+  if (!wasOpen) loadPdfs(chapterId);
+}
+
+function openChapterModal(subjectId, chapterData = null) {
+  document.getElementById('chapterModalTitle').textContent = chapterData ? '✏️ অধ্যায় সম্পাদনা' : '📖 নতুন অধ্যায়';
+  document.getElementById('chapterId').value = chapterData ? chapterData.id : '';
+  document.getElementById('chapterSubjectId').value = subjectId;
+  document.getElementById('chapterName').value = chapterData ? chapterData.name : '';
+  document.getElementById('chapterOrder').value = chapterData ? (chapterData.display_order || '') : '';
+  document.getElementById('chapterPremium').checked = chapterData ? !!chapterData.is_premium : false;
+  openModal('chapterModal');
+  setTimeout(() => document.getElementById('chapterName').focus(), 300);
+}
+
+function editChapter(chapterId, subjectId) {
+  const chapters = chaptersCache[subjectId] || [];
+  const ch = chapters.find(x => x.id === chapterId);
+  if (ch) openChapterModal(subjectId, ch);
+}
+
+async function saveChapter(e) {
+  e.preventDefault();
+  const id = document.getElementById('chapterId').value;
+  const subjectId = document.getElementById('chapterSubjectId').value;
+  const body = {
+    subject_id: parseInt(subjectId),
+    name: document.getElementById('chapterName').value.trim(),
+    display_order: parseInt(document.getElementById('chapterOrder').value) || 1,
+    is_premium: document.getElementById('chapterPremium').checked,
+  };
+  if (!body.name) return showToast('নাম লিখুন', 'error');
+
+  const btn = document.getElementById('chapterSaveBtn');
+  btn.disabled = true; btn.textContent = 'সংরক্ষণ হচ্ছে...';
+  try {
+    const res = id
+      ? await Auth.api(`/api/admin/chapters/${id}`, { method: 'PUT', body: JSON.stringify(body) })
+      : await Auth.api('/api/admin/chapters', { method: 'POST', body: JSON.stringify(body) });
+    if (!res.ok) throw new Error((await res.json()).error || 'ব্যর্থ');
+    showToast(id ? 'অধ্যায় আপডেট ✓' : 'অধ্যায় যোগ ✓', 'success');
+    closeModal('chapterModal');
+    loadChapters(parseInt(subjectId));
+  } catch (err) {
+    showToast('ত্রুটি: ' + err.message, 'error');
+  } finally {
+    btn.disabled = false; btn.textContent = 'সংরক্ষণ করো';
+  }
+}
+
+function deleteChapter(id, name, subjectId) {
+  showConfirm(
+    `"${name}" মুছবে?`,
+    'এই অধ্যায়ের সব PDF মুছে যাবে।',
+    '🗑️',
+    async () => {
+      try {
+        const res = await Auth.api(`/api/admin/chapters/${id}`, { method: 'DELETE' });
+        if (!res.ok) throw new Error('ব্যর্থ');
+        showToast('অধ্যায় মুছে গেছে', 'success');
+        loadChapters(subjectId);
+      } catch {
+        showToast('মুছতে ব্যর্থ', 'error');
+      }
+    }
+  );
+}
+
+// ══════════════════════════════════════════
+// PDFs
+// ══════════════════════════════════════════
+const pdfsCache = {};
+let selectedFile = null;
+let pdfTabMode = 'upload';
+
+async function loadPdfs(chapterId) {
+  const listEl = document.getElementById(`pdf-list-${chapterId}`);
+  if (!listEl) return;
+  listEl.innerHTML = '<div class="skeleton skel-row" style="height:40px"></div>';
+  try {
+    const res = await Auth.api(`/api/admin/pdfs?chapter_id=${chapterId}`);
+    if (!res.ok) throw new Error('Failed');
+    const data = await res.json();
+    const pdfs = data.pdfs || [];
+    pdfsCache[chapterId] = pdfs;
+    renderPdfs(chapterId, pdfs);
+  } catch {
+    listEl.innerHTML = `<div class="empty"><div class="empty-icon">⚠️</div><div class="empty-title">লোড ব্যর্থ</div><button class="btn btn-outline btn-sm mt-12" onclick="loadPdfs(${chapterId})">Retry</button></div>`;
+  }
+}
+
+function renderPdfs(chapterId, pdfs) {
+  const listEl = document.getElementById(`pdf-list-${chapterId}`);
+  if (!listEl) return;
+  if (!pdfs.length) {
+    listEl.innerHTML = `<div style="text-align:center;padding:16px;color:var(--text3);font-size:12px">কোনো PDF নেই</div>`;
+    return;
+  }
+  listEl.innerHTML = pdfs.map(p => `
+    <div class="list-item pdf-item" style="flex-direction:column;align-items:stretch;padding:10px 12px">
+      <div style="display:flex;align-items:center;gap:8px">
+        <span style="font-size:16px">📄</span>
+        <div class="list-item-info">
+          <div class="list-item-name pdf-item-name">${escHtml(p.title)}</div>
+          <div class="list-item-meta">
+            ${p.page_count ? `${p.page_count} পৃষ্ঠা ·` : ''}
+            ${p.is_premium ? '<span class="badge badge-premium">⭐ Premium</span>' : '<span class="badge badge-free">Free</span>'}
+          </div>
+        </div>
+        <div class="list-item-actions">
+          <button class="act-btn act-ocr" title="OCR দিয়ে MCQ" onclick="triggerOcr(${p.id}, '${escHtml(p.title)}')">📷</button>
+          <button class="act-btn act-edit" title="সম্পাদনা" onclick="editPdf(${p.id}, ${chapterId})">✏️</button>
+          <button class="act-btn act-delete" title="মুছো" onclick="deletePdf(${p.id}, '${escHtml(p.title)}', ${chapterId})">🗑️</button>
+        </div>
+      </div>
+      ${p.ocr_status === 'processing' ? '<div style="margin-top:6px"><span class="ocr-status ocr-pending">⏳ OCR চলছে...</span></div>' : ''}
+      ${p.ocr_status === 'done' ? '<div style="margin-top:6px"><span class="ocr-status ocr-done">✓ OCR সম্পন্ন</span></div>' : ''}
+    </div>
+  `).join('');
+}
+
+function switchPdfTab(tab) {
+  pdfTabMode = tab;
+  document.getElementById('tabUpload').classList.toggle('active', tab === 'upload');
+  document.getElementById('tabUrl').classList.toggle('active', tab === 'url');
+  document.getElementById('pdfUploadPanel').style.display = tab === 'upload' ? 'block' : 'none';
+  document.getElementById('pdfUrlPanel').style.display = tab === 'url' ? 'block' : 'none';
+}
+
+function handleDragOver(e) {
+  e.preventDefault();
+  document.getElementById('fileDrop').classList.add('dragover');
+}
+function handleDragLeave() {
+  document.getElementById('fileDrop').classList.remove('dragover');
+}
+function handleDrop(e) {
+  e.preventDefault();
+  document.getElementById('fileDrop').classList.remove('dragover');
+  const file = e.dataTransfer.files[0];
+  if (file && file.type === 'application/pdf') {
+    selectedFile = file;
+    const fn = document.getElementById('selectedFileName');
+    fn.textContent = '✓ ' + file.name;
+    fn.style.display = 'block';
+  } else {
+    showToast('শুধু PDF ফাইল গ্রহণযোগ্য', 'error');
+  }
+}
+function handleFileSelect(e) {
+  const file = e.target.files[0];
+  if (file) {
+    selectedFile = file;
+    const fn = document.getElementById('selectedFileName');
+    fn.textContent = '✓ ' + file.name;
+    fn.style.display = 'block';
+  }
+}
+
+function openPdfModal(chapterId, pdfData = null) {
+  document.getElementById('pdfModalTitle').textContent = pdfData ? '✏️ PDF সম্পাদনা' : '📄 PDF যোগ করুন';
+  document.getElementById('pdfId').value = pdfData ? pdfData.id : '';
+  document.getElementById('pdfChapterId').value = chapterId;
+  document.getElementById('pdfTitle').value = pdfData ? pdfData.title : '';
+  document.getElementById('pdfPageCount').value = pdfData ? (pdfData.page_count || '') : '';
+  document.getElementById('pdfPremium').checked = pdfData ? !!pdfData.is_premium : false;
+  document.getElementById('pdfUrl').value = pdfData ? (pdfData.pdf_url || '') : '';
+  selectedFile = null;
+  document.getElementById('selectedFileName').style.display = 'none';
+  document.getElementById('uploadProgress').style.display = 'none';
+  switchPdfTab(pdfData && pdfData.pdf_url ? 'url' : 'upload');
+  openModal('pdfModal');
+  setTimeout(() => document.getElementById('pdfTitle').focus(), 300);
+}
+
+function editPdf(pdfId, chapterId) {
+  const pdfs = pdfsCache[chapterId] || [];
+  const p = pdfs.find(x => x.id === pdfId);
+  if (p) openPdfModal(chapterId, p);
+}
+
+async function savePdf(e) {
+  e.preventDefault();
+  const id = document.getElementById('pdfId').value;
+  const chapterId = document.getElementById('pdfChapterId').value;
+  const title = document.getElementById('pdfTitle').value.trim();
+  if (!title) return showToast('শিরোনাম লিখুন', 'error');
+
+  const btn = document.getElementById('pdfSaveBtn');
+  btn.disabled = true; btn.textContent = 'সংরক্ষণ হচ্ছে...';
+
+  try {
+    let pdfUrl = document.getElementById('pdfUrl').value.trim();
+
+    // Upload file if mode is upload and file selected
+    if (pdfTabMode === 'upload' && selectedFile) {
+      const progressWrap = document.getElementById('uploadProgress');
+      const bar = document.getElementById('uploadBar');
+      progressWrap.style.display = 'block';
+
+      // Use XMLHttpRequest for progress
+      pdfUrl = await new Promise((resolve, reject) => {
+        const formData = new FormData();
+        formData.append('file', selectedFile);
+        formData.append('chapter_id', chapterId);
+
+        const xhr = new XMLHttpRequest();
+        xhr.open('POST', CONFIG.workerUrl + '/api/admin/upload-pdf');
+        xhr.setRequestHeader('Authorization', `Bearer ${Auth.getToken()}`);
+        xhr.upload.onprogress = (ev) => {
+          if (ev.lengthComputable) {
+            bar.style.width = Math.round((ev.loaded / ev.total) * 100) + '%';
+          }
+        };
+        xhr.onload = () => {
+          try {
+            const d = JSON.parse(xhr.responseText);
+            if (xhr.status >= 200 && xhr.status < 300) resolve(d.url || d.pdf_url || '');
+            else reject(new Error(d.error || 'আপলোড ব্যর্থ'));
+          } catch { reject(new Error('আপলোড ব্যর্থ')); }
+        };
+        xhr.onerror = () => reject(new Error('নেটওয়ার্ক ত্রুটি'));
+        xhr.send(formData);
+      });
+    }
+
+    if (!pdfUrl && !id) return showToast('ফাইল বা URL দিন', 'error');
+
+    const body = {
+      chapter_id: parseInt(chapterId),
+      title,
+      pdf_url: pdfUrl,
+      page_count: parseInt(document.getElementById('pdfPageCount').value) || null,
+      is_premium: document.getElementById('pdfPremium').checked,
+    };
+
+    const res = id
+      ? await Auth.api(`/api/admin/pdfs/${id}`, { method: 'PUT', body: JSON.stringify(body) })
+      : await Auth.api('/api/admin/pdfs', { method: 'POST', body: JSON.stringify(body) });
+    if (!res.ok) throw new Error((await res.json()).error || 'ব্যর্থ');
+
+    showToast(id ? 'PDF আপডেট ✓' : 'PDF যোগ ✓', 'success');
+    closeModal('pdfModal');
+    loadPdfs(parseInt(chapterId));
+  } catch (err) {
+    showToast('ত্রুটি: ' + err.message, 'error');
+  } finally {
+    btn.disabled = false; btn.textContent = 'সংরক্ষণ করো';
+    document.getElementById('uploadProgress').style.display = 'none';
+  }
+}
+
+function deletePdf(id, title, chapterId) {
+  showConfirm(
+    `"${title}" মুছবে?`,
+    'এই PDF এর সব MCQ ও ডেটা মুছে যাবে।',
+    '🗑️',
+    async () => {
+      try {
+        const res = await Auth.api(`/api/admin/pdfs/${id}`, { method: 'DELETE' });
+        if (!res.ok) throw new Error('ব্যর্থ');
+        showToast('PDF মুছে গেছে', 'success');
+        loadPdfs(chapterId);
+      } catch {
+        showToast('মুছতে ব্যর্থ', 'error');
+      }
+    }
+  );
+}
+
+async function triggerOcr(pdfId, title) {
+  showConfirm(
+    `OCR চালাবে?`,
+    `"${title}" থেকে AI স্বয়ংক্রিয়ভাবে MCQ বানাবে। এটি কিছু সময় নেবে।`,
+    '📷',
+    async () => {
+      try {
+        const res = await Auth.api('/api/admin/pdf-ocr', {
+          method: 'POST',
+          body: JSON.stringify({ pdf_id: pdfId }),
+        });
+        if (!res.ok) throw new Error((await res.json()).error || 'ব্যর্থ');
+        showToast('OCR শুরু হয়েছে ✓', 'success');
+        // Refresh nearby pdf list
+        const allPdfs = Object.entries(pdfsCache);
+        for (const [cid, pdfs] of allPdfs) {
+          if (pdfs.some(p => p.id === pdfId)) {
+            setTimeout(() => loadPdfs(parseInt(cid)), 1000);
+            break;
+          }
+        }
+      } catch (err) {
+        showToast('OCR শুরু করতে ব্যর্থ: ' + err.message, 'error');
+      }
+    }
+  );
+}
+
+// Close modals on overlay click
+document.querySelectorAll('.modal-overlay').forEach(overlay => {
+  overlay.addEventListener('click', function(e) {
+    if (e.target === this) {
+      const id = this.id;
+      closeModal(id);
+    }
+  });
+});
+
+// ── Init ──
+loadSubjects();
+</script>
+</body>
+</html>

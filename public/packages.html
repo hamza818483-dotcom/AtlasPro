@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="bn" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>প্যাকেজ – AtlasPro</title>
+<link rel="stylesheet" href="css/style.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Bengali:wght@400;600;700;900&family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
+<style>
+/* ── Package-page extras ── */
+.page-hero {
+  padding: 20px 14px 8px;
+}
+.page-title {
+  font-size: 22px;
+  font-weight: 900;
+  color: var(--text);
+}
+.page-sub {
+  font-size: 13px;
+  color: var(--text2);
+  margin-top: 4px;
+  line-height: 1.5;
+}
+
+/* ── Current plan banner ── */
+.plan-banner {
+  margin: 12px 14px 0;
+  padding: 14px 16px;
+  border-radius: var(--radius);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 13px;
+  font-weight: 600;
+}
+.plan-banner-free {
+  background: rgba(99,179,237,0.1);
+  border: 1px solid rgba(99,179,237,0.25);
+  color: #63B3ED;
+}
+.plan-banner-premium {
+  background: rgba(245,158,11,0.1);
+  border: 1px solid rgba(245,158,11,0.3);
+  color: var(--amber);
+}
+.plan-banner-icon { font-size: 22px; flex-shrink: 0; }
+.plan-banner-text { flex: 1; }
+.plan-banner-main { font-weight: 700; }
+.plan-banner-note { font-size: 11px; margin-top: 2px; opacity: 0.8; }
+
+/* ── Plans grid ── */
+.plans-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  padding: 16px 14px 0;
+}
+@media (max-width: 380px) {
+  .plans-grid { grid-template-columns: 1fr; }
+}
+
+/* ── Plan card ── */
+.plan-card {
+  border-radius: var(--radius);
+  padding: 20px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  position: relative;
+  overflow: hidden;
+}
+.plan-card-free {
+  background: var(--card);
+  border: 1px solid var(--border);
+}
+.plan-card-premium {
+  background: linear-gradient(160deg, #1A1040 0%, #0D0920 100%);
+  border: 1.5px solid transparent;
+  background-clip: padding-box;
+  position: relative;
+}
+.plan-card-premium::before {
+  content: '';
+  position: absolute;
+  inset: -1.5px;
+  border-radius: calc(var(--radius) + 1px);
+  background: linear-gradient(135deg, #6C63FF, #F472B6, #6C63FF);
+  z-index: -1;
+  background-size: 200% 200%;
+  animation: gradShift 4s linear infinite;
+}
+[data-theme="light"] .plan-card-premium {
+  background: linear-gradient(160deg, #F5F3FF 0%, #EDE9FE 100%);
+  background-clip: padding-box;
+}
+
+.plan-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-bottom: 10px;
+  min-height: 22px;
+}
+.badge-popular {
+  background: linear-gradient(135deg, #6C63FF, #F472B6);
+  color: #fff;
+  font-size: 9px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 20px;
+  letter-spacing: 0.3px;
+}
+.badge-current {
+  background: rgba(16,185,129,0.15);
+  color: var(--green);
+  border: 1px solid rgba(16,185,129,0.3);
+  font-size: 9px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 20px;
+}
+
+.plan-name {
+  font-size: 15px;
+  font-weight: 900;
+  letter-spacing: 0.5px;
+  color: var(--text);
+}
+.plan-price {
+  font-size: 26px;
+  font-weight: 900;
+  margin: 6px 0 2px;
+  color: var(--text);
+  line-height: 1;
+}
+.plan-price-sub {
+  font-size: 10px;
+  color: var(--text3);
+  margin-bottom: 14px;
+}
+.plan-card-premium .plan-price { color: var(--accent); }
+
+.plan-divider {
+  height: 1px;
+  background: var(--border);
+  margin: 0 0 14px;
+}
+
+.feature-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex: 1;
+  margin-bottom: 18px;
+}
+.feature-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 7px;
+  font-size: 11.5px;
+  color: var(--text2);
+  line-height: 1.4;
+}
+.feature-icon { font-size: 13px; flex-shrink: 0; margin-top: 0.5px; }
+.feature-item.no { color: var(--text3); }
+
+.plan-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 11px 14px;
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  border: none;
+  font-family: inherit;
+  transition: all 0.2s;
+  text-decoration: none;
+  width: 100%;
+  text-align: center;
+}
+.plan-btn-free {
+  background: var(--card-hover);
+  border: 1px solid var(--border);
+  color: var(--text2);
+}
+.plan-btn-premium {
+  background: linear-gradient(135deg, #6C63FF, #9D6FF4);
+  color: #fff;
+  box-shadow: 0 4px 16px rgba(108,99,255,0.35);
+}
+.plan-btn-premium:hover {
+  background: linear-gradient(135deg, #5A52E0, #8A5FD8);
+  box-shadow: 0 6px 24px rgba(108,99,255,0.5);
+  transform: translateY(-1px);
+}
+.plan-btn-current {
+  background: rgba(16,185,129,0.12);
+  border: 1px solid rgba(16,185,129,0.3);
+  color: var(--green);
+  cursor: default;
+}
+
+/* ── Premium glow shimmer ── */
+@keyframes shimmer {
+  0%   { transform: translateX(-100%); }
+  100% { transform: translateX(200%); }
+}
+.plan-card-premium .shimmer {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: linear-gradient(105deg, transparent 40%, rgba(255,255,255,0.04) 50%, transparent 60%);
+  pointer-events: none;
+  animation: shimmer 3s infinite;
+}
+
+/* ── FAQ Accordion ── */
+.faq-section {
+  padding: 24px 14px 0;
+}
+.faq-title {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: var(--text3);
+  text-transform: uppercase;
+  margin-bottom: 12px;
+}
+.faq-item {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  margin-bottom: 8px;
+  overflow: hidden;
+  transition: border-color 0.2s;
+}
+.faq-item.open { border-color: var(--primary); }
+.faq-q {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px;
+  font-size: 13.5px;
+  font-weight: 700;
+  cursor: pointer;
+  color: var(--text);
+  gap: 10px;
+  user-select: none;
+}
+.faq-q-text { flex: 1; }
+.faq-chevron {
+  font-size: 12px;
+  color: var(--text3);
+  transition: transform 0.25s;
+  flex-shrink: 0;
+}
+.faq-item.open .faq-chevron { transform: rotate(180deg); }
+.faq-a {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.3s ease, padding 0.3s ease;
+  font-size: 13px;
+  color: var(--text2);
+  line-height: 1.7;
+  padding: 0 16px;
+}
+.faq-item.open .faq-a {
+  max-height: 200px;
+  padding: 0 16px 14px;
+}
+
+/* ── Contact section ── */
+.contact-section {
+  padding: 24px 14px 0;
+}
+.contact-title {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: var(--text3);
+  text-transform: uppercase;
+  margin-bottom: 12px;
+}
+.contact-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.contact-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 14px 12px;
+  border-radius: var(--radius);
+  font-size: 13px;
+  font-weight: 700;
+  text-decoration: none;
+  transition: all 0.2s;
+}
+.contact-wa {
+  background: rgba(37,211,102,0.12);
+  border: 1px solid rgba(37,211,102,0.3);
+  color: #25D366;
+}
+.contact-wa:hover { background: rgba(37,211,102,0.2); }
+.contact-tg {
+  background: rgba(34,158,217,0.12);
+  border: 1px solid rgba(34,158,217,0.3);
+  color: #229ED9;
+}
+.contact-tg:hover { background: rgba(34,158,217,0.2); }
+
+.page-bottom-gap { height: 20px; }
+</style>
+</head>
+<body>
+
+<!-- ══ HEADER ══ -->
+<header class="header">
+  <button class="icon-btn menu-btn" onclick="toggleSidebar()">☰</button>
+  <a class="logo-link" href="index.html" aria-label="AtlasPro হোম">
+    <img class="logo-icon" src="img/logo-icon.svg" alt="ATLAS">
+    <div class="logo-text-block">
+      <span class="logo-name"><span class="logo-a">A</span>TLAS</span>
+      <span class="logo-sub">পড়াশোনা হোক গোছানো</span>
+    </div>
+  </a>
+  <div class="header-actions">
+    <button class="icon-btn" id="themeToggle" onclick="Theme.toggle()" title="Theme">☀️</button>
+    <div class="avatar-btn" id="avatarBtn" onclick="window.location.href='profile.html'">A</div>
+  </div>
+</header>
+
+<!-- ══ SIDEBAR ══ -->
+<div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+<div class="sidebar" id="sidebar">
+  <div class="sidebar-header">
+    <span class="atlas-brand" style="font-size:22px">ATLAS</span>
+    <div style="font-size:10px;color:var(--text3);margin-top:2px">Educational Platform</div>
+  </div>
+  <div class="sidebar-user" id="sidebarUser">
+    <div class="sidebar-avatar" id="sidebarAvatar">A</div>
+    <div>
+      <div class="sidebar-name" id="sidebarName">Guest</div>
+      <span class="sidebar-badge badge-free" id="sidebarBadge">🆓 Free</span>
+    </div>
+  </div>
+  <nav class="sidebar-nav">
+    <a class="sidebar-link" href="index.html"><span>🏠</span> হোম</a>
+    <a class="sidebar-link" href="profile.html"><span>👤</span> প্রোফাইল</a>
+    <a class="sidebar-link" href="focus.html"><span>⏱️</span> Focus Timer</a>
+    <a class="sidebar-link active" href="packages.html"><span>⭐</span> প্যাকেজ</a>
+    <div class="sidebar-divider"></div>
+    <a class="sidebar-link" href="#" onclick="showToast('শীঘ্রই আসছে!')"><span>📥</span> Offline Cache</a>
+    <div class="sidebar-divider"></div>
+    <div class="sidebar-admin" id="adminLink" style="display:none" onclick="window.location.href='admin/index.html'">
+      👑 Admin Panel
+    </div>
+    <div class="sidebar-logout" onclick="Auth.logout()">
+      <span>🚪</span> Logout
+    </div>
+  </nav>
+</div>
+
+<!-- ══ MAIN CONTENT ══ -->
+<main style="padding-bottom:16px">
+
+  <!-- Page Title -->
+  <div class="page-hero">
+    <div class="page-title">⭐ প্যাকেজ বেছে নাও</div>
+    <div class="page-sub">তোমার পড়াশোনার জন্য সেরা প্ল্যানটি বেছে নাও</div>
+  </div>
+
+  <!-- Current Plan Banner -->
+  <div id="planBanner"></div>
+
+  <!-- Plans Grid -->
+  <div class="plans-grid">
+
+    <!-- FREE PLAN -->
+    <div class="plan-card plan-card-free">
+      <div class="plan-badges">
+        <span class="badge-current" id="freeBadgeCurrent" style="display:none">✅ বর্তমান প্ল্যান</span>
+      </div>
+      <div class="plan-name">FREE</div>
+      <div class="plan-price">১০</div>
+      <div class="plan-price-sub">পৃষ্ঠা / দিন</div>
+      <div class="plan-divider"></div>
+      <ul class="feature-list">
+        <li class="feature-item"><span class="feature-icon">✅</span> সব বিষয় দেখা</li>
+        <li class="feature-item"><span class="feature-icon">✅</span> দিনে ১০ পৃষ্ঠা PDF</li>
+        <li class="feature-item"><span class="feature-icon">✅</span> MCQ Exam (limited)</li>
+        <li class="feature-item"><span class="feature-icon">✅</span> Focus Timer</li>
+        <li class="feature-item no"><span class="feature-icon">❌</span> Unlimited PDF</li>
+        <li class="feature-item no"><span class="feature-icon">❌</span> AI ব্যাখ্যা</li>
+        <li class="feature-item no"><span class="feature-icon">❌</span> Offline mode</li>
+        <li class="feature-item no"><span class="feature-icon">❌</span> Priority support</li>
+      </ul>
+      <div class="plan-btn plan-btn-current" id="freeBtnCurrent" style="display:none">✅ বর্তমান প্ল্যান</div>
+      <div class="plan-btn plan-btn-free" id="freeBtnDefault">বিনামূল্যে</div>
+    </div>
+
+    <!-- PREMIUM PLAN -->
+    <div class="plan-card plan-card-premium">
+      <div class="shimmer"></div>
+      <div class="plan-badges">
+        <span class="badge-popular">⭐ সবচেয়ে জনপ্রিয়</span>
+        <span class="badge-current" id="premiumBadgeCurrent" style="display:none">✅ বর্তমান</span>
+      </div>
+      <div class="plan-name" style="color:var(--accent)">PREMIUM</div>
+      <div class="plan-price">৳৯৯</div>
+      <div class="plan-price-sub">/ মাস</div>
+      <div class="plan-divider"></div>
+      <ul class="feature-list">
+        <li class="feature-item"><span class="feature-icon">✅</span> সব বিষয় দেখা</li>
+        <li class="feature-item"><span class="feature-icon">✅</span> Unlimited PDF পড়া</li>
+        <li class="feature-item"><span class="feature-icon">✅</span> সব MCQ Exam</li>
+        <li class="feature-item"><span class="feature-icon">✅</span> Focus Timer</li>
+        <li class="feature-item"><span class="feature-icon">✅</span> AI ব্যাখ্যা (প্রতিটা ভুলে)</li>
+        <li class="feature-item"><span class="feature-icon">✅</span> Offline PDF cache</li>
+        <li class="feature-item"><span class="feature-icon">✅</span> Priority WhatsApp support</li>
+        <li class="feature-item"><span class="feature-icon">✅</span> নতুন content আগে পাবে</li>
+      </ul>
+      <button class="plan-btn plan-btn-premium" id="premiumBtn" onclick="upgradeWhatsApp()">
+        ⚡ এখনই আপগ্রেড করো
+      </button>
+      <div class="plan-btn plan-btn-current" id="premiumBtnCurrent" style="display:none">
+        ✅ বর্তমান প্ল্যান
+      </div>
+    </div>
+
+  </div>
+
+  <!-- FAQ Section -->
+  <div class="faq-section">
+    <div class="faq-title">প্রশ্ন ও উত্তর</div>
+
+    <div class="faq-item" id="faq1">
+      <div class="faq-q" onclick="toggleFaq('faq1')">
+        <span class="faq-q-text">Premium কীভাবে নেবো?</span>
+        <span class="faq-chevron">▼</span>
+      </div>
+      <div class="faq-a">
+        আমাদের WhatsApp নম্বরে মেসেজ করো। "Premium নিতে চাই" লিখে পাঠাও। আমরা বিকাশ/নগদ নম্বর দেবো। Payment এর পর ২ ঘণ্টার মধ্যে একাউন্ট activate হবে।
+      </div>
+    </div>
+
+    <div class="faq-item" id="faq2">
+      <div class="faq-q" onclick="toggleFaq('faq2')">
+        <span class="faq-q-text">Payment কীভাবে করবো?</span>
+        <span class="faq-chevron">▼</span>
+      </div>
+      <div class="faq-a">
+        বিকাশ, নগদ, রকেট — যেকোনো মোবাইল ব্যাংকিং দিয়ে payment করা যাবে। Payment করার পর screenshot পাঠালেই হবে।
+      </div>
+    </div>
+
+    <div class="faq-item" id="faq3">
+      <div class="faq-q" onclick="toggleFaq('faq3')">
+        <span class="faq-q-text">Cancel করা যাবে?</span>
+        <span class="faq-chevron">▼</span>
+      </div>
+      <div class="faq-a">
+        হ্যাঁ, যেকোনো সময় cancel করা যাবে। চলতি মাসের শেষ পর্যন্ত Premium সুবিধা পাবে। কোনো লুকানো চার্জ নেই।
+      </div>
+    </div>
+
+    <div class="faq-item" id="faq4">
+      <div class="faq-q" onclick="toggleFaq('faq4')">
+        <span class="faq-q-text">কতদিন valid থাকবে?</span>
+        <span class="faq-chevron">▼</span>
+      </div>
+      <div class="faq-a">
+        প্রতিটি payment ৩০ দিনের জন্য valid। মাস শেষ হওয়ার আগে renewal করলে কোনো interruption ছাড়াই সুবিধা পাবে।
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Contact Section -->
+  <div class="contact-section">
+    <div class="contact-title">আমাদের সাথে যোগাযোগ করো</div>
+    <div class="contact-grid">
+      <a class="contact-btn contact-wa" href="https://wa.me/8801999681290?text=%E0%A6%86%E0%A6%AE%E0%A6%BF%20Premium%20%E0%A6%A8%E0%A6%BF%E0%A6%A4%E0%A7%87%20%E0%A6%9A%E0%A6%BE%E0%A6%87" target="_blank" rel="noopener">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+        WhatsApp
+      </a>
+      <a class="contact-btn contact-tg" href="https://t.me/rafi_somc" target="_blank" rel="noopener">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/></svg>
+        Telegram
+      </a>
+    </div>
+  </div>
+
+  <div class="page-bottom-gap"></div>
+
+</main>
+
+<!-- ══ FLOATING BUTTONS ══ -->
+<div class="float-btns">
+  <a class="float-btn float-wa" href="https://wa.me/8801999681290?text=%E0%A6%86%E0%A6%AE%E0%A6%BF%20Premium%20%E0%A6%A8%E0%A6%BF%E0%A6%A4%E0%A7%87%20%E0%A6%9A%E0%A6%BE%E0%A6%87" target="_blank" rel="noopener" title="WhatsApp">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+  </a>
+  <a class="float-btn float-tg" href="https://t.me/rafi_somc" target="_blank" rel="noopener" title="Telegram">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="white"><path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/></svg>
+  </a>
+</div>
+
+<!-- ══ BOTTOM NAV ══ -->
+<nav class="bottom-nav">
+  <a class="nav-item" href="index.html">
+    <span class="nav-icon">🏠</span>হোম
+  </a>
+  <a class="nav-item" href="index.html#subjects">
+    <span class="nav-icon">📚</span>বিষয়
+  </a>
+  <a class="nav-item" href="profile.html#history">
+    <span class="nav-icon">📝</span>এক্সাম
+  </a>
+  <a class="nav-item" href="focus.html">
+    <span class="nav-icon">⏱️</span>টাইমার
+  </a>
+  <a class="nav-item" href="profile.html">
+    <span class="nav-icon">👤</span>প্রোফাইল
+  </a>
+</nav>
+
+<!-- ══ TOAST ══ -->
+<div class="toast" id="toast"></div>
+
+<script src="js/config.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/theme.js"></script>
+<script>
+// ── Helpers ──
+function toggleSidebar() {
+  document.getElementById('sidebar').classList.toggle('open');
+  document.getElementById('sidebarOverlay').classList.toggle('open');
+}
+function closeSidebar() {
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('sidebarOverlay').classList.remove('open');
+}
+function showToast(msg, duration) {
+  duration = duration || 2500;
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(function() { t.classList.remove('show'); }, duration);
+}
+
+// ── WhatsApp upgrade deep-link ──
+function upgradeWhatsApp() {
+  const name = Auth.getUserName() || '';
+  const msg = encodeURIComponent('আমি AtlasPro Premium নিতে চাই' + (name ? ' — ' + name : '') + '. কীভাবে payment করবো?');
+  window.open('https://wa.me/8801999681290?text=' + msg, '_blank', 'noopener');
+}
+
+// ── Toggle FAQ ──
+function toggleFaq(id) {
+  const item = document.getElementById(id);
+  const isOpen = item.classList.contains('open');
+  // Close all
+  document.querySelectorAll('.faq-item').forEach(function(el) {
+    el.classList.remove('open');
+  });
+  // Open clicked unless it was already open
+  if (!isOpen) item.classList.add('open');
+}
+
+// ── Init page ──
+function init() {
+  const name = Auth.getUserName();
+  const isAdmin = Auth.isAdmin();
+  const isPremium = localStorage.getItem('is_premium') === 'true';
+
+  // Header avatar
+  const initial = name ? name[0].toUpperCase() : 'A';
+  document.getElementById('avatarBtn').textContent = initial;
+  document.getElementById('sidebarAvatar').textContent = initial;
+  document.getElementById('sidebarName').textContent = name || 'Guest';
+
+  // Sidebar badge
+  const badge = document.getElementById('sidebarBadge');
+  if (isPremium) {
+    badge.className = 'sidebar-badge badge-premium';
+    badge.textContent = '⭐ Premium';
+  }
+
+  // Admin link
+  if (isAdmin) {
+    document.getElementById('adminLink').style.display = 'flex';
+  }
+
+  // Plan banner
+  const banner = document.getElementById('planBanner');
+  if (isPremium) {
+    banner.innerHTML = '<div class="plan-banner plan-banner-premium"><span class="plan-banner-icon">⭐</span><div class="plan-banner-text"><div class="plan-banner-main">তুমি Premium সদস্য!</div><div class="plan-banner-note">সব সুবিধা উপভোগ করো — Unlimited PDF, AI ব্যাখ্যা এবং আরো অনেক কিছু।</div></div></div>';
+    // Show premium current badge, hide upgrade button
+    document.getElementById('premiumBadgeCurrent').style.display = 'inline-block';
+    document.getElementById('premiumBtn').style.display = 'none';
+    document.getElementById('premiumBtnCurrent').style.display = 'flex';
+  } else {
+    banner.innerHTML = '<div class="plan-banner plan-banner-free"><span class="plan-banner-icon">🆓</span><div class="plan-banner-text"><div class="plan-banner-main">তুমি এখন Free Plan-এ আছো</div><div class="plan-banner-note">দিনে মাত্র ১০ পৃষ্ঠা। Premium-এ upgrade করে Unlimited সুবিধা নাও!</div></div></div>';
+    // Show free current badge
+    document.getElementById('freeBadgeCurrent').style.display = 'inline-block';
+    document.getElementById('freeBtnDefault').style.display = 'none';
+    document.getElementById('freeBtnCurrent').style.display = 'flex';
+  }
+}
+
+init();
+</script>
+</body>
+</html>

@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="bn" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Focus Timer — AtlasPro</title>
+<link rel="stylesheet" href="css/style.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Bengali:wght@400;600;700;900&family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
+<style>
+/* ── Mode Tabs ── */
+.mode-tabs { display:flex; gap:6px; padding:14px 14px 0; }
+.mode-tab {
+  flex:1; padding:9px 6px; border-radius:10px;
+  border:1.5px solid var(--border); background:var(--card);
+  color:var(--text2); font-size:12px; font-weight:700;
+  cursor:pointer; transition:all 0.2s; font-family:inherit;
+  text-align:center;
+}
+.mode-tab.active { background:var(--primary); border-color:var(--primary); color:#fff; }
+
+/* ── Timer Circle ── */
+.timer-section {
+  display:flex; flex-direction:column; align-items:center;
+  padding:24px 14px 20px;
+}
+.timer-ring-wrap {
+  position:relative; width:220px; height:220px;
+  margin-bottom:20px;
+}
+.timer-svg { transform:rotate(-90deg); }
+.timer-track { fill:none; stroke:var(--border); stroke-width:10; }
+.timer-progress {
+  fill:none; stroke:var(--primary); stroke-width:10;
+  stroke-linecap:round;
+  stroke-dasharray: 628;
+  stroke-dashoffset: 0;
+  transition: stroke-dashoffset 0.9s linear, stroke 0.4s;
+}
+.timer-center {
+  position:absolute; inset:0;
+  display:flex; flex-direction:column;
+  align-items:center; justify-content:center;
+}
+.timer-display {
+  font-size:48px; font-weight:900;
+  font-family:'Inter', monospace;
+  letter-spacing:2px; color:var(--text);
+  line-height:1;
+}
+.timer-mode-label {
+  font-size:11px; font-weight:700;
+  color:var(--text3); margin-top:4px;
+  letter-spacing:1px; text-transform:uppercase;
+}
+.session-count {
+  font-size:11px; color:var(--text3); margin-bottom:14px;
+}
+.session-dots { display:flex; gap:6px; }
+.session-dot {
+  width:10px; height:10px; border-radius:50%;
+  background:var(--border); transition:background 0.3s;
+}
+.session-dot.done { background:var(--primary); }
+
+/* ── Controls ── */
+.timer-controls { display:flex; gap:10px; align-items:center; }
+.ctrl-btn {
+  height:48px; padding:0 20px;
+  border-radius:12px; font-size:14px; font-weight:700;
+  border:none; cursor:pointer; font-family:inherit;
+  transition:all 0.2s; display:flex; align-items:center; gap:6px;
+}
+.ctrl-start { background:var(--primary); color:#fff; }
+.ctrl-start:hover { background:#5A52E0; }
+.ctrl-pause { background:var(--amber); color:#fff; }
+.ctrl-pause:hover { background:#D97706; }
+.ctrl-reset {
+  height:48px; width:48px; padding:0;
+  border-radius:12px; background:var(--card);
+  border:1.5px solid var(--border); font-size:18px;
+  cursor:pointer; transition:all 0.2s;
+}
+.ctrl-reset:hover { border-color:var(--red); color:var(--red); }
+
+/* ── Custom Duration ── */
+.custom-section {
+  margin:0 14px; background:var(--card);
+  border:1px solid var(--border); border-radius:var(--radius);
+  overflow:hidden;
+}
+.custom-header {
+  display:flex; align-items:center; justify-content:space-between;
+  padding:12px 14px; cursor:pointer;
+}
+.custom-header-title { font-size:13px; font-weight:700; }
+.custom-body { padding:14px; display:none; border-top:1px solid var(--border); }
+.custom-body.open { display:block; }
+.custom-row { display:flex; align-items:center; gap:10px; margin-bottom:10px; }
+.custom-label { font-size:12px; color:var(--text2); min-width:100px; }
+.custom-input {
+  width:80px; height:38px; background:var(--bg2);
+  border:1.5px solid var(--border); border-radius:var(--radius-sm);
+  text-align:center; font-size:15px; font-weight:700;
+  color:var(--text); outline:none; font-family:inherit;
+  transition:border-color 0.2s;
+}
+.custom-input:focus { border-color:var(--primary); }
+.custom-suffix { font-size:12px; color:var(--text3); }
+
+/* ── Active Students ── */
+.active-section {
+  margin:14px; background:var(--card);
+  border:1px solid var(--border); border-radius:var(--radius);
+  padding:14px;
+}
+.active-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; }
+.active-title { font-size:14px; font-weight:700; }
+.active-count {
+  font-size:28px; font-weight:900;
+  color:var(--green); line-height:1; margin-bottom:4px;
+}
+.active-sub { font-size:11px; color:var(--text3); }
+.active-dots { display:flex; flex-wrap:wrap; gap:6px; margin-top:10px; }
+.active-dot {
+  width:32px; height:32px; border-radius:50%;
+  background:var(--primary-light); border:1.5px solid rgba(108,99,255,0.3);
+  display:flex; align-items:center; justify-content:center;
+  font-size:13px; font-weight:700; color:var(--primary);
+}
+
+/* ── Session Log ── */
+.log-section { margin:0 14px 20px; }
+.log-item {
+  display:flex; align-items:center; gap:10px;
+  padding:10px 0; border-bottom:1px solid var(--border);
+}
+.log-item:last-child { border-bottom:none; }
+.log-icon { font-size:20px; }
+.log-text { flex:1; font-size:12px; color:var(--text2); }
+.log-time { font-size:11px; color:var(--text3); }
+.log-total {
+  text-align:center; padding:12px;
+  font-size:13px; font-weight:700;
+  color:var(--primary); background:var(--primary-light);
+  border-radius:var(--radius-sm); margin-top:8px;
+}
+</style>
+</head>
+<body>
+
+<header class="header">
+  <button class="icon-btn menu-btn" onclick="toggleSidebar()">☰</button>
+  <a class="logo-link" href="index.html">
+    <img class="logo-icon" src="img/logo-icon.svg" alt="ATLAS">
+    <div class="logo-text-block">
+      <span class="logo-name"><span class="logo-a">A</span>TLAS</span>
+      <span class="logo-sub">পড়াশোনা হোক গোছানো</span>
+    </div>
+  </a>
+  <div class="header-actions">
+    <button class="icon-btn" id="themeToggle" onclick="Theme.toggle()">☀️</button>
+    <button class="icon-btn" onclick="showToast('🔔 কোনো notification নেই')">🔔</button>
+    <div class="avatar-btn" id="avatarBtn" onclick="window.location.href='profile.html'">A</div>
+  </div>
+</header>
+
+<div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+<div class="sidebar" id="sidebar">
+  <div class="sidebar-header">
+    <span class="atlas-brand" style="font-size:22px">ATLAS</span>
+    <div style="font-size:10px;color:var(--text3);margin-top:2px">Educational Platform</div>
+  </div>
+  <div class="sidebar-user">
+    <div class="sidebar-avatar" id="sidebarAvatar">A</div>
+    <div><div class="sidebar-name" id="sidebarName">Guest</div><span class="sidebar-badge badge-free" id="sidebarBadge">🆓 Free</span></div>
+  </div>
+  <nav class="sidebar-nav">
+    <a class="sidebar-link" href="index.html"><span>🏠</span> হোম</a>
+    <a class="sidebar-link" href="index.html"><span>📚</span> বিষয়</a>
+    <a class="sidebar-link" href="profile.html"><span>👤</span> প্রোফাইল</a>
+    <a class="sidebar-link active" href="focus.html"><span>⏱️</span> Focus Timer</a>
+    <a class="sidebar-link" href="packages.html"><span>⭐</span> প্যাকেজ</a>
+    <div class="sidebar-divider"></div>
+    <div class="sidebar-admin" id="adminLink" style="display:none" onclick="window.location.href='admin/index.html'">👑 Admin Panel</div>
+    <div class="sidebar-logout" onclick="Auth.logout()"><span>🚪</span> Logout</div>
+  </nav>
+</div>
+
+<main style="padding-bottom:16px">
+
+  <!-- Mode Tabs -->
+  <div class="mode-tabs">
+    <button class="mode-tab active" id="tab_study"  onclick="setMode('study')">📚 পড়াশোনা</button>
+    <button class="mode-tab"        id="tab_short"  onclick="setMode('short')">☕ ছোট বিরতি</button>
+    <button class="mode-tab"        id="tab_long"   onclick="setMode('long')">🌿 বড় বিরতি</button>
+  </div>
+
+  <!-- Timer -->
+  <div class="timer-section">
+    <div class="timer-ring-wrap">
+      <svg class="timer-svg" width="220" height="220" viewBox="0 0 220 220">
+        <circle class="timer-track"    cx="110" cy="110" r="100"/>
+        <circle class="timer-progress" cx="110" cy="110" r="100" id="timerProgress"/>
+      </svg>
+      <div class="timer-center">
+        <div class="timer-display" id="timerDisplay">25:00</div>
+        <div class="timer-mode-label" id="timerModeLabel">পড়াশোনা</div>
+      </div>
+    </div>
+
+    <div class="session-count" id="sessionCount">আজ ০টি session শেষ হয়েছে</div>
+    <div class="session-dots" id="sessionDots"></div>
+
+    <div class="timer-controls" style="margin-top:18px">
+      <button class="ctrl-btn ctrl-reset" onclick="resetTimer()" title="Reset">↺</button>
+      <button class="ctrl-btn ctrl-start" id="ctrlMain" onclick="toggleTimer()">▶ শুরু করো</button>
+      <button class="ctrl-btn ctrl-reset" onclick="skipSession()" title="Skip">⏭</button>
+    </div>
+  </div>
+
+  <!-- Custom Duration -->
+  <div class="custom-section">
+    <div class="custom-header" onclick="toggleCustom()">
+      <span class="custom-header-title">⚙️ সময় পরিবর্তন করো</span>
+      <span id="customToggleIcon">▾</span>
+    </div>
+    <div class="custom-body" id="customBody">
+      <div class="custom-row">
+        <span class="custom-label">📚 পড়াশোনা</span>
+        <input type="number" class="custom-input" id="studyMin" value="25" min="5" max="60" onchange="updateDurations()">
+        <span class="custom-suffix">মিনিট</span>
+      </div>
+      <div class="custom-row">
+        <span class="custom-label">☕ ছোট বিরতি</span>
+        <input type="number" class="custom-input" id="shortMin" value="5"  min="1" max="30" onchange="updateDurations()">
+        <span class="custom-suffix">মিনিট</span>
+      </div>
+      <div class="custom-row">
+        <span class="custom-label">🌿 বড় বিরতি</span>
+        <input type="number" class="custom-input" id="longMin"  value="15" min="5" max="60" onchange="updateDurations()">
+        <span class="custom-suffix">মিনিট</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Active Students -->
+  <div class="active-section">
+    <div class="active-header">
+      <div class="active-title">🟢 এখন পড়ছে</div>
+      <div style="font-size:10px;color:var(--text3)" id="activeUpdated"></div>
+    </div>
+    <div class="active-count" id="activeCount">—</div>
+    <div class="active-sub">জন student এখন AtlasPro তে পড়ছে</div>
+    <div class="active-dots" id="activeDots"></div>
+  </div>
+
+  <!-- Session Log -->
+  <div class="section-label" style="padding:14px 14px 8px">
+    <span class="section-title">আজকের Sessions</span>
+    <span id="totalStudyTime" style="font-size:11px;color:var(--primary)"></span>
+  </div>
+  <div class="log-section" id="logSection">
+    <div style="text-align:center;padding:20px;color:var(--text3);font-size:12px">এখনো কোনো session শেষ হয়নি</div>
+  </div>
+
+</main>
+
+<div class="float-btns">
+  <a class="float-btn float-wa" href="https://wa.me/8801999681290" target="_blank" rel="noopener"><svg width="24" height="24" viewBox="0 0 24 24" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg></a>
+  <a class="float-btn float-tg" href="https://t.me/rafi_somc" target="_blank" rel="noopener"><svg width="22" height="22" viewBox="0 0 24 24" fill="white"><path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/></svg></a>
+</div>
+
+<nav class="bottom-nav">
+  <a class="nav-item" href="index.html"><span class="nav-icon">🏠</span>হোম</a>
+  <a class="nav-item" href="index.html"><span class="nav-icon">📚</span>বিষয়</a>
+  <a class="nav-item" href="profile.html#history"><span class="nav-icon">📝</span>এক্সাম</a>
+  <a class="nav-item active" href="focus.html"><span class="nav-icon">⏱️</span>টাইমার</a>
+  <a class="nav-item" href="profile.html"><span class="nav-icon">👤</span>প্রোফাইল</a>
+</nav>
+<div class="toast" id="toast"></div>
+
+<script src="js/config.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/theme.js"></script>
+<script>
+function toggleSidebar() { document.getElementById('sidebar').classList.toggle('open'); document.getElementById('sidebarOverlay').classList.toggle('open'); }
+function closeSidebar()  { document.getElementById('sidebar').classList.remove('open'); document.getElementById('sidebarOverlay').classList.remove('open'); }
+function showToast(msg, d=2500) { const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),d); }
+
+// ── State ──
+const MODES = { study:{label:'পড়াশোনা',color:'var(--primary)'}, short:{label:'ছোট বিরতি',color:'var(--green)'}, long:{label:'বড় বিরতি',color:'#60A5FA'} };
+let mode       = 'study';
+let durations  = { study:25*60, short:5*60, long:15*60 };
+let remaining  = durations.study;
+let totalSecs  = durations.study;
+let running    = false;
+let interval   = null;
+let sessions   = JSON.parse(localStorage.getItem('focus_sessions_'+today()) || '[]');
+
+function today() { return new Date().toISOString().split('T')[0]; }
+
+function setMode(m) {
+  if (running) { showToast('আগে timer থামাও'); return; }
+  mode = m;
+  remaining = durations[m];
+  totalSecs = durations[m];
+  Object.keys(MODES).forEach(k => document.getElementById('tab_'+k).classList.toggle('active', k===m));
+  document.getElementById('timerModeLabel').textContent = MODES[m].label;
+  document.getElementById('timerProgress').style.stroke = MODES[m].color;
+  updateDisplay();
+}
+
+function toggleTimer() {
+  if (running) pauseTimer(); else startTimer();
+}
+
+function startTimer() {
+  running = true;
+  document.getElementById('ctrlMain').className = 'ctrl-btn ctrl-pause';
+  document.getElementById('ctrlMain').innerHTML = '⏸ বিরতি';
+  if (Auth.isLoggedIn()) Auth.api('/api/focus/start', {method:'POST'}).catch(()=>{});
+  interval = setInterval(tick, 1000);
+}
+
+function pauseTimer() {
+  running = false;
+  clearInterval(interval);
+  document.getElementById('ctrlMain').className = 'ctrl-btn ctrl-start';
+  document.getElementById('ctrlMain').innerHTML = '▶ চালু করো';
+}
+
+function resetTimer() {
+  pauseTimer();
+  remaining = durations[mode];
+  totalSecs = durations[mode];
+  updateDisplay();
+}
+
+function skipSession() {
+  pauseTimer();
+  onSessionEnd();
+}
+
+function tick() {
+  remaining--;
+  updateDisplay();
+  if (remaining <= 0) {
+    clearInterval(interval);
+    running = false;
+    onSessionEnd();
+  }
+}
+
+function onSessionEnd() {
+  beep();
+  const entry = { type:mode, label:MODES[mode].label, duration:durations[mode]-remaining, time:new Date().toLocaleTimeString('bn-BD',{hour:'2-digit',minute:'2-digit'}) };
+  sessions.push(entry);
+  localStorage.setItem('focus_sessions_'+today(), JSON.stringify(sessions));
+  renderLog();
+  updateSessionDots();
+  showToast(mode==='study' ? '🎉 Session শেষ! বিরতি নাও।' : '📚 বিরতি শেষ! পড়াশোনা শুরু করো।');
+  if (Auth.isLoggedIn()) Auth.api('/api/focus/stop', {method:'POST'}).catch(()=>{});
+
+  // Auto switch
+  const next = mode==='study' ? (sessions.filter(s=>s.type==='study').length%4===0 ? 'long':'short') : 'study';
+  setTimeout(()=>setMode(next), 1500);
+}
+
+function updateDisplay() {
+  const m = Math.floor(remaining/60), s = remaining%60;
+  document.getElementById('timerDisplay').textContent = `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+  // Update ring
+  const circumference = 2*Math.PI*100; // r=100
+  const progress = remaining / totalSecs;
+  document.getElementById('timerProgress').style.strokeDashoffset = circumference*(1-progress);
+  document.getElementById('timerProgress').style.strokeDasharray  = circumference;
+}
+
+function updateSessionDots() {
+  const studyCount = sessions.filter(s=>s.type==='study').length;
+  document.getElementById('sessionCount').textContent = `আজ ${studyCount}টি session শেষ হয়েছে`;
+  const dots = Array.from({length:4},(_,i)=>`<div class="session-dot${i<studyCount%4?' done':''}"></div>`).join('');
+  document.getElementById('sessionDots').innerHTML = dots;
+}
+
+function renderLog() {
+  const el = document.getElementById('logSection');
+  if (!sessions.length) { el.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text3);font-size:12px">এখনো কোনো session শেষ হয়নি</div>'; return; }
+  const totalStudy = sessions.filter(s=>s.type==='study').reduce((a,s)=>a+s.duration,0);
+  const mins = Math.floor(totalStudy/60);
+  document.getElementById('totalStudyTime').textContent = `মোট ${mins} মিনিট`;
+  el.innerHTML = sessions.slice().reverse().map(s=>`
+    <div class="log-item">
+      <span class="log-icon">${s.type==='study'?'📚':s.type==='short'?'☕':'🌿'}</span>
+      <span class="log-text">${s.label} — ${Math.floor(s.duration/60)} মিনিট</span>
+      <span class="log-time">${s.time}</span>
+    </div>`).join('') + (mins>0?`<div class="log-total">আজ মোট ${mins} মিনিট পড়াশোনা করেছো 🎯</div>`:'');
+}
+
+function updateDurations() {
+  durations.study = (parseInt(document.getElementById('studyMin').value)||25)*60;
+  durations.short = (parseInt(document.getElementById('shortMin').value)||5)*60;
+  durations.long  = (parseInt(document.getElementById('longMin').value)||15)*60;
+  if (!running) { remaining=durations[mode]; totalSecs=durations[mode]; updateDisplay(); }
+}
+
+function toggleCustom() {
+  const b=document.getElementById('customBody'), i=document.getElementById('customToggleIcon');
+  const o=b.classList.toggle('open'); i.style.transform=o?'rotate(180deg)':'';
+}
+
+function beep() {
+  try {
+    const ctx = new (window.AudioContext||window.webkitAudioContext)();
+    const osc = ctx.createOscillator();
+    const gain= ctx.createGain();
+    osc.connect(gain); gain.connect(ctx.destination);
+    osc.frequency.value=880; osc.type='sine';
+    gain.gain.setValueAtTime(0.3,ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+0.8);
+    osc.start(); osc.stop(ctx.currentTime+0.8);
+  } catch {}
+}
+
+async function loadActiveCount() {
+  try {
+    const res = await fetch(CONFIG.workerUrl+'/api/focus/active-count');
+    if (!res.ok) return;
+    const d = await res.json();
+    const count = d.count || 0;
+    document.getElementById('activeCount').textContent = count;
+    document.getElementById('activeUpdated').textContent = 'এইমাত্র';
+    const dots = Array.from({length:Math.min(count,12)},()=>`<div class="active-dot">👤</div>`).join('');
+    document.getElementById('activeDots').innerHTML = dots + (count>12?`<div style="font-size:11px;color:var(--text3);padding:5px">+${count-12} জন আরো</div>`:'');
+  } catch {}
+}
+
+function initHeader() {
+  const name=Auth.getUserName(), isAdmin=Auth.isAdmin(), isPremium=localStorage.getItem('is_premium')==='true';
+  const initial=name?name[0].toUpperCase():'A';
+  document.getElementById('avatarBtn').textContent=initial;
+  document.getElementById('sidebarAvatar').textContent=initial;
+  document.getElementById('sidebarName').textContent=name||'Guest';
+  if(isPremium){const b=document.getElementById('sidebarBadge');b.className='sidebar-badge badge-premium';b.textContent='⭐ Premium';}
+  if(isAdmin) document.getElementById('adminLink').style.display='flex';
+}
+
+document.addEventListener('DOMContentLoaded',()=>{
+  initHeader();
+  updateDisplay();
+  updateSessionDots();
+  renderLog();
+  loadActiveCount();
+  setInterval(loadActiveCount, 30000);
+});
+</script>
+</body>
+</html>

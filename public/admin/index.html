@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="bn" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin Panel — AtlasPro</title>
+<link rel="stylesheet" href="../css/style.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Bengali:wght@400;600;700;900&family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
+<style>
+body { padding-top:56px; padding-bottom:66px; }
+.admin-header {
+  position:fixed; top:0; left:0; right:0; height:56px;
+  background:var(--bg2); border-bottom:1px solid var(--border);
+  display:flex; align-items:center; gap:12px; padding:0 14px; z-index:100;
+}
+.admin-header-logo { display:flex; align-items:center; gap:8px; text-decoration:none; }
+.admin-badge {
+  font-size:10px; font-weight:700; padding:3px 8px; border-radius:6px;
+  background:rgba(245,158,11,0.15); color:var(--amber);
+  border:1px solid rgba(245,158,11,0.3);
+}
+.admin-header-spacer { flex:1; }
+
+/* Stats grid */
+.stats-grid {
+  display:grid; grid-template-columns:1fr 1fr; gap:10px;
+  padding:14px 14px 0;
+}
+.stat-card {
+  background:var(--card); border:1px solid var(--border);
+  border-radius:var(--radius); padding:16px;
+  display:flex; flex-direction:column; gap:4px;
+}
+.stat-card-icon { font-size:24px; }
+.stat-card-val  { font-size:26px; font-weight:900; color:var(--primary); line-height:1; }
+.stat-card-lbl  { font-size:11px; color:var(--text3); font-weight:600; }
+
+/* Section grid (the main feature) */
+.section-grid {
+  display:grid; grid-template-columns:1fr 1fr; gap:10px;
+  padding:14px;
+}
+.section-box {
+  background:var(--card); border:1.5px solid var(--border);
+  border-radius:var(--radius); padding:18px 14px;
+  cursor:pointer; transition:all 0.22s;
+  text-decoration:none; color:inherit;
+  display:flex; flex-direction:column; gap:8px;
+  position:relative; overflow:hidden;
+}
+.section-box::before {
+  content:''; position:absolute; inset:0;
+  opacity:0; transition:opacity 0.22s;
+}
+.section-box:hover { transform:translateY(-3px); box-shadow:var(--shadow); }
+.section-box:hover::before { opacity:1; }
+.section-box:hover .section-box-arrow { color:inherit; }
+
+.sb-subjects::before  { background:linear-gradient(135deg,rgba(108,99,255,0.12),transparent); }
+.sb-mcq::before       { background:linear-gradient(135deg,rgba(244,114,182,0.12),transparent); }
+.sb-users::before     { background:linear-gradient(135deg,rgba(16,185,129,0.12),transparent); }
+.sb-announce::before  { background:linear-gradient(135deg,rgba(245,158,11,0.12),transparent); }
+.sb-owner::before     { background:linear-gradient(135deg,rgba(96,165,250,0.12),transparent); }
+.sb-packages::before  { background:linear-gradient(135deg,rgba(251,113,133,0.12),transparent); }
+
+.sb-subjects { border-color:rgba(108,99,255,0.3); }
+.sb-mcq      { border-color:rgba(244,114,182,0.3); }
+.sb-users    { border-color:rgba(16,185,129,0.3);  }
+.sb-announce { border-color:rgba(245,158,11,0.3);  }
+.sb-owner    { border-color:rgba(96,165,250,0.3);  }
+.sb-packages { border-color:rgba(251,113,133,0.3); }
+
+.section-box-icon { font-size:30px; }
+.section-box-title {
+  font-size:14px; font-weight:900;
+  position:relative; z-index:1;
+}
+.section-box-desc { font-size:11px; color:var(--text3); line-height:1.4; position:relative; z-index:1; }
+.section-box-arrow { font-size:18px; color:var(--text3); margin-top:auto; transition:color 0.2s; }
+
+/* Activity */
+.activity-list { padding:0 14px 14px; display:flex; flex-direction:column; gap:6px; }
+.activity-item {
+  display:flex; align-items:center; gap:10px;
+  padding:10px; background:var(--card); border:1px solid var(--border);
+  border-radius:var(--radius-sm);
+}
+.activity-icon { font-size:18px; flex-shrink:0; }
+.activity-text { flex:1; font-size:12px; color:var(--text2); }
+.activity-time { font-size:10px; color:var(--text3); white-space:nowrap; }
+
+/* View site link */
+.view-site {
+  display:flex; align-items:center; justify-content:center;
+  gap:8px; margin:0 14px 14px;
+  padding:14px; border-radius:var(--radius);
+  background:var(--card); border:1px solid var(--border);
+  text-decoration:none; color:var(--text2);
+  font-size:13px; font-weight:700; transition:all 0.2s;
+}
+.view-site:hover { border-color:var(--primary); color:var(--primary); }
+
+/* Admin bottom nav */
+.admin-nav {
+  position:fixed; bottom:0; left:0; right:0;
+  height:60px; background:var(--bg2);
+  border-top:1px solid var(--border);
+  display:flex; z-index:100;
+}
+.admin-nav-item {
+  flex:1; display:flex; flex-direction:column;
+  align-items:center; justify-content:center;
+  gap:2px; color:var(--text3); font-size:10px;
+  text-decoration:none; cursor:pointer;
+  transition:color 0.2s;
+}
+.admin-nav-item.active { color:var(--primary); }
+.admin-nav-icon { font-size:20px; }
+
+/* Skeleton */
+.skel { background:linear-gradient(90deg,var(--border) 25%,var(--card-hover) 50%,var(--border) 75%); background-size:200% 100%; animation:shimmer 1.4s ease infinite; border-radius:6px; }
+@keyframes shimmer { 0%{background-position:200% 0}100%{background-position:-200% 0} }
+.skel-stat { height:80px; border-radius:var(--radius); }
+</style>
+</head>
+<body>
+
+<header class="admin-header">
+  <a class="admin-header-logo" href="../index.html">
+    <img src="../img/logo-icon.svg" alt="ATLAS" width="28" height="28">
+    <span style="font-size:16px;font-weight:900;color:var(--text)">ATLAS</span>
+  </a>
+  <span class="admin-badge">👑 Admin</span>
+  <div class="admin-header-spacer"></div>
+  <button class="icon-btn" id="themeToggle" onclick="Theme.toggle()">☀️</button>
+</header>
+
+<main>
+
+  <!-- Stats -->
+  <div class="section-label" style="padding:14px 14px 8px"><span class="section-title">পরিসংখ্যান</span></div>
+  <div class="stats-grid" id="statsGrid">
+    <div class="skel skel-stat"></div>
+    <div class="skel skel-stat"></div>
+    <div class="skel skel-stat"></div>
+    <div class="skel skel-stat"></div>
+  </div>
+
+  <!-- Section Grid -->
+  <div class="section-label" style="padding:14px 14px 8px"><span class="section-title">Admin Sections</span></div>
+  <div class="section-grid">
+    <a class="section-box sb-subjects" href="subjects.html">
+      <div class="section-box-icon">📚</div>
+      <div class="section-box-title">বিষয় ও অধ্যায়</div>
+      <div class="section-box-desc">Subject, Chapter, PDF যোগ ও সম্পাদনা</div>
+      <div class="section-box-arrow">→</div>
+    </a>
+    <a class="section-box sb-mcq" href="mcq.html">
+      <div class="section-box-icon">❓</div>
+      <div class="section-box-title">MCQ প্রশ্ন</div>
+      <div class="section-box-desc">Per-page MCQ add, CSV, AI generate</div>
+      <div class="section-box-arrow">→</div>
+    </a>
+    <a class="section-box sb-users" href="users.html">
+      <div class="section-box-icon">👥</div>
+      <div class="section-box-title">ব্যবহারকারী</div>
+      <div class="section-box-desc">User list, Premium toggle</div>
+      <div class="section-box-arrow">→</div>
+    </a>
+    <a class="section-box sb-announce" href="announcements.html">
+      <div class="section-box-icon">📢</div>
+      <div class="section-box-title">ঘোষণা</div>
+      <div class="section-box-desc">Homepage announcement manage</div>
+      <div class="section-box-arrow">→</div>
+    </a>
+    <a class="section-box sb-owner" href="owner.html">
+      <div class="section-box-icon">👤</div>
+      <div class="section-box-title">Owner Info</div>
+      <div class="section-box-desc">Founder card আপডেট করো</div>
+      <div class="section-box-arrow">→</div>
+    </a>
+    <a class="section-box sb-packages" href="packages.html">
+      <div class="section-box-icon">📦</div>
+      <div class="section-box-title">প্যাকেজ</div>
+      <div class="section-box-desc">Free/Premium plan manage</div>
+      <div class="section-box-arrow">→</div>
+    </a>
+  </div>
+
+  <!-- Recent Activity -->
+  <div class="section-label" style="padding:0 14px 8px"><span class="section-title">সাম্প্রতিক কার্যক্রম</span></div>
+  <div class="activity-list" id="activityList">
+    <div style="text-align:center;padding:20px;color:var(--text3);font-size:12px">লোড হচ্ছে...</div>
+  </div>
+
+  <!-- View Site -->
+  <a class="view-site" href="../index.html">🌐 সাইট দেখুন →</a>
+
+</main>
+
+<nav class="admin-nav">
+  <a class="admin-nav-item active" href="index.html"><span class="admin-nav-icon">📊</span>Dashboard</a>
+  <a class="admin-nav-item" href="subjects.html"><span class="admin-nav-icon">📚</span>বিষয়</a>
+  <a class="admin-nav-item" href="mcq.html"><span class="admin-nav-icon">❓</span>MCQ</a>
+  <a class="admin-nav-item" href="users.html"><span class="admin-nav-icon">👥</span>Users</a>
+  <a class="admin-nav-item" href="announcements.html"><span class="admin-nav-icon">📢</span>ঘোষণা</a>
+</nav>
+
+<div class="toast" id="toast"></div>
+
+<script src="../js/config.js"></script>
+<script src="../js/auth.js"></script>
+<script src="../js/theme.js"></script>
+<script>
+function showToast(msg,d=2500){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),d);}
+function escHtml(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+
+function checkAdmin() {
+  if (!Auth.isAdmin()) { window.location.href = '../index.html'; return false; }
+  return true;
+}
+
+async function loadStats() {
+  try {
+    const res = await Auth.api('/api/admin/stats');
+    if (!res.ok) throw new Error();
+    const d = await res.json();
+    document.getElementById('statsGrid').innerHTML = `
+      <div class="stat-card"><div class="stat-card-icon">👥</div><div class="stat-card-val">${d.total_users??'—'}</div><div class="stat-card-lbl">মোট Users</div></div>
+      <div class="stat-card"><div class="stat-card-icon">📄</div><div class="stat-card-val">${d.total_pdfs??'—'}</div><div class="stat-card-lbl">মোট PDF</div></div>
+      <div class="stat-card"><div class="stat-card-icon">❓</div><div class="stat-card-val">${d.total_mcq??'—'}</div><div class="stat-card-lbl">মোট MCQ</div></div>
+      <div class="stat-card"><div class="stat-card-icon">📊</div><div class="stat-card-val">${d.active_today??'—'}</div><div class="stat-card-lbl">আজকের Active</div></div>`;
+  } catch {
+    document.getElementById('statsGrid').innerHTML = `
+      <div class="stat-card"><div class="stat-card-icon">👥</div><div class="stat-card-val">—</div><div class="stat-card-lbl">মোট Users</div></div>
+      <div class="stat-card"><div class="stat-card-icon">📄</div><div class="stat-card-val">—</div><div class="stat-card-lbl">মোট PDF</div></div>
+      <div class="stat-card"><div class="stat-card-icon">❓</div><div class="stat-card-val">—</div><div class="stat-card-lbl">মোট MCQ</div></div>
+      <div class="stat-card"><div class="stat-card-icon">📊</div><div class="stat-card-val">—</div><div class="stat-card-lbl">আজকের Active</div></div>`;
+  }
+}
+
+async function loadActivity() {
+  try {
+    const res = await Auth.api('/api/admin/activity');
+    if (!res.ok) throw new Error();
+    const d = await res.json();
+    const list = d.activities || [];
+    if (!list.length) { document.getElementById('activityList').innerHTML='<div style="text-align:center;padding:20px;color:var(--text3);font-size:12px">কোনো activity নেই</div>'; return; }
+    document.getElementById('activityList').innerHTML = list.map(a=>`
+      <div class="activity-item">
+        <span class="activity-icon">${a.icon||'📌'}</span>
+        <span class="activity-text">${escHtml(a.message||'')}</span>
+        <span class="activity-time">${a.time||''}</span>
+      </div>`).join('');
+  } catch {
+    document.getElementById('activityList').innerHTML='<div style="text-align:center;padding:20px;color:var(--text3);font-size:12px">লোড হয়নি</div>';
+  }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  if (!checkAdmin()) return;
+  loadStats();
+  loadActivity();
+});
+</script>
+</body>
+</html>
