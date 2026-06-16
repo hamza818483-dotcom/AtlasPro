@@ -11,8 +11,12 @@ jobs:
           java-version: '17'
       - uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.24.5'
+          flutter-version: '3.44.0'
           channel: 'stable'
+      - name: Patch Flutter v1 embedding check
+        run: |
+          FILE=$(find /opt/hostedtoolcache/flutter -name "project.dart" -path "*/flutter_tools/*" | head -1)
+          sed -i "s/throwToolExit('Build failed due to use of deleted Android v1 embedding.', exitCode: 1);/\/\/ v1 check disabled/g" "$FILE"
       - run: flutter pub get
       - run: flutter build apk --release
       - uses: actions/upload-artifact@v4
