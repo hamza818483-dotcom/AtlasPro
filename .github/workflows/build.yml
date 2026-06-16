@@ -1,7 +1,7 @@
-name: Build APK
+name: Build APK & Deploy Web
 on: [push]
 jobs:
-  build:
+  build-apk:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -15,15 +15,12 @@ jobs:
           channel: 'stable'
       - name: Patch Flutter v1 embedding check
         run: |
-          # Find all Flutter tools dart files that contain the v1 embedding error
           FILES=$(find /opt/hostedtoolcache/flutter -name "*.dart" -path "*/flutter_tools/*" -exec grep -l "deleted Android v1 embedding" {} \; 2>/dev/null)
           if [ -n "$FILES" ]; then
             for FILE in $FILES; do
               echo "Patching: $FILE"
-              # Use perl for multiline-safe replacement (throwToolExit spans multiple lines in source)
               perl -i -0pe 's/throwToolExit\([^;]*deleted Android v1 embedding[^;]*\);//gs' "$FILE"
             done
-            # Delete compiled snapshots so Flutter rebuilds from the patched source
             find /opt/hostedtoolcache/flutter -name "flutter_tools.snapshot" -delete 2>/dev/null && echo "Deleted snapshot" || echo "No snapshot found"
             find /opt/hostedtoolcache/flutter -name "flutter_tools.dill" -delete 2>/dev/null && echo "Deleted dill" || echo "No dill found"
             echo "Patch complete"
@@ -36,3 +33,21 @@ jobs:
         with:
           name: app-release
           path: build/app/outputs/flutter-apk/app-release.apk
+
+  deploy-web:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.44.0'
+          channel: 'stable'
+      - run: flutter pub get
+      - run: flutter build web --release --base-href /
+      - uses: cloudflare/pages-action@v1
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          projectName: atlaspro
+          directory: build/web
+          gitHubToken: ${{ secrets.GITHUB_TOKEN }}
