@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="bn" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AtlasPro</title>
+<link rel="stylesheet" href="css/style.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Bengali:wght@400;600;700;900&family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
+</head>
+<body>
+
+<!-- ══ HEADER ══ -->
+<header class="header">
+  <button class="icon-btn menu-btn" onclick="toggleSidebar()">☰</button>
+  <div class="header-brand">
+    <span class="atlas-brand" style="font-size:20px">ATLAS</span>
+  </div>
+  <div class="header-actions">
+    <button class="icon-btn" id="themeToggle" onclick="Theme.toggle()" title="Theme">☀️</button>
+    <button class="icon-btn" onclick="showToast('🔔 কোনো নতুন notification নেই')" title="Notification">🔔</button>
+    <div class="avatar-btn" id="avatarBtn" onclick="window.location.href='profile.html'">A</div>
+  </div>
+</header>
+
+<!-- ══ SIDEBAR ══ -->
+<div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+<div class="sidebar" id="sidebar">
+  <div class="sidebar-header">
+    <span class="atlas-brand" style="font-size:22px">ATLAS</span>
+    <div style="font-size:10px;color:var(--text3);margin-top:2px">Educational Platform</div>
+  </div>
+  <div class="sidebar-user" id="sidebarUser">
+    <div class="sidebar-avatar" id="sidebarAvatar">A</div>
+    <div>
+      <div class="sidebar-name" id="sidebarName">Guest</div>
+      <span class="sidebar-badge badge-free" id="sidebarBadge">🆓 Free</span>
+    </div>
+  </div>
+  <nav class="sidebar-nav">
+    <a class="sidebar-link active" href="index.html"><span>🏠</span> হোম</a>
+    <a class="sidebar-link" href="profile.html"><span>👤</span> প্রোফাইল</a>
+    <a class="sidebar-link" href="focus.html"><span>⏱️</span> Focus Timer</a>
+    <a class="sidebar-link" href="packages.html"><span>⭐</span> প্যাকেজ</a>
+    <div class="sidebar-divider"></div>
+    <a class="sidebar-link" href="#" onclick="showToast('শীঘ্রই আসছে!')"><span>📥</span> Offline Cache</a>
+    <div class="sidebar-divider"></div>
+    <div class="sidebar-admin" id="adminLink" style="display:none" onclick="window.location.href='admin/index.html'">
+      👑 Admin Panel
+    </div>
+    <div class="sidebar-logout" onclick="Auth.logout()">
+      <span>🚪</span> Logout
+    </div>
+  </nav>
+</div>
+
+<!-- ══ MAIN CONTENT ══ -->
+<main id="mainContent" style="padding-bottom:16px">
+
+  <!-- Announcement Slideshow -->
+  <div class="slideshow-wrap" id="slideshowWrap" style="display:none">
+    <div id="slideshowInner"></div>
+    <div class="slide-dots" id="slideDots"></div>
+  </div>
+
+  <!-- Greeting -->
+  <div class="greeting" id="greetingSection">
+    <div class="greeting-name" id="greetingName">AtlasPro-তে স্বাগতম! 👋</div>
+    <div style="margin-top:6px" id="greetingBadge"></div>
+  </div>
+
+  <!-- Subjects Section -->
+  <div class="section-label">
+    <span class="section-title">বিষয়সমূহ</span>
+    <span id="adminBadge" style="display:none">
+      <a href="admin/index.html" style="font-size:11px;background:rgba(239,68,68,0.12);color:#f87171;padding:3px 10px;border-radius:6px;border:1px solid rgba(239,68,68,0.25)">⚙️ Admin</a>
+    </span>
+  </div>
+
+  <!-- Subject Grid (dynamic) -->
+  <div id="subjectArea">
+    <div class="loader"><div class="spinner"></div><div class="text-sm">লোড হচ্ছে...</div></div>
+  </div>
+
+  <!-- Quick Actions -->
+  <div class="section-label mt-8">
+    <span class="section-title">Quick Access</span>
+  </div>
+  <div class="quick-grid" id="quickGrid">
+    <div class="quick-card" onclick="window.location.href='focus.html'">
+      <div class="quick-icon">⏱️</div>
+      <div class="quick-label">Focus Timer</div>
+      <div class="quick-sub">Study session</div>
+    </div>
+    <div class="quick-card" onclick="window.location.href='profile.html#history'">
+      <div class="quick-icon">📊</div>
+      <div class="quick-label">My Mistakes</div>
+      <div class="quick-sub">ভুল থেকে শিখো</div>
+    </div>
+    <div class="quick-card" onclick="window.location.href='packages.html'">
+      <div class="quick-icon">⭐</div>
+      <div class="quick-label">Premium Plan</div>
+      <div class="quick-sub">Upgrade করো</div>
+    </div>
+    <div class="quick-card" onclick="showToast('🤖 ATLAS AI শীঘ্রই আসছে!')">
+      <div class="quick-icon">🤖</div>
+      <div class="quick-label">ATLAS AI</div>
+      <div class="quick-sub">Coming soon</div>
+    </div>
+    <div class="quick-card full-width admin-card" id="adminQuick" style="display:none" onclick="window.location.href='admin/index.html'">
+      <div class="quick-icon">👑</div>
+      <div class="quick-label">Admin Control</div>
+      <div class="quick-sub">সব নিয়ন্ত্রণ এখানে</div>
+    </div>
+  </div>
+
+  <!-- Owner Flip Card -->
+  <div class="section-label mt-8">
+    <span class="section-title">আমাদের সম্পর্কে</span>
+  </div>
+  <div class="owner-section" id="ownerSection" style="display:none"></div>
+
+</main>
+
+<!-- ══ FLOATING BUTTONS ══ -->
+<div class="float-btns">
+  <a class="float-btn float-wa" href="https://wa.me/8801999681290" target="_blank" title="WhatsApp">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="white">
+      <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+    </svg>
+  </a>
+  <a class="float-btn float-tg" href="https://t.me/rafi_somc" target="_blank" title="Telegram">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="white">
+      <path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/>
+    </svg>
+  </a>
+</div>
+
+<!-- ══ BOTTOM NAV ══ -->
+<nav class="bottom-nav">
+  <a class="nav-item active" href="index.html">
+    <span class="nav-icon">🏠</span>হোম
+  </a>
+  <a class="nav-item" href="#" id="navSubjects">
+    <span class="nav-icon">📚</span>বিষয়
+  </a>
+  <a class="nav-item" href="profile.html#history">
+    <span class="nav-icon">📝</span>এক্সাম
+  </a>
+  <a class="nav-item" href="focus.html">
+    <span class="nav-icon">⏱️</span>টাইমার
+  </a>
+  <a class="nav-item" href="profile.html">
+    <span class="nav-icon">👤</span>প্রোফাইল
+  </a>
+</nav>
+
+<!-- ══ TOAST ══ -->
+<div class="toast" id="toast"></div>
+
+<script src="js/config.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/theme.js"></script>
+<script>
+// ── Sidebar ──
+function toggleSidebar() {
+  document.getElementById('sidebar').classList.toggle('open');
+  document.getElementById('sidebarOverlay').classList.toggle('open');
+}
+function closeSidebar() {
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('sidebarOverlay').classList.remove('open');
+}
+
+// ── Toast ──
+function showToast(msg, duration=2500) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), duration);
+}
+
+// ── Gradient colors for subject cards ──
+const GRAD = [
+  ['#6C63FF','#3D35B0'], ['#00D4AA','#00856F'],
+  ['#FF6B6B','#B03535'], ['#FFBE0B','#B08500'],
+  ['#3A86FF','#1A56CC'], ['#FF006E','#AA0048'],
+  ['#8B5CF6','#5B21B6'], ['#EC4899','#9D174D'],
+];
+
+// ── Load page ──
+async function init() {
+  initHeader();
+  loadAnnouncements();
+  loadSubjects();
+  loadOwner();
+}
+
+function initHeader() {
+  const name = Auth.getUserName();
+  const isAdmin = Auth.isAdmin();
+  const isPremium = localStorage.getItem('is_premium') === 'true';
+
+  // Avatar
+  const initial = name ? name[0].toUpperCase() : 'A';
+  document.getElementById('avatarBtn').textContent = initial;
+  document.getElementById('sidebarAvatar').textContent = initial;
+  document.getElementById('sidebarName').textContent = name || 'Guest';
+
+  // Badge
+  const badge = document.getElementById('sidebarBadge');
+  if (isPremium) {
+    badge.className = 'sidebar-badge badge-premium';
+    badge.textContent = '⭐ Premium';
+  }
+
+  // Greeting
+  document.getElementById('greetingName').textContent =
+    name ? `স্বাগতম, ${name}! 👋` : 'AtlasPro-তে স্বাগতম! 👋';
+
+  // Badge row
+  const remaining = localStorage.getItem('remaining_pages') || '10';
+  const badgeEl = document.getElementById('greetingBadge');
+  if (isPremium) {
+    badgeEl.innerHTML = `<span class="greeting-badge" style="background:rgba(245,158,11,0.12);color:var(--amber)">⭐ Premium</span>`;
+  } else {
+    badgeEl.innerHTML = `
+      <span class="greeting-badge" style="background:rgba(99,179,237,0.12);color:#63B3ED">🆓 Free · ${remaining} পৃষ্ঠা বাকি</span>
+      <span class="greeting-upgrade" onclick="window.location.href='packages.html'">আপগ্রেড করো →</span>`;
+  }
+
+  // Admin
+  if (isAdmin) {
+    document.getElementById('adminLink').style.display = 'flex';
+    document.getElementById('adminBadge').style.display = 'block';
+    document.getElementById('adminQuick').style.display = 'flex';
+  }
+}
+
+async function loadAnnouncements() {
+  try {
+    const res = await fetch(CONFIG.workerUrl + '/api/public/announcements');
+    if (!res.ok) return;
+    const data = await res.json();
+    const items = data.announcements || [];
+    if (!items.length) return;
+
+    const wrap = document.getElementById('slideshowWrap');
+    const inner = document.getElementById('slideshowInner');
+    const dots = document.getElementById('slideDots');
+    wrap.style.display = 'block';
+
+    let current = 0;
+    function render() {
+      inner.innerHTML = items.map((a, i) => `
+        <div class="slide ${i===current?'active':''}" style="background:linear-gradient(135deg,${a.color||'var(--card)'},var(--bg2));border-color:${a.color||'var(--border)'}20">
+          <div class="slide-title">${a.title||''}</div>
+          <div class="slide-text">${a.content||''}</div>
+        </div>`).join('');
+      dots.innerHTML = items.map((_, i) =>
+        `<div class="slide-dot ${i===current?'active':''}"></div>`).join('');
+    }
+    render();
+    setInterval(() => { current = (current+1) % items.length; render(); }, 3000);
+  } catch(_) {}
+}
+
+async function loadSubjects() {
+  const area = document.getElementById('subjectArea');
+  if (!Auth.isLoggedIn()) {
+    area.innerHTML = `
+      <div class="login-cta">
+        <div class="login-cta-icon">🔐</div>
+        <div class="login-cta-title">কন্টেন্ট দেখতে লগইন করো</div>
+        <div class="login-cta-text">বিষয়, অধ্যায় ও PDF পেতে একাউন্ট দরকার</div>
+        <a href="auth.html" class="btn btn-primary btn-full">লগইন / রেজিস্ট্রেশন</a>
+      </div>`;
+    return;
+  }
+  try {
+    const res = await Auth.api('/api/subjects');
+    const data = await res.json();
+    const subjects = data.subjects || [];
+    if (!subjects.length) {
+      area.innerHTML = `<div class="empty"><div class="empty-icon">📚</div><div class="empty-title">কোনো বিষয় নেই</div></div>`;
+      return;
+    }
+    area.innerHTML = `<div class="subject-grid">${subjects.map((s,i)=>{
+      const [c1,c2] = GRAD[i % GRAD.length];
+      return `<div class="subject-card" style="background:linear-gradient(135deg,${c1}CC,${c2});box-shadow:0 4px 16px ${c1}33"
+        onclick="window.location.href='chapters.html?subject_id=${s.id}&name=${encodeURIComponent(s.name)}'">
+        <div class="subject-icon">${s.icon||'📚'}</div>
+        <div class="subject-name">${s.name||''}</div>
+        <div class="subject-meta"><span>📖</span> অধ্যায় দেখো →</div>
+      </div>`;
+    }).join('')}</div>`;
+  } catch(_) {
+    area.innerHTML = `<div class="empty"><div class="empty-icon">⚠️</div><div class="empty-title">লোড ব্যর্থ</div><button class="btn btn-outline mt-12" onclick="loadSubjects()">Retry</button></div>`;
+  }
+}
+
+async function loadOwner() {
+  try {
+    const res = await fetch(CONFIG.workerUrl + '/api/public/owner');
+    if (!res.ok) return;
+    const data = await res.json();
+    const owner = data.owner;
+    if (!owner) return;
+    const sec = document.getElementById('ownerSection');
+    sec.style.display = 'block';
+    sec.innerHTML = `
+      <div class="flip-card" id="ownerCard" onclick="document.getElementById('ownerCard').classList.toggle('flipped')">
+        <div class="flip-card-inner">
+          <div class="flip-front">
+            <div class="owner-glow"></div>
+            <img class="owner-photo" src="${owner.photo_url||''}" onerror="this.style.display='none'" alt="Owner">
+            <div style="font-weight:700;font-size:15px">${owner.name||''}</div>
+            <div style="font-size:11px;color:var(--text3)">${owner.role||''} · ক্লিক করো</div>
+          </div>
+          <div class="flip-back">
+            <div style="font-weight:700;font-size:16px">${owner.name||''}</div>
+            <div style="font-size:12px;color:var(--primary)">${owner.role||''}</div>
+            <div style="font-size:12px;color:var(--text2);line-height:1.6;margin-top:6px">${owner.bio||''}</div>
+            ${owner.social_link?`<a href="${owner.social_link}" target="_blank" style="font-size:12px;color:var(--accent);margin-top:8px">🔗 Social Link</a>`:''}
+          </div>
+        </div>
+      </div>`;
+  } catch(_) {}
+}
+
+// Scroll to subjects on nav click
+document.getElementById('navSubjects').addEventListener('click', e => {
+  e.preventDefault();
+  document.getElementById('subjectArea').scrollIntoView({ behavior: 'smooth' });
+});
+
+init();
+</script>
+</body>
+</html>
