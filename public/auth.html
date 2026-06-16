@@ -271,15 +271,14 @@ async function handleLogin() {
       body: JSON.stringify({ phone, password: pass }),
     });
     const data = await res.json();
-    if (!res.ok) { showToast('❌ ' + (data.message || 'লগইন ব্যর্থ')); return; }
+    if (!res.ok) { showToast('❌ ' + (data.error || data.message || 'লগইন ব্যর্থ')); btn.disabled = false; btn.textContent = 'লগইন করুন'; return; }
     Auth.setSession(data);
     showToast('✅ লগইন সফল!');
     setTimeout(() => window.location.href = 'index.html', 700);
   } catch (_) {
     showToast('❌ সংযোগ ব্যর্থ');
+    btn.disabled = false; btn.textContent = 'লগইন করুন';
   }
-
-  btn.disabled = false; btn.textContent = 'লগইন করুন';
 }
 
 // ── STUB: replace with real API call ──
@@ -320,15 +319,14 @@ async function handleRegister() {
         timer_type: timer }),
     });
     const data = await res.json();
-    if (!res.ok) { showToast('❌ ' + (data.message || 'রেজিস্ট্রেশন ব্যর্থ')); return; }
+    if (!res.ok) { showToast('❌ ' + (data.error || data.message || 'রেজিস্ট্রেশন ব্যর্থ')); btn.disabled = false; btn.textContent = 'রেজিস্টার করুন'; return; }
     Auth.setSession(data);
     showToast('✅ রেজিস্ট্রেশন সফল!');
     setTimeout(() => window.location.href = 'index.html', 700);
   } catch (_) {
     showToast('❌ সংযোগ ব্যর্থ');
+    btn.disabled = false; btn.textContent = 'রেজিস্টার করুন';
   }
-
-  btn.disabled = false; btn.textContent = 'রেজিস্টার করুন';
 }
 
 // ── STUB: replace with real API call ──
