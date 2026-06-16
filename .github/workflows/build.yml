@@ -33,6 +33,7 @@ jobs:
   deploy-worker:
     name: Deploy Worker (Cloudflare Workers)
     runs-on: ubuntu-latest
+    continue-on-error: true
     steps:
       - uses: actions/checkout@v4
 
