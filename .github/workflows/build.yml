@@ -15,8 +15,21 @@ jobs:
           channel: 'stable'
       - name: Patch Flutter v1 embedding check
         run: |
-          FILE=$(find /opt/hostedtoolcache/flutter -name "project.dart" -path "*/flutter_tools/*" | head -1)
-          sed -i "s/throwToolExit('Build failed due to use of deleted Android v1 embedding.', exitCode: 1);/\/\/ v1 check disabled/g" "$FILE"
+          # Find all Flutter tools dart files that contain the v1 embedding error
+          FILES=$(find /opt/hostedtoolcache/flutter -name "*.dart" -path "*/flutter_tools/*" -exec grep -l "deleted Android v1 embedding" {} \; 2>/dev/null)
+          if [ -n "$FILES" ]; then
+            for FILE in $FILES; do
+              echo "Patching: $FILE"
+              # Use perl for multiline-safe replacement (throwToolExit spans multiple lines in source)
+              perl -i -0pe 's/throwToolExit\([^;]*deleted Android v1 embedding[^;]*\);//gs' "$FILE"
+            done
+            # Delete compiled snapshots so Flutter rebuilds from the patched source
+            find /opt/hostedtoolcache/flutter -name "flutter_tools.snapshot" -delete 2>/dev/null && echo "Deleted snapshot" || echo "No snapshot found"
+            find /opt/hostedtoolcache/flutter -name "flutter_tools.dill" -delete 2>/dev/null && echo "Deleted dill" || echo "No dill found"
+            echo "Patch complete"
+          else
+            echo "Warning: v1 embedding check not found in Flutter tools source"
+          fi
       - run: flutter pub get
       - run: flutter build apk --release
       - uses: actions/upload-artifact@v4
