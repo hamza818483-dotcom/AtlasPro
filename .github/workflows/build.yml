@@ -52,11 +52,11 @@ jobs:
           curl -s -X POST "https://api.cloudflare.com/client/v4/accounts/${{ secrets.CLOUDFLARE_ACCOUNT_ID }}/pages/projects" \
             -H "Authorization: Bearer ${{ secrets.CLOUDFLARE_API_TOKEN }}" \
             -H "Content-Type: application/json" \
-            --data '{"name":"atlaspro","production_branch":"main"}' || true
+            --data '{"name":"atlaspractice","production_branch":"main"}' || true
       - uses: cloudflare/pages-action@v1
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          projectName: atlaspro
+          projectName: atlaspractice
           directory: build/web
           gitHubToken: ${{ secrets.GITHUB_TOKEN }}

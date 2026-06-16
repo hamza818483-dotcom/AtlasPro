@@ -32,7 +32,6 @@ final GoRouter appRouter = GoRouter(
   redirect: (context, state) async {
     final path = state.uri.toString();
     final loggedIn = await _isLoggedIn();
-    if (!loggedIn && path != '/' && path != '/auth') return '/auth';
     if (loggedIn && path == '/auth') return '/home';
     if (path == '/admin' && !(await _isAdmin())) return '/home';
     return null;

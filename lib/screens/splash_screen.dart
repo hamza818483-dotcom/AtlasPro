@@ -51,8 +51,7 @@ class _SplashScreenState extends State<SplashScreen>
     ]);
 
     if (!mounted) return;
-    final loggedIn = await AuthService.isLoggedIn();
-    context.go(loggedIn ? '/home' : '/auth');
+    context.go('/home');
   }
 
   @override
