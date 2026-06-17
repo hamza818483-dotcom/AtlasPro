@@ -76,12 +76,17 @@ Return ONLY a JSON array: [{"question":"...","option_a":"...","option_b":"...","
           let aiText = null;
 
           // Try Gemini Vision if PDF URL available
-          if (pdf.url && geminiKeys.length > 0) {
+          if (pdf.r2_url && geminiKeys.length > 0) {
             try {
-              const pdfRes = await fetch(pdf.url);
+              const pdfRes = await fetch(pdf.r2_url);
               if (pdfRes.ok) {
                 const buf = await pdfRes.arrayBuffer();
-                const b64 = btoa(String.fromCharCode(...new Uint8Array(buf)));
+                const u8 = new Uint8Array(buf);
+                let bin = '';
+                for (let i = 0; i < u8.length; i += 8192) {
+                  bin += String.fromCharCode(...u8.subarray(i, i + 8192));
+                }
+                const b64 = btoa(bin);
                 const body = {
                   contents: [{ parts: [
                     { inline_data: { mime_type: 'application/pdf', data: b64 } },

@@ -237,13 +237,16 @@ export default {
 
       if (path === '/api/admin/mcq' && method === 'POST') {
         const body = await request.json();
+        const ansMap = { '1':'A', '2':'B', '3':'C', '4':'D', 'k':'A', 'kh':'B', 'g':'C', 'gh':'D', 'a':'A', 'b':'B', 'c':'C', 'd':'D' };
+        const rawAns = String(body.correct_answer || 'A').trim().toLowerCase();
+        const ca = ansMap[rawAns] || rawAns.toUpperCase() || 'A';
         const res = await env.DB.prepare(`
           INSERT INTO mcqs (pdf_id, type, question, option_a, option_b, option_c, option_d, correct_answer, explanation, page_number)
           VALUES (?,?,?,?,?,?,?,?,?,?)
         `).bind(
           body.pdf_id, body.type || 'standard', body.question,
           body.option_a, body.option_b, body.option_c, body.option_d,
-          body.correct_answer, body.explanation || '', body.page_number || 1
+          ca, body.explanation || '', body.page_number || 1
         ).run();
         return json({ id: res.meta.last_row_id }, 201);
       }
@@ -251,12 +254,15 @@ export default {
       if (path.match(/^\/api\/admin\/mcq\/\d+$/) && method === 'PUT') {
         const id = path.split('/').pop();
         const body = await request.json();
+        const ansMap = { '1':'A', '2':'B', '3':'C', '4':'D', 'k':'A', 'kh':'B', 'g':'C', 'gh':'D', 'a':'A', 'b':'B', 'c':'C', 'd':'D' };
+        const rawAns = String(body.correct_answer || 'A').trim().toLowerCase();
+        const ca = ansMap[rawAns] || rawAns.toUpperCase() || 'A';
         await env.DB.prepare(`
           UPDATE mcqs SET question=?, option_a=?, option_b=?, option_c=?, option_d=?,
           correct_answer=?, explanation=?, page_number=? WHERE id=?
         `).bind(
           body.question, body.option_a, body.option_b, body.option_c, body.option_d,
-          body.correct_answer, body.explanation || '', body.page_number || 1, id
+          ca, body.explanation || '', body.page_number || 1, id
         ).run();
         return json({ message: 'Updated' });
       }
@@ -327,38 +333,28 @@ export default {
         return json({ count: mcqs.length, mcqs });
       }
 
-      // MCQ CSV Upload
-      if (path === '/api/admin/mcq/csv' && method === 'POST') {
-        const formData = await request.formData();
-        const file = formData.get('file');
-        const pdfId = formData.get('pdf_id');
-        const type = formData.get('type') || 'standard';
-        const pageNumber = parseInt(formData.get('page_number') || '1');
+      // MCQ Batch Insert (JSON array — used by CSV import and AI save)
+      if (path === '/api/admin/mcq/batch' && method === 'POST') {
+        const body = await request.json();
+        const mcqs = body.mcqs || [];
+        if (!mcqs.length) return json({ error: 'No MCQs provided' }, 400);
 
-        const csvText = await file.text();
-        const lines = csvText.split('\n').filter(l => l.trim());
-        const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
-
+        const answerMap = { '1':'A', '2':'B', '3':'C', '4':'D', 'k':'A', 'kh':'B', 'g':'C', 'gh':'D', 'a':'A', 'b':'B', 'c':'C', 'd':'D' };
         let count = 0;
-        for (let i = 1; i < lines.length; i++) {
-          const cols = lines[i].split(',');
-          const row = {};
-          headers.forEach((h, idx) => row[h] = (cols[idx] || '').trim());
-
-          if (!row.question) continue;
+        for (const m of mcqs) {
+          if (!m.question) continue;
+          const raw = String(m.correct_answer || 'A').trim().toLowerCase();
+          const ca = answerMap[raw] || raw.toUpperCase() || 'A';
           await env.DB.prepare(`
-            INSERT INTO mcqs (pdf_id, type, question, option_a, option_b, option_c, option_d, correct_answer, explanation, page_number)
-            VALUES (?,?,?,?,?,?,?,?,?,?)
+            INSERT INTO mcqs (pdf_id, type, question, option_a, option_b, option_c, option_d, correct_answer, explanation, page_number, created_at)
+            VALUES (?,?,?,?,?,?,?,?,?,?,datetime('now'))
           `).bind(
-            pdfId, type, row.question,
-            row.option_a || row.a || '', row.option_b || row.b || '',
-            row.option_c || row.c || '', row.option_d || row.d || '',
-            (row.correct_answer || row.answer || 'A').toUpperCase(),
-            row.explanation || '', pageNumber
+            m.pdf_id, m.type || 'standard', m.question,
+            m.option_a || '', m.option_b || '', m.option_c || '', m.option_d || '',
+            ca, m.explanation || '', m.page_number || 1
           ).run();
           count++;
         }
-
         return json({ count, message: `${count} MCQs imported` }, 201);
       }
 
@@ -411,18 +407,6 @@ export default {
           const textPrompt = `${prompt}\n\nPage: ${page_number}`;
           const groqText = await callGroq(env.GROQ_KEY, [{ role: 'user', content: textPrompt }]);
           if (groqText) mcqs = parseMcqJson(groqText);
-        }
-
-        for (const mcq of mcqs) {
-          await env.DB.prepare(`
-            INSERT INTO mcqs (pdf_id, type, question, option_a, option_b, option_c, option_d, correct_answer, explanation, page_number, source)
-            VALUES (?,?,?,?,?,?,?,?,?,?,'ai')
-          `).bind(
-            pdf_id, type,
-            mcq.question || '', mcq.option_a || '', mcq.option_b || '',
-            mcq.option_c || '', mcq.option_d || '',
-            (mcq.correct_answer || 'A').toUpperCase(), mcq.explanation || '', page_number
-          ).run();
         }
 
         return json({ count: mcqs.length, mcqs });

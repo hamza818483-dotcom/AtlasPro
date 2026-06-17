@@ -629,8 +629,8 @@ body { padding-top: 56px; padding-bottom: 80px; }
           <div class="card-title">📊 CSV থেকে আমদানি</div>
           <div class="csv-info">
             <strong style="color:var(--green)">ফরম্যাট:</strong><br>
-            <code>question,option_a,option_b,option_c,option_d,correct_answer,explanation</code><br>
-            <span style="font-size:11px;color:var(--text3);margin-top:6px;display:block">correct_answer: k / kh / g / gh (বা ক / খ / গ / ঘ)</span>
+            <code>questions,option1,option2,option3,option4,answer,explanation,type,section</code><br>
+            <span style="font-size:11px;color:var(--text3);margin-top:6px;display:block">answer: 1/2/3/4 (numeric) • type ও section ডিফল্ট 1</span>
           </div>
           <div class="form-group">
             <label class="form-label">পেইজ নম্বর</label>
@@ -1095,8 +1095,8 @@ function renderMcqList() {
     listEl.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📝</div><div class="empty-state-title">এই পেইজে কোনো প্রশ্ন নেই</div><div class="empty-state-text">ম্যানুয়াল, CSV বা AI ট্যাব থেকে প্রশ্ন যোগ করুন</div></div>';
     return;
   }
-  const optKeys = ['k','kh','g','gh'];
-  const optLbls = { k:'ক', kh:'খ', g:'গ', gh:'ঘ' };
+  const optLabels = ['ক','খ','গ','ঘ'];
+  const optDbKeys = ['a','b','c','d'];
   const typeMeta = {
     standard: { label:'Standard', cls:'badge-standard' },
     hard: { label:'Hard 🔥', cls:'badge-hard' },
@@ -1104,11 +1104,11 @@ function renderMcqList() {
   };
   listEl.innerHTML = allMcqs.map((q, i) => {
     const tm = typeMeta[q.type] || typeMeta.standard;
-    const opts = optKeys.map(k => {
-      const val = q['option_' + k] || q['option_' + {k:'a',kh:'b',g:'c',gh:'d'}[k]] || '';
-      const ca = q.correct_answer;
-      const isCorr = ca === k || ca === {k:'a',kh:'b',g:'c',gh:'d'}[k];
-      return `<div class="mcq-opt ${isCorr ? 'correct' : ''}"><span class="opt-key">${optLbls[k]}</span>${esc(val)}</div>`;
+    const ca = (q.correct_answer || 'A').toUpperCase();
+    const opts = optDbKeys.map((k, idx) => {
+      const val = q['option_' + k] || '';
+      const isCorr = ca === k.toUpperCase() || ca === String(idx + 1);
+      return `<div class="mcq-opt ${isCorr ? 'correct' : ''}"><span class="opt-key">${optLabels[idx]}</span>${esc(val)}</div>`;
     }).join('');
     return `
       <div class="mcq-card" id="mcard-${q.id}">
@@ -1180,14 +1180,14 @@ function startMcqEdit(id) {
   editingMcqId = id;
   document.getElementById('mcqId').value = id;
   document.getElementById('mcqQuestion').value = q.question || '';
-  document.getElementById('opt-k').value = q.option_k || q.option_a || '';
-  document.getElementById('opt-kh').value = q.option_kh || q.option_b || '';
-  document.getElementById('opt-g').value = q.option_g || q.option_c || '';
-  document.getElementById('opt-gh').value = q.option_gh || q.option_d || '';
+  document.getElementById('opt-k').value = q.option_a || '';
+  document.getElementById('opt-kh').value = q.option_b || '';
+  document.getElementById('opt-g').value = q.option_c || '';
+  document.getElementById('opt-gh').value = q.option_d || '';
   document.getElementById('mcqExplanation').value = q.explanation || '';
-  const ca = q.correct_answer;
-  const mapped = { a:'k', b:'kh', c:'g', d:'gh' };
-  selectAnswer(mapped[ca] || ca || 'k');
+  const ca = (q.correct_answer || 'A').toUpperCase();
+  const mapped = { 'A':'k', 'B':'kh', 'C':'g', 'D':'gh' };
+  selectAnswer(mapped[ca] || 'k');
   selectType(q.type || 'standard');
   document.getElementById('manualFormTitle').textContent = '✏️ প্রশ্ন সম্পাদনা';
   document.getElementById('mcqSaveBtn').textContent = '✓ আপডেট করো';
@@ -1274,7 +1274,7 @@ function parseCsv(text) {
     const obj = {};
     headers.forEach((h, i) => { obj[h] = (fields[i] || '').replace(/^"|"$/g,'').trim(); });
     return obj;
-  }).filter(r => r.question || r.question_text);
+  }).filter(r => r.questions || r.question || r.question_text);
 }
 
 function processCsvFile(file) {
@@ -1298,18 +1298,18 @@ async function importCsv() {
   if (!csvData.length) return showToast('CSV ফাইল নির্বাচন করুন', 'error');
   if (!activePdfId) return showToast('PDF নির্বাচন করুন', 'error');
   const pg = parseInt(document.getElementById('csvPageNum').value) || currentPage;
-  const validAns = { k:'k', kh:'kh', g:'g', gh:'gh', 'ক':'k', 'খ':'kh', 'গ':'g', 'ঘ':'gh', a:'k', b:'kh', c:'g', d:'gh' };
+  const numToLetter = { '1':'A', '2':'B', '3':'C', '4':'D' };
   const mcqs = csvData.map(r => ({
     pdf_id: activePdfId,
     page_number: pg,
-    question: r.question || r.question_text || '',
-    option_a: r.option_a || r.option_k || '',
-    option_b: r.option_b || r.option_kh || '',
-    option_c: r.option_c || r.option_g || '',
-    option_d: r.option_d || r.option_gh || '',
-    correct_answer: validAns[(r.correct_answer || r.correct || '').toLowerCase()] || 'k',
-    type: ['standard','hard','true_false'].includes(r.type) ? r.type : 'standard',
-    explanation: r.explanation || null,
+    question: r.questions || r.question || r.question_text || '',
+    option_a: r.option1 || r.option_a || '',
+    option_b: r.option2 || r.option_b || '',
+    option_c: r.option3 || r.option_c || '',
+    option_d: r.option4 || r.option_d || '',
+    correct_answer: numToLetter[String(r.answer || r.correct_answer || '1').trim()] || String(r.answer || r.correct_answer || 'A').toUpperCase(),
+    type: r.type && r.type !== '1' && ['standard','hard','true_false'].includes(r.type) ? r.type : 'standard',
+    explanation: r.explanation || '',
   })).filter(r => r.question);
 
   const btn = document.getElementById('csvImportBtn');
@@ -1319,9 +1319,9 @@ async function importCsv() {
   btn.disabled = true; pw.style.display = 'block'; pf.style.width = '0%';
 
   try {
-    const chunk = 10; let done = 0;
+    const chunk = 20; let done = 0;
     for (let i = 0; i < mcqs.length; i += chunk) {
-      const r = await api('/api/admin/mcq/csv', { method: 'POST', body: JSON.stringify({ mcqs: mcqs.slice(i, i+chunk) }) });
+      const r = await api('/api/admin/mcq/batch', { method: 'POST', body: JSON.stringify({ mcqs: mcqs.slice(i, i+chunk) }) });
       if (!r.ok) throw new Error((await r.json()).error || 'আমদানি ব্যর্থ');
       done += Math.min(chunk, mcqs.length - i);
       const pct = Math.round(done / mcqs.length * 100);
@@ -1370,21 +1370,22 @@ async function aiGenerate() {
 
 function renderAiPreview(qs) {
   const optKeys = ['k','kh','g','gh'];
+  const optDbKeys = ['a','b','c','d'];
   const optLbls = { k:'ক', kh:'খ', g:'গ', gh:'ঘ' };
+  const letterToKey = { 'A':'k', 'B':'kh', 'C':'g', 'D':'gh' };
   const hdr = document.getElementById('aiResultHeader');
   hdr.textContent = 'AI তৈরি করেছে ' + qs.length + ' টি প্রশ্ন (সম্পাদনা করতে পারবেন)';
   document.getElementById('aiPreviewList').innerHTML = qs.map((q, idx) => {
-    const ca = q.correct_answer;
-    const ansMap = { a:'k', b:'kh', c:'g', d:'gh' };
-    const corrKey = ansMap[ca] || ca || 'k';
+    const ca = (q.correct_answer || 'A').toUpperCase();
+    const corrKey = letterToKey[ca] || 'k';
     return `<div class="ai-preview-card">
       <div class="ai-preview-q">
         <strong style="color:var(--text3);font-size:11px">${idx+1}.</strong>
         <textarea id="ai-q-${idx}" rows="2" style="width:100%;background:transparent;border:none;color:var(--text);font-size:13px;font-family:inherit;outline:none;resize:none;line-height:1.5;margin-top:4px">${esc(q.question)}</textarea>
       </div>
       <div class="ai-preview-opts">
-        ${optKeys.map(k => {
-          const val = q['option_' + k] || q['option_' + {k:'a',kh:'b',g:'c',gh:'d'}[k]] || '';
+        ${optKeys.map((k, ki) => {
+          const val = q['option_' + optDbKeys[ki]] || '';
           const isC = corrKey === k;
           return `<div class="ai-preview-opt ${isC ? 'correct' : ''}"><strong>${optLbls[k]})</strong> <input id="ai-o-${idx}-${k}" value="${esc(val)}" style="background:transparent;border:none;color:inherit;font-size:11px;font-family:inherit;width:calc(100% - 24px);outline:none"></div>`;
         }).join('')}
@@ -1410,7 +1411,7 @@ async function saveAiMcqs() {
   if (!aiData.length) return;
   if (!activePdfId) return;
   const optKeys = ['k','kh','g','gh'];
-  const fieldMap = { k:'a', kh:'b', g:'c', gh:'d' };
+  const keyToLetter = { k:'A', kh:'B', g:'C', gh:'D' };
   const mcqs = aiData.map((q, idx) => ({
     pdf_id: activePdfId,
     page_number: currentPage,
@@ -1419,15 +1420,15 @@ async function saveAiMcqs() {
     option_b: (document.getElementById('ai-o-' + idx + '-kh')?.value || q.option_kh || q.option_b || '').trim(),
     option_c: (document.getElementById('ai-o-' + idx + '-g')?.value || q.option_g || q.option_c || '').trim(),
     option_d: (document.getElementById('ai-o-' + idx + '-gh')?.value || q.option_gh || q.option_d || '').trim(),
-    correct_answer: document.getElementById('ai-ca-' + idx)?.value || q.correct_answer || 'k',
+    correct_answer: keyToLetter[document.getElementById('ai-ca-' + idx)?.value] || q.correct_answer || 'A',
     type: q.type || selAiType || 'standard',
-    explanation: q.explanation || null,
+    explanation: q.explanation || '',
   })).filter(m => m.question);
 
   const btn = document.getElementById('aiSaveBtn');
   btn.disabled = true; btn.innerHTML = '<span class="spinner-inline"></span> সংরক্ষণ হচ্ছে...';
   try {
-    const r = await api('/api/admin/mcq/csv', { method: 'POST', body: JSON.stringify({ mcqs }) });
+    const r = await api('/api/admin/mcq/batch', { method: 'POST', body: JSON.stringify({ mcqs }) });
     if (!r.ok) throw new Error((await r.json()).error || 'ব্যর্থ');
     showToast(mcqs.length + ' টি AI প্রশ্ন সংরক্ষিত ✓', 'success');
     discardAi(); loadMcqs();
