@@ -20,6 +20,11 @@ database_id = "4b5de415-f0ba-4fd3-95f2-ee95f2da46d0"
 SUPABASE_URL = "https://cctbwbipsoapskajoubr.supabase.co"
 SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNjdGJ3Ymlwc29hcHNrYWpvdWJyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEzNjQ0MTcsImV4cCI6MjA5Njk0MDQxN30.JhBlyfKtIdIsBGAXt4j32ctj7Sr_XsCcdB7xaxs_6CY"
 
-# Secrets (set via: wrangler secret put GEMINI_KEY / GROQ_KEY)
-# GEMINI_KEY — Google Gemini API key for MCQ generation and AI explanations
-# GROQ_KEY   — Groq API key (fallback for Gemini)
+# Cloudflare AI (Workers AI — free tier)
+[ai]
+binding = "AI"
+
+# Secrets (set via: wrangler secret put <NAME>)
+# GEMINI_KEYS — comma-separated Google Gemini API keys (rotation)
+# GEMINI_KEY  — single Gemini key (fallback if GEMINI_KEYS not set)
+# GROQ_KEY    — Groq API key (fallback for Gemini)

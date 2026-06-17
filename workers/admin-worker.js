@@ -1,6 +1,5 @@
 // admin-worker.js — AtlasPro Admin API
-// Handles: subjects, chapters, pdfs, mcq, users, announcements, packages, owner, settings
-import { supabaseUpload, supabaseDelete, getGeminiKeys, callGemini, callGroq, parseMcqJson } from './utils.js';
+import { supabaseUpload, supabaseDelete, getGeminiKeys, callGemini, callGroq, callCfAi, parseMcqJson } from './utils.js';
 
 export default {
   async fetch(request, env) {
@@ -317,6 +316,10 @@ export default {
           const gr = await callGroq(env.GROQ_KEY, [{ role: 'user', content: geminiPrompt }], 2048);
           if (gr) mcqs = parseMcqJson(gr);
         }
+        if (!mcqs.length) {
+          const cf = await callCfAi(env, geminiPrompt);
+          if (cf) mcqs = parseMcqJson(cf);
+        }
 
         for (const mcq of mcqs) {
           await env.DB.prepare(`
@@ -407,6 +410,12 @@ export default {
           const textPrompt = `${prompt}\n\nPage: ${page_number}`;
           const groqText = await callGroq(env.GROQ_KEY, [{ role: 'user', content: textPrompt }]);
           if (groqText) mcqs = parseMcqJson(groqText);
+        }
+
+        // Fallback: Cloudflare AI
+        if (!mcqs.length) {
+          const cfText = await callCfAi(env, `${prompt}\n\nPage: ${page_number}`);
+          if (cfText) mcqs = parseMcqJson(cfText);
         }
 
         return json({ count: mcqs.length, mcqs });
