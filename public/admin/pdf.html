@@ -453,6 +453,78 @@ body { padding-top: 56px; padding-bottom: 80px; }
 .confirm-actions .btn { flex: 1; }
 
 .toast { bottom: 72px !important; }
+
+/* Combo input — type + dropdown */
+.combo-wrap { position: relative; }
+.combo-row { display: flex; gap: 0; }
+.combo-input {
+  flex: 1; background: var(--bg2); border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm) 0 0 var(--radius-sm);
+  color: var(--text); font-size: 14px; padding: 12px 14px;
+  outline: none; font-family: inherit; transition: border-color 0.2s;
+  box-sizing: border-box; border-right: none;
+}
+.combo-input:focus { border-color: var(--primary); }
+.combo-input::placeholder { color: var(--text3); }
+.combo-toggle {
+  width: 48px; background: var(--card); border: 1.5px solid var(--border);
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; font-size: 16px; color: var(--text2);
+  transition: all 0.2s; flex-shrink: 0;
+}
+.combo-toggle:hover { background: rgba(108,99,255,0.1); color: var(--primary); border-color: var(--primary); }
+.combo-toggle.open { background: var(--primary); color: #fff; border-color: var(--primary); }
+.combo-dropdown {
+  position: absolute; top: calc(100% + 4px); left: 0; right: 0;
+  background: var(--bg2); border: 1.5px solid var(--primary);
+  border-radius: var(--radius-sm); max-height: 200px; overflow-y: auto;
+  z-index: 50; display: none; box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+}
+.combo-dropdown.open { display: block; }
+.combo-item {
+  padding: 10px 14px; font-size: 13px; cursor: pointer;
+  display: flex; align-items: center; gap: 8px;
+  transition: background 0.15s; border-bottom: 1px solid var(--border);
+}
+.combo-item:last-child { border-bottom: none; }
+.combo-item:hover { background: rgba(108,99,255,0.1); }
+.combo-item.sel { background: rgba(108,99,255,0.15); color: var(--primary); font-weight: 700; }
+.combo-empty { padding: 14px; text-align: center; font-size: 12px; color: var(--text3); }
+.combo-icon-input {
+  width: 52px; background: var(--bg2); border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm); color: var(--text); font-size: 18px;
+  padding: 10px; outline: none; text-align: center; font-family: inherit;
+  transition: border-color 0.2s; flex-shrink: 0;
+}
+.combo-icon-input:focus { border-color: var(--primary); }
+.combo-add-btn {
+  padding: 10px 16px; border-radius: var(--radius-sm); border: none;
+  background: var(--primary); color: #fff; font-size: 13px; font-weight: 700;
+  cursor: pointer; font-family: inherit; white-space: nowrap;
+  transition: background 0.2s; flex-shrink: 0;
+}
+.combo-add-btn:hover { background: #5A52E0; }
+.combo-add-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.selected-tag {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: rgba(108,99,255,0.12); border: 1px solid rgba(108,99,255,0.3);
+  border-radius: 20px; padding: 5px 12px; font-size: 12px;
+  font-weight: 600; color: #9C8BFF; margin-top: 8px;
+}
+.selected-tag .tag-x {
+  cursor: pointer; font-size: 14px; color: var(--text3);
+  transition: color 0.2s; margin-left: 4px;
+}
+.selected-tag .tag-x:hover { color: var(--red); }
+.step-num {
+  width: 24px; height: 24px; border-radius: 50%;
+  background: var(--primary); color: #fff;
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 12px; font-weight: 900; flex-shrink: 0;
+}
+.step-disabled { opacity: 0.4; pointer-events: none; }
 </style>
 </head>
 <body>
@@ -465,44 +537,47 @@ body { padding-top: 56px; padding-bottom: 80px; }
 
 <main class="main-content">
 
+  <!-- ═══ STEP 1: বিষয় ═══ -->
   <div class="section-card card-purple">
     <div class="card-body">
-      <div class="card-title">📚 বিষয় ও অধ্যায় নির্বাচন</div>
-      <div class="form-group">
-        <label class="form-label">বিষয়</label>
-        <select class="form-select" id="selSubject" onchange="onSubjectChange()">
-          <option value="">-- বিষয় বেছে নিন --</option>
-        </select>
-      </div>
-      <button class="link-btn" onclick="toggleNewSubject()">+ নতুন বিষয় যোগ করো</button>
-      <div class="inline-add" id="newSubjectBox">
-        <div class="inline-add-row">
-          <input class="form-input" id="newSubjectName" placeholder="বিষয়ের নাম (যেমন: পদার্থবিজ্ঞান)" style="flex:1">
-          <input class="form-input" id="newSubjectIcon" placeholder="Icon (যেমন: ⚗️)" style="width:70px">
-          <button class="btn btn-primary btn-sm" onclick="createSubject()">যোগ করো</button>
-          <button class="btn btn-sm btn-outline" onclick="toggleNewSubject()">✕</button>
+      <div class="card-title"><span class="step-num">1</span> বিষয় (Subject)</div>
+      <div style="display:flex;gap:8px;align-items:flex-start">
+        <div class="combo-wrap" style="flex:1">
+          <div class="combo-row">
+            <input class="combo-input" id="subjectInput" placeholder="বিষয়ের নাম লিখো..." autocomplete="off" oninput="filterSubjects()">
+            <button class="combo-toggle" id="subjectToggle" onclick="toggleSubjectDD()">▼</button>
+          </div>
+          <div class="combo-dropdown" id="subjectDD"></div>
         </div>
+        <input class="combo-icon-input" id="subjectIcon" placeholder="📚" title="Icon">
+        <button class="combo-add-btn" id="subjectAddBtn" onclick="saveSubject()">+ যোগ</button>
       </div>
-      <div class="form-group" style="margin-bottom:6px;margin-top:10px">
-        <label class="form-label">অধ্যায়</label>
-        <select class="form-select" id="selChapter" disabled onchange="onChapterChange()">
-          <option value="">-- অধ্যায় বেছে নিন --</option>
-        </select>
-      </div>
-      <button class="link-btn" onclick="toggleNewChapter()">+ নতুন অধ্যায় যোগ করো</button>
-      <div class="inline-add" id="newChapterBox">
-        <div class="inline-add-row">
-          <input class="form-input" id="newChapterName" placeholder="অধ্যায়ের নাম" style="flex:1">
-          <button class="btn btn-primary btn-sm" onclick="createChapter()">যোগ করো</button>
-          <button class="btn btn-sm btn-outline" onclick="toggleNewChapter()">✕</button>
-        </div>
-      </div>
+      <div id="subjectSelectedTag"></div>
     </div>
   </div>
 
-  <div class="section-card card-green" id="uploadSection" style="display:none">
+  <!-- ═══ STEP 2: অধ্যায় ═══ -->
+  <div class="section-card card-green" id="chapterSection">
     <div class="card-body">
-      <div class="card-title">📤 PDF আপলোড</div>
+      <div class="card-title"><span class="step-num">2</span> অধ্যায় (Chapter)</div>
+      <div style="display:flex;gap:8px;align-items:flex-start">
+        <div class="combo-wrap" style="flex:1">
+          <div class="combo-row">
+            <input class="combo-input" id="chapterInput" placeholder="অধ্যায়ের নাম লিখো..." autocomplete="off" oninput="filterChapters()">
+            <button class="combo-toggle" id="chapterToggle" onclick="toggleChapterDD()">▼</button>
+          </div>
+          <div class="combo-dropdown" id="chapterDD"></div>
+        </div>
+        <button class="combo-add-btn" id="chapterAddBtn" onclick="saveChapter()">+ যোগ</button>
+      </div>
+      <div id="chapterSelectedTag"></div>
+    </div>
+  </div>
+
+  <!-- ═══ STEP 3: PDF আপলোড ═══ -->
+  <div class="section-card card-amber" id="uploadSection">
+    <div class="card-body">
+      <div class="card-title"><span class="step-num">3</span> PDF আপলোড</div>
       <div class="drop-zone" id="dropZone"
         ondragover="dzOver(event)" ondragleave="dzLeave()" ondrop="dzDrop(event)">
         <input type="file" id="pdfFileInput" accept=".pdf" onchange="onFileSelect(event)">
@@ -519,16 +594,16 @@ body { padding-top: 56px; padding-bottom: 80px; }
         <div class="progress-label" id="progressLabel">আপলোড হচ্ছে...</div>
         <div class="progress-bar-bg"><div class="progress-bar-fill" id="progressFill"></div></div>
       </div>
-      <div class="upload-success" id="uploadSuccess">✅ আপলোড সম্পন্ন! PDF তালিকা আপডেট হচ্ছে...</div>
-      <button class="btn btn-green btn-full" id="uploadBtn" onclick="uploadPdf()">আপলোড করো</button>
+      <div class="upload-success" id="uploadSuccess">✅ আপলোড সম্পন্ন!</div>
+      <button class="btn btn-green btn-full" id="uploadBtn" onclick="uploadPdf()">📤 আপলোড করো</button>
     </div>
   </div>
 
-  <div id="pdfListSection" style="display:none">
-    <div class="section-heading">এই অধ্যায়ের PDF সমূহ</div>
+  <!-- ═══ Saved PDF List ═══ -->
+  <div id="pdfListSection">
+    <div class="section-heading">📕 সংরক্ষিত PDF সমূহ</div>
     <div class="pdf-list" id="pdfList">
-      <div class="skeleton skel-row"></div>
-      <div class="skeleton skel-row"></div>
+      <div class="empty-state"><div class="empty-state-icon">📄</div><div class="empty-state-text">বিষয় ও অধ্যায় নির্বাচন করুন</div></div>
     </div>
   </div>
 
@@ -766,129 +841,178 @@ function closeConfirm() {
 }
 document.getElementById('confirmOkBtn').onclick = () => { if (confirmCb) confirmCb(); closeConfirm(); };
 
-let selSubjectId = null;
-let selChapterId = null;
-let activePdfId = null;
-let activePdfTitle = '';
+let selSubjectId = null, selSubjectName = '';
+let selChapterId = null, selChapterName = '';
+let activePdfId = null, activePdfTitle = '';
 let currentPage = 1;
-let allMcqs = [];
-let csvData = [];
-let aiData = [];
-let editingMcqId = null;
-let selAnswerKey = null;
-let selTypeKey = 'standard';
-let selAiType = 'standard';
+let allMcqs = [], csvData = [], aiData = [];
+let editingMcqId = null, selAnswerKey = null;
+let selTypeKey = 'standard', selAiType = 'standard';
 let selectedPdfFile = null;
+let subjectsCache = [], chaptersCache = [];
+
+// ── Subject/Chapter combo-input logic ──
 
 async function loadSubjects() {
-  const sel = document.getElementById('selSubject');
   try {
     const r = await api('/api/admin/subjects');
     if (!r.ok) throw new Error();
     const d = await r.json();
-    (d.subjects || []).forEach(s => {
-      const o = document.createElement('option');
-      o.value = s.id; o.textContent = (s.icon || '') + ' ' + s.name;
-      sel.appendChild(o);
-    });
+    subjectsCache = d.subjects || [];
   } catch { showToast('বিষয় লোড ব্যর্থ', 'error'); }
 }
 
-async function onSubjectChange() {
-  selSubjectId = document.getElementById('selSubject').value || null;
-  selChapterId = null;
-  const chSel = document.getElementById('selChapter');
-  chSel.innerHTML = '<option value="">-- অধ্যায় বেছে নিন --</option>';
-  chSel.disabled = true;
-  hideUploadAndList();
-  if (!selSubjectId) return;
-  try {
-    const r = await api('/api/admin/chapters?subject_id=' + selSubjectId);
-    if (!r.ok) throw new Error();
-    const d = await r.json();
-    (d.chapters || []).forEach(ch => {
-      const o = document.createElement('option');
-      o.value = ch.id; o.textContent = ch.name;
-      chSel.appendChild(o);
-    });
-    chSel.disabled = false;
-  } catch { showToast('অধ্যায় লোড ব্যর্থ', 'error'); }
+function filterSubjects() {
+  const q = document.getElementById('subjectInput').value.trim().toLowerCase();
+  const dd = document.getElementById('subjectDD');
+  const filtered = q ? subjectsCache.filter(s => s.name.toLowerCase().includes(q)) : subjectsCache;
+  renderSubjectDD(filtered);
+  dd.classList.add('open');
+  document.getElementById('subjectToggle').classList.add('open');
 }
 
-async function onChapterChange() {
-  selChapterId = document.getElementById('selChapter').value || null;
-  if (!selChapterId) { hideUploadAndList(); return; }
-  showUploadAndList();
-  loadPdfs();
+function renderSubjectDD(list) {
+  const dd = document.getElementById('subjectDD');
+  if (!list.length) { dd.innerHTML = '<div class="combo-empty">কোনো বিষয় নেই</div>'; return; }
+  dd.innerHTML = list.map(s =>
+    `<div class="combo-item ${selSubjectId == s.id ? 'sel' : ''}" onclick="pickSubject(${s.id},'${esc(s.name)}','${esc(s.icon||'📚')}')">
+      <span>${s.icon || '📚'}</span> <span>${esc(s.name)}</span>
+    </div>`
+  ).join('');
 }
 
-function hideUploadAndList() {
-  document.getElementById('uploadSection').style.display = 'none';
-  document.getElementById('pdfListSection').style.display = 'none';
-}
-function showUploadAndList() {
-  document.getElementById('uploadSection').style.display = 'block';
-  document.getElementById('pdfListSection').style.display = 'block';
-}
-
-function toggleNewSubject() {
-  const box = document.getElementById('newSubjectBox');
-  box.classList.toggle('show');
-  if (box.classList.contains('show')) document.getElementById('newSubjectName').focus();
-  else { document.getElementById('newSubjectName').value = ''; document.getElementById('newSubjectIcon').value = ''; }
+function toggleSubjectDD() {
+  const dd = document.getElementById('subjectDD');
+  const btn = document.getElementById('subjectToggle');
+  if (dd.classList.contains('open')) { dd.classList.remove('open'); btn.classList.remove('open'); return; }
+  renderSubjectDD(subjectsCache);
+  dd.classList.add('open'); btn.classList.add('open');
 }
 
-async function createSubject() {
-  const name = document.getElementById('newSubjectName').value.trim();
-  const icon = document.getElementById('newSubjectIcon').value.trim() || '📚';
-  if (!name) return showToast('বিষয়ের নাম লিখুন', 'error');
+function pickSubject(id, name, icon) {
+  selSubjectId = id; selSubjectName = name;
+  document.getElementById('subjectInput').value = name;
+  document.getElementById('subjectIcon').value = icon;
+  document.getElementById('subjectDD').classList.remove('open');
+  document.getElementById('subjectToggle').classList.remove('open');
+  document.getElementById('subjectSelectedTag').innerHTML =
+    `<div class="selected-tag">${icon} ${esc(name)} <span class="tag-x" onclick="clearSubject()">✕</span></div>`;
+  loadChapters();
+}
+
+function clearSubject() {
+  selSubjectId = null; selSubjectName = '';
+  document.getElementById('subjectInput').value = '';
+  document.getElementById('subjectIcon').value = '';
+  document.getElementById('subjectSelectedTag').innerHTML = '';
+  clearChapter();
+  chaptersCache = [];
+  document.getElementById('pdfList').innerHTML = '<div class="empty-state"><div class="empty-state-icon">📄</div><div class="empty-state-text">বিষয় ও অধ্যায় নির্বাচন করুন</div></div>';
+}
+
+async function saveSubject() {
+  const name = document.getElementById('subjectInput').value.trim();
+  const icon = document.getElementById('subjectIcon').value.trim() || '📚';
+  if (!name) return showToast('বিষয়ের নাম লিখো', 'error');
+  const existing = subjectsCache.find(s => s.name.toLowerCase() === name.toLowerCase());
+  if (existing) { pickSubject(existing.id, existing.name, existing.icon || '📚'); return; }
+  const btn = document.getElementById('subjectAddBtn');
+  btn.disabled = true; btn.textContent = '...';
   try {
     const r = await api('/api/admin/subjects', { method: 'POST', body: JSON.stringify({ name, icon, description: '' }) });
     if (!r.ok) throw new Error((await r.json()).error || 'ব্যর্থ');
     const d = await r.json();
-    showToast('বিষয় যোগ হয়েছে ✓', 'success');
-    document.getElementById('newSubjectBox').classList.remove('show');
-    document.getElementById('newSubjectName').value = '';
-    document.getElementById('newSubjectIcon').value = '';
+    showToast('বিষয় যোগ ✓', 'success');
     await loadSubjects();
-    document.getElementById('selSubject').value = d.id || '';
-    await onSubjectChange();
-  } catch(e) { showToast('সমস্যা: ' + e.message, 'error'); }
+    pickSubject(d.id, name, icon);
+  } catch (e) { showToast(e.message, 'error'); }
+  finally { btn.disabled = false; btn.textContent = '+ যোগ'; }
 }
 
-function toggleNewChapter() {
-  const box = document.getElementById('newChapterBox');
-  box.classList.toggle('show');
-  if (box.classList.contains('show')) document.getElementById('newChapterName').focus();
-  else document.getElementById('newChapterName').value = '';
+async function loadChapters() {
+  if (!selSubjectId) { chaptersCache = []; return; }
+  try {
+    const r = await api('/api/admin/chapters?subject_id=' + selSubjectId);
+    if (!r.ok) throw new Error();
+    const d = await r.json();
+    chaptersCache = d.chapters || [];
+  } catch { chaptersCache = []; }
 }
 
-async function createChapter() {
-  if (!selSubjectId) return showToast('আগে বিষয় নির্বাচন করুন', 'error');
-  const name = document.getElementById('newChapterName').value.trim();
-  if (!name) return showToast('অধ্যায়ের নাম লিখুন', 'error');
+function filterChapters() {
+  const q = document.getElementById('chapterInput').value.trim().toLowerCase();
+  const dd = document.getElementById('chapterDD');
+  const filtered = q ? chaptersCache.filter(c => c.name.toLowerCase().includes(q)) : chaptersCache;
+  renderChapterDD(filtered);
+  dd.classList.add('open');
+  document.getElementById('chapterToggle').classList.add('open');
+}
+
+function renderChapterDD(list) {
+  const dd = document.getElementById('chapterDD');
+  if (!list.length) { dd.innerHTML = '<div class="combo-empty">কোনো অধ্যায় নেই</div>'; return; }
+  dd.innerHTML = list.map(c =>
+    `<div class="combo-item ${selChapterId == c.id ? 'sel' : ''}" onclick="pickChapter(${c.id},'${esc(c.name)}')">
+      <span>📖</span> <span>${esc(c.name)}</span>
+    </div>`
+  ).join('');
+}
+
+function toggleChapterDD() {
+  const dd = document.getElementById('chapterDD');
+  const btn = document.getElementById('chapterToggle');
+  if (dd.classList.contains('open')) { dd.classList.remove('open'); btn.classList.remove('open'); return; }
+  renderChapterDD(chaptersCache);
+  dd.classList.add('open'); btn.classList.add('open');
+}
+
+function pickChapter(id, name) {
+  selChapterId = id; selChapterName = name;
+  document.getElementById('chapterInput').value = name;
+  document.getElementById('chapterDD').classList.remove('open');
+  document.getElementById('chapterToggle').classList.remove('open');
+  document.getElementById('chapterSelectedTag').innerHTML =
+    `<div class="selected-tag">📖 ${esc(name)} <span class="tag-x" onclick="clearChapter()">✕</span></div>`;
+  loadPdfs();
+}
+
+function clearChapter() {
+  selChapterId = null; selChapterName = '';
+  document.getElementById('chapterInput').value = '';
+  document.getElementById('chapterSelectedTag').innerHTML = '';
+  document.getElementById('pdfList').innerHTML = '<div class="empty-state"><div class="empty-state-icon">📄</div><div class="empty-state-text">অধ্যায় নির্বাচন করুন</div></div>';
+}
+
+async function saveChapter() {
+  if (!selSubjectId) return showToast('আগে বিষয় নির্বাচন করো', 'error');
+  const name = document.getElementById('chapterInput').value.trim();
+  if (!name) return showToast('অধ্যায়ের নাম লিখো', 'error');
+  const existing = chaptersCache.find(c => c.name.toLowerCase() === name.toLowerCase());
+  if (existing) { pickChapter(existing.id, existing.name); return; }
+  const btn = document.getElementById('chapterAddBtn');
+  btn.disabled = true; btn.textContent = '...';
   try {
     const r = await api('/api/admin/chapters', { method: 'POST', body: JSON.stringify({ subject_id: parseInt(selSubjectId), name }) });
     if (!r.ok) throw new Error((await r.json()).error || 'ব্যর্থ');
-    showToast('অধ্যায় যোগ হয়েছে ✓', 'success');
-    document.getElementById('newChapterName').value = '';
-    document.getElementById('newChapterBox').classList.remove('show');
-    await onSubjectChange();
-    document.getElementById('selSubject').value = selSubjectId;
-    await onSubjectChange();
-    const chSel = document.getElementById('selChapter');
-    document.getElementById('selSubject').value = selSubjectId;
-    const r2 = await api('/api/admin/chapters?subject_id=' + selSubjectId);
-    const d2 = await r2.json();
-    chSel.innerHTML = '<option value="">-- অধ্যায় বেছে নিন --</option>';
-    (d2.chapters || []).forEach(ch => {
-      const o = document.createElement('option');
-      o.value = ch.id; o.textContent = ch.name;
-      chSel.appendChild(o);
-    });
-    chSel.disabled = false;
-  } catch (e) { showToast('ত্রুটি: ' + e.message, 'error'); }
+    const d = await r.json();
+    showToast('অধ্যায় যোগ ✓', 'success');
+    await loadChapters();
+    pickChapter(d.id, name);
+  } catch (e) { showToast(e.message, 'error'); }
+  finally { btn.disabled = false; btn.textContent = '+ যোগ'; }
 }
+
+// Close dropdowns on outside click
+document.addEventListener('click', e => {
+  if (!e.target.closest('#subjectInput') && !e.target.closest('#subjectToggle') && !e.target.closest('#subjectDD')) {
+    document.getElementById('subjectDD').classList.remove('open');
+    document.getElementById('subjectToggle').classList.remove('open');
+  }
+  if (!e.target.closest('#chapterInput') && !e.target.closest('#chapterToggle') && !e.target.closest('#chapterDD')) {
+    document.getElementById('chapterDD').classList.remove('open');
+    document.getElementById('chapterToggle').classList.remove('open');
+  }
+});
 
 function dzOver(e) { e.preventDefault(); document.getElementById('dropZone').classList.add('dragover'); }
 function dzLeave() { document.getElementById('dropZone').classList.remove('dragover'); }
@@ -908,7 +1032,8 @@ function setFile(f) {
 }
 
 async function uploadPdf() {
-  if (!selChapterId) return showToast('অধ্যায় নির্বাচন করুন', 'error');
+  if (!selSubjectId) return showToast('আগে বিষয় নির্বাচন করো', 'error');
+  if (!selChapterId) return showToast('আগে অধ্যায় নির্বাচন করো', 'error');
   if (!selectedPdfFile) return showToast('PDF ফাইল নির্বাচন করুন', 'error');
   const title = document.getElementById('pdfTitle').value.trim();
   if (!title) return showToast('শিরোনাম লিখুন', 'error');
@@ -971,7 +1096,10 @@ async function uploadPdf() {
 }
 
 async function loadPdfs() {
-  if (!selChapterId) return;
+  if (!selChapterId) {
+    document.getElementById('pdfList').innerHTML = '<div class="empty-state"><div class="empty-state-icon">📄</div><div class="empty-state-text">অধ্যায় নির্বাচন করুন</div></div>';
+    return;
+  }
   const listEl = document.getElementById('pdfList');
   listEl.innerHTML = '<div class="skeleton skel-row"></div><div class="skeleton skel-sm"></div>';
   try {
@@ -1436,7 +1564,9 @@ async function saveAiMcqs() {
   finally { btn.disabled = false; btn.textContent = '✓ সব সংরক্ষণ করো'; }
 }
 
-loadSubjects();
+loadSubjects().then(() => {
+  if (subjectsCache.length) renderSubjectDD(subjectsCache);
+});
 </script>
 </body>
 </html>
