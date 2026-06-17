@@ -1,6 +1,5 @@
-// workers/exam-worker.js — FINAL (Batch 15)
-// Handles: /api/exam/submit, /api/exam/answers/:id, /api/exam/mcq (redirect to home-pdf-worker)
-// auth-worker.js থেকে exam routes সরিয়ে এখানে রাখো
+// workers/exam-worker.js
+import { getGeminiKeys, callGemini, callGroq, callCfAi, parseMcqJson } from './utils.js';
 
 export default {
   async fetch(request, env) {
@@ -52,6 +51,94 @@ export default {
             'SELECT * FROM mcqs WHERE pdf_id=? AND type=? ORDER BY id ASC'
           ).bind(pdfId, type).all();
           allMcqs = results;
+        }
+
+        // If no MCQs found, try AI generation
+        if (allMcqs.length === 0) {
+          if (type !== 'standard') {
+            const isPremium = user.is_premium === 1 || user.is_premium === true;
+            if (!isPremium) {
+              return json({ coming_soon: true, message: 'এই ধরনের MCQ Premium ব্যবহারকারীদের জন্য। Standard MCQ সবার জন্য উপলব্ধ।' });
+            }
+          }
+
+          // Fetch PDF info for AI prompt
+          const pdf = await env.DB.prepare('SELECT * FROM pdfs WHERE id=?').bind(pdfId).first();
+          if (!pdf) return json({ error: 'PDF not found' }, 404);
+
+          const geminiKeys = getGeminiKeys(env);
+          const pageList = pages.length ? pages.join(', ') : 'all';
+          const typePrompt = type === 'true_false' ? 'True/False questions' : type === 'hard' ? 'hard/advanced MCQs' : 'standard MCQs';
+          const prompt = `Generate 5 ${typePrompt} from page ${pageList} of a textbook PDF titled "${pdf.title || 'Unknown'}".
+Each question must have 4 options (A, B, C, D), one correct answer, and a brief explanation.
+Return ONLY a JSON array: [{"question":"...","option_a":"...","option_b":"...","option_c":"...","option_d":"...","correct_answer":"A","explanation":"..."}]`;
+
+          let aiText = null;
+
+          // Try Gemini Vision if PDF URL available
+          if (pdf.url && geminiKeys.length > 0) {
+            try {
+              const pdfRes = await fetch(pdf.url);
+              if (pdfRes.ok) {
+                const buf = await pdfRes.arrayBuffer();
+                const b64 = btoa(String.fromCharCode(...new Uint8Array(buf)));
+                const body = {
+                  contents: [{ parts: [
+                    { inline_data: { mime_type: 'application/pdf', data: b64 } },
+                    { text: prompt }
+                  ]}],
+                  generationConfig: { temperature: 0.7, maxOutputTokens: 4096 }
+                };
+                aiText = await callGemini(geminiKeys, body);
+              }
+            } catch (_) {}
+          }
+
+          // Fallback: Gemini text-only
+          if (!aiText && geminiKeys.length > 0) {
+            const body = {
+              contents: [{ parts: [{ text: prompt }] }],
+              generationConfig: { temperature: 0.7, maxOutputTokens: 4096 }
+            };
+            aiText = await callGemini(geminiKeys, body);
+          }
+
+          // Fallback: Groq
+          if (!aiText && env.GROQ_KEY) {
+            aiText = await callGroq(env.GROQ_KEY, [{ role: 'user', content: prompt }], 4096);
+          }
+
+          // Fallback: Cloudflare AI
+          if (!aiText) {
+            aiText = await callCfAi(env, prompt);
+          }
+
+          if (aiText) {
+            const parsed = parseMcqJson(aiText);
+            if (parsed.length > 0) {
+              // Save to DB for future use
+              for (const pg of (pages.length ? pages : [1])) {
+                for (const q of parsed) {
+                  await env.DB.prepare(`
+                    INSERT INTO mcqs (pdf_id, page_number, type, question, option_a, option_b, option_c, option_d, correct_answer, explanation, created_at)
+                    VALUES (?,?,?,?,?,?,?,?,?,?,datetime('now'))
+                  `).bind(pdfId, pg, type, q.question, q.option_a, q.option_b, q.option_c, q.option_d, q.correct_answer || 'A', q.explanation || '').run();
+                }
+              }
+
+              const questions = parsed.map(q => ({
+                question: q.question,
+                options: [q.option_a, q.option_b, q.option_c, q.option_d],
+                correct_index: ['A','B','C','D'].indexOf((q.correct_answer||'A').toUpperCase()),
+                explanation: q.explanation || '',
+                type,
+                page: pages[0] || 1,
+              }));
+              return json({ questions, ai_generated: true });
+            }
+          }
+
+          return json({ coming_soon: true, message: 'MCQ তৈরি করা যায়নি। পরে আবার চেষ্টা করুন।' });
         }
 
         const questions = allMcqs.map(m => ({

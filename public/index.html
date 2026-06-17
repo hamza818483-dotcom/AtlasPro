@@ -191,14 +191,6 @@ function showToast(msg, duration=2500) {
   setTimeout(() => t.classList.remove('show'), duration);
 }
 
-// ── Gradient colors for subject cards ──
-const GRAD = [
-  ['#6C63FF','#3D35B0'], ['#00D4AA','#00856F'],
-  ['#FF6B6B','#B03535'], ['#FFBE0B','#B08500'],
-  ['#3A86FF','#1A56CC'], ['#FF006E','#AA0048'],
-  ['#8B5CF6','#5B21B6'], ['#EC4899','#9D174D'],
-];
-
 // ── Load page ──
 async function init() {
   initHeader();
@@ -272,40 +264,6 @@ async function loadAnnouncements() {
     render();
     setInterval(() => { current = (current+1) % items.length; render(); }, 3000);
   } catch(_) {}
-}
-
-async function loadSubjects() {
-  const area = document.getElementById('subjectArea');
-  if (!Auth.isLoggedIn()) {
-    area.innerHTML = `
-      <div class="login-cta">
-        <div class="login-cta-icon">🔐</div>
-        <div class="login-cta-title">কন্টেন্ট দেখতে লগইন করো</div>
-        <div class="login-cta-text">বিষয়, অধ্যায় ও PDF পেতে একাউন্ট দরকার</div>
-        <a href="auth.html" class="btn btn-primary btn-full">লগইন / রেজিস্ট্রেশন</a>
-      </div>`;
-    return;
-  }
-  try {
-    const res = await Auth.api('/api/subjects');
-    const data = await res.json();
-    const subjects = data.subjects || [];
-    if (!subjects.length) {
-      area.innerHTML = `<div class="empty"><div class="empty-icon">📚</div><div class="empty-title">কোনো বিষয় নেই</div></div>`;
-      return;
-    }
-    area.innerHTML = `<div class="subject-grid">${subjects.map((s,i)=>{
-      const [c1,c2] = GRAD[i % GRAD.length];
-      return `<div class="subject-card" style="background:linear-gradient(135deg,${c1}CC,${c2});box-shadow:0 4px 16px ${c1}33"
-        onclick="window.location.href='chapters.html?subject_id=${s.id}&name=${encodeURIComponent(s.name)}'">
-        <div class="subject-icon">${s.icon||'📚'}</div>
-        <div class="subject-name">${s.name||''}</div>
-        <div class="subject-meta"><span>📖</span> অধ্যায় দেখো →</div>
-      </div>`;
-    }).join('')}</div>`;
-  } catch(_) {
-    area.innerHTML = `<div class="empty"><div class="empty-icon">⚠️</div><div class="empty-title">লোড ব্যর্থ</div><button class="btn btn-outline mt-12" onclick="loadSubjects()">Retry</button></div>`;
-  }
 }
 
 async function loadOwner() {

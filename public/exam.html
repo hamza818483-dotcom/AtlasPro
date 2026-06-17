@@ -7,758 +7,399 @@
 <link rel="stylesheet" href="css/style.css">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Bengali:wght@400;600;700;900&family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <style>
-body { padding-top: 56px; padding-bottom: 0; }
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:'Noto Sans Bengali','Inter',sans-serif;min-height:100vh;padding:0}
+
+/* ── Pre-screen ── */
+.pre{min-height:100vh;padding-bottom:90px}
+.pre-img{width:100%;max-height:300px;object-fit:contain;background:#111120;border-radius:0 0 16px 16px}
+.pre-canvas-wrap{width:100%;background:#111120;display:flex;justify-content:center;border-radius:0 0 16px 16px;overflow:hidden}
+.pre-canvas-wrap canvas{max-width:100%;max-height:300px;display:block}
+.pre-body{padding:16px 14px}
+.pre-title{font-size:18px;font-weight:900;color:var(--primary);text-align:center;margin:12px 0 4px}
+.pre-sub{font-size:13px;color:var(--text3);text-align:center;margin-bottom:16px}
+.pre-stats{display:flex;gap:8px;margin-bottom:16px}
+.pre-stat{flex:1;background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px 10px;text-align:center}
+.pre-stat-val{font-size:20px;font-weight:900}
+.pre-stat-lbl{font-size:10px;color:var(--text3);margin-top:2px}
+.pre-info{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:16px}
+.pre-info-row{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)}
+.pre-info-row:last-child{border-bottom:none}
+.pre-info-key{font-size:13px;color:var(--text3)}
+.pre-info-val{font-size:13px;font-weight:700}
+.pre-start{
+  width:100%;padding:16px;border-radius:14px;border:none;
+  background:linear-gradient(135deg,#6C63FF,#8B5CF6);color:#fff;
+  font-size:16px;font-weight:900;cursor:pointer;font-family:inherit;
+  transition:transform .15s;margin-top:8px;
+}
+.pre-start:hover{transform:scale(1.02)}
 
 /* ── Exam Header ── */
-.exam-header {
-  position: fixed;
-  top: 0; left: 0; right: 0;
-  height: 56px;
-  background: var(--bg2);
-  border-bottom: 1px solid var(--border);
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 0 14px;
-  z-index: 100;
+.ex-hdr{
+  position:sticky;top:0;z-index:100;
+  background:var(--bg2);border-bottom:1px solid var(--border);
+  padding:10px 14px;
 }
-.exam-title {
-  flex: 1;
-  min-width: 0;
-  font-size: 13px;
-  font-weight: 700;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+.ex-hdr-top{display:flex;align-items:center;gap:10px}
+.ex-hdr .atlas{font-size:18px;font-weight:900;background:linear-gradient(135deg,#818CF8,#C4B5FD,#F472B6);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.ex-hdr-title{flex:1;font-size:13px;font-weight:700;color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ex-timer{
+  color:var(--green);font-size:18px;font-weight:900;
+  font-family:'Inter',monospace;letter-spacing:1px;
 }
-.exam-title-sub {
-  font-size: 10px;
-  color: var(--text3);
-  font-weight: 400;
-}
+.ex-timer.warn{color:var(--amber)}
+.ex-timer.danger{color:var(--red)}
+.ex-hdr-sub{display:flex;align-items:center;justify-content:space-between;margin-top:6px;font-size:11px;color:var(--text3)}
+.ex-progress{font-weight:700;color:var(--text2)}
 
-/* ── Timer ── */
-.timer-box {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  background: var(--card);
-  border: 1.5px solid var(--border);
-  border-radius: 10px;
-  padding: 6px 12px;
-  flex-shrink: 0;
+/* ── Question List ── */
+.q-list{padding:12px 14px 120px;display:flex;flex-direction:column;gap:14px}
+.q-card{background:var(--card);border:1.5px solid var(--border);border-radius:14px;padding:16px;transition:border-color .2s}
+.q-card.answered{border-color:rgba(108,99,255,.4)}
+.q-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.q-badge{font-size:11px;font-weight:700;color:var(--primary);background:rgba(108,99,255,.12);padding:3px 10px;border-radius:20px}
+.q-atlas{font-size:12px;font-weight:900;color:var(--text3)}
+.q-text{font-size:15px;font-weight:600;line-height:1.7;margin-bottom:14px}
+.q-opts{display:flex;flex-direction:column;gap:8px}
+.q-opt{
+  display:flex;align-items:center;gap:10px;
+  padding:12px;background:var(--bg2);border:1.5px solid var(--border);
+  border-radius:10px;cursor:pointer;transition:all .15s;
 }
-.timer-display {
-  font-size: 16px;
-  font-weight: 900;
-  color: var(--text);
-  font-family: 'Inter', monospace;
-  letter-spacing: 1px;
-  min-width: 48px;
-  text-align: center;
+.q-opt:hover{border-color:rgba(108,99,255,.4);background:rgba(108,99,255,.06)}
+.q-opt.sel{border-color:var(--primary);background:rgba(108,99,255,.12)}
+.q-opt-lbl{
+  width:28px;height:28px;border-radius:50%;
+  background:var(--card);border:1.5px solid var(--border);
+  display:flex;align-items:center;justify-content:center;
+  font-size:13px;font-weight:900;flex-shrink:0;transition:all .15s;
 }
-.timer-display.warning { color: var(--amber); }
-.timer-display.danger  { color: var(--red); }
-.timer-icon { font-size: 14px; }
+.q-opt.sel .q-opt-lbl{background:var(--primary);border-color:var(--primary);color:#fff}
+.q-opt-txt{flex:1;font-size:14px;line-height:1.5}
 
-/* ── Score tracker ── */
-.score-track {
-  display: flex;
-  gap: 12px;
-  padding: 10px 14px;
-  background: var(--card);
-  border-bottom: 1px solid var(--border);
+/* ── Fixed Submit ── */
+.ex-submit-bar{
+  position:fixed;bottom:0;left:0;right:0;z-index:100;
+  padding:12px 14px;background:var(--bg2);border-top:1px solid var(--border);
 }
-.score-item {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 2px;
-  flex: 1;
+.ex-submit-btn{
+  width:100%;padding:14px;border-radius:12px;border:none;
+  background:linear-gradient(135deg,#10B981,#059669);color:#fff;
+  font-size:15px;font-weight:900;cursor:pointer;font-family:inherit;
+  transition:transform .15s;
 }
-.score-val {
-  font-size: 18px;
-  font-weight: 900;
-}
-.score-lbl {
-  font-size: 9px;
-  font-weight: 600;
-  letter-spacing: 0.5px;
-  color: var(--text3);
-  text-transform: uppercase;
-}
-.score-correct { color: var(--green); }
-.score-wrong   { color: var(--red); }
-.score-skip    { color: var(--text3); }
-.score-marks   { color: var(--primary); }
+.ex-submit-btn:hover{transform:scale(1.02)}
 
-/* ── Progress bar ── */
-.progress-bar-wrap {
-  height: 3px;
-  background: var(--border);
-}
-.progress-bar-fill {
-  height: 100%;
-  background: linear-gradient(90deg, var(--primary), var(--pink));
-  transition: width 0.4s ease;
-}
+/* ── Modal ── */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:500;display:flex;align-items:center;justify-content:center;padding:20px;opacity:0;pointer-events:none;transition:opacity .25s}
+.modal-overlay.open{opacity:1;pointer-events:all}
+.modal{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:24px;width:100%;max-width:360px}
+.modal-title{font-size:16px;font-weight:900;margin-bottom:6px}
+.modal-text{font-size:13px;color:var(--text2);line-height:1.6;margin-bottom:16px}
+.modal-stats{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap}
+.modal-stat{flex:1;min-width:70px;background:var(--bg2);border-radius:8px;padding:10px;text-align:center}
+.modal-stat-val{font-size:20px;font-weight:900}
+.modal-stat-lbl{font-size:10px;color:var(--text3);margin-top:2px}
+.modal-actions{display:flex;gap:8px}
+.modal-actions button{flex:1;padding:12px;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit}
+.mbtn-cancel{background:var(--bg2);border:1px solid var(--border);color:var(--text)}
+.mbtn-confirm{background:var(--green);border:none;color:#fff}
 
-/* ── Question Area ── */
-.question-area {
-  padding: 16px 14px 180px;
-}
-.q-header {
-  display: flex;
-  align-items: flex-start;
-  gap: 10px;
-  margin-bottom: 14px;
-}
-.q-num {
-  width: 32px; height: 32px;
-  border-radius: 50%;
-  background: var(--primary-light);
-  border: 1.5px solid rgba(108,99,255,0.35);
-  display: flex; align-items: center; justify-content: center;
-  font-size: 12px; font-weight: 900;
-  color: var(--primary);
-  flex-shrink: 0;
-}
-.q-type-badge {
-  font-size: 9px; font-weight: 700;
-  padding: 2px 7px; border-radius: 20px;
-  background: rgba(108,99,255,0.1);
-  color: var(--accent);
-  border: 1px solid rgba(108,99,255,0.2);
-}
-.q-text {
-  font-size: 15px;
-  font-weight: 600;
-  line-height: 1.7;
-  color: var(--text);
-  flex: 1;
-}
+/* ── Loading / Error ── */
+.ctr{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:60vh;gap:14px;text-align:center;padding:20px}
+.sp{width:36px;height:36px;border-radius:50%;border:3px solid var(--border);border-top-color:var(--primary);animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
 
-/* ── Options ── */
-.options-list {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  margin-top: 16px;
-}
-.option-btn {
-  display: flex;
-  align-items: flex-start;
-  gap: 12px;
-  padding: 14px;
-  background: var(--card);
-  border: 1.5px solid var(--border);
-  border-radius: var(--radius);
-  cursor: pointer;
-  transition: all 0.18s;
-  text-align: left;
-  color: var(--text);
-  font-family: inherit;
-  font-size: 14px;
-  line-height: 1.5;
-  width: 100%;
-}
-.option-btn:hover:not(:disabled):not(.selected) {
-  border-color: var(--primary);
-  background: var(--primary-light);
-}
-.option-btn.selected {
-  border-color: var(--primary);
-  background: rgba(108,99,255,0.15);
-}
-.option-label {
-  width: 28px; height: 28px;
-  border-radius: 50%;
-  background: var(--bg2);
-  border: 1.5px solid var(--border);
-  display: flex; align-items: center; justify-content: center;
-  font-size: 13px; font-weight: 900;
-  flex-shrink: 0;
-  transition: all 0.18s;
-}
-.option-btn.selected .option-label {
-  background: var(--primary);
-  border-color: var(--primary);
-  color: #fff;
-}
-.option-text { flex: 1; padding-top: 2px; }
+/* ── Coming Soon ── */
+.coming{text-align:center;padding:60px 20px}
+.coming-icon{font-size:48px;margin-bottom:12px}
+.coming-title{font-size:16px;font-weight:700;margin-bottom:8px}
+.coming-sub{font-size:13px;color:var(--text3);line-height:1.6;margin-bottom:20px}
+.coming-btn{padding:10px 24px;border-radius:10px;border:1px solid var(--border);background:var(--card);color:var(--text);font-size:13px;font-weight:700;cursor:pointer;font-family:inherit}
 
-/* ── Navigation Grid ── */
-.nav-grid-wrap {
-  position: fixed;
-  bottom: 60px; left: 0; right: 0;
-  background: var(--bg2);
-  border-top: 1px solid var(--border);
-  padding: 10px 14px;
-  z-index: 90;
-  max-height: 160px;
-  overflow-y: auto;
-}
-.nav-grid {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-.nav-dot {
-  width: 32px; height: 32px;
-  border-radius: 8px;
-  font-size: 11px; font-weight: 700;
-  border: 1.5px solid var(--border);
-  background: var(--card);
-  color: var(--text2);
-  cursor: pointer;
-  transition: all 0.15s;
-  display: flex; align-items: center; justify-content: center;
-}
-.nav-dot:hover { border-color: var(--primary); color: var(--primary); }
-.nav-dot.answered { background: var(--primary); border-color: var(--primary); color: #fff; }
-.nav-dot.current  { border-color: var(--pink); color: var(--pink); box-shadow: 0 0 0 2px rgba(244,114,182,0.3); }
-.nav-dot.answered.current { background: var(--primary); border-color: var(--pink); color: #fff; }
-
-/* ── Bottom Action Bar ── */
-.exam-bottom {
-  position: fixed;
-  bottom: 0; left: 0; right: 0;
-  height: 60px;
-  background: var(--bg2);
-  border-top: 1px solid var(--border);
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 0 14px;
-  z-index: 100;
-}
-.btn-nav {
-  height: 42px;
-  padding: 0 16px;
-  border-radius: 10px;
-  border: 1.5px solid var(--border);
-  background: var(--card);
-  color: var(--text);
-  font-size: 13px; font-weight: 700;
-  cursor: pointer;
-  transition: all 0.2s;
-  font-family: inherit;
-  white-space: nowrap;
-}
-.btn-nav:hover:not(:disabled) { border-color: var(--primary); color: var(--primary); }
-.btn-nav:disabled { opacity: 0.35; cursor: not-allowed; }
-.btn-skip {
-  height: 42px;
-  padding: 0 14px;
-  border-radius: 10px;
-  border: 1.5px solid var(--border);
-  background: transparent;
-  color: var(--text3);
-  font-size: 12px; font-weight: 700;
-  cursor: pointer;
-  transition: all 0.2s;
-  font-family: inherit;
-}
-.btn-skip:hover { color: var(--amber); border-color: var(--amber); }
-.btn-submit {
-  flex: 1;
-  height: 42px;
-  border-radius: 10px;
-  background: linear-gradient(135deg, var(--green), #0A9668);
-  color: #fff;
-  font-size: 13px; font-weight: 700;
-  border: none;
-  cursor: pointer;
-  font-family: inherit;
-  transition: opacity 0.2s;
-}
-.btn-submit:hover { opacity: 0.9; }
-
-/* ── Confirm Submit Modal ── */
-.modal-overlay {
-  position: fixed; inset: 0;
-  background: rgba(0,0,0,0.7);
-  z-index: 500;
-  display: flex; align-items: center; justify-content: center;
-  padding: 20px;
-  opacity: 0; pointer-events: none;
-  transition: opacity 0.25s;
-}
-.modal-overlay.open { opacity: 1; pointer-events: all; }
-.modal {
-  background: var(--card);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 24px;
-  width: 100%;
-  max-width: 360px;
-  transform: translateY(20px);
-  transition: transform 0.25s;
-}
-.modal-overlay.open .modal { transform: translateY(0); }
-.modal-title  { font-size: 16px; font-weight: 900; margin-bottom: 6px; }
-.modal-text   { font-size: 13px; color: var(--text2); line-height: 1.6; margin-bottom: 20px; }
-.modal-stats  { display: flex; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; }
-.modal-stat   {
-  flex: 1; min-width: 70px;
-  background: var(--bg2);
-  border-radius: var(--radius-sm);
-  padding: 10px;
-  text-align: center;
-}
-.modal-stat-val { font-size: 22px; font-weight: 900; }
-.modal-stat-lbl { font-size: 10px; color: var(--text3); margin-top: 2px; }
-.modal-actions { display: flex; gap: 8px; }
-
-/* ── Loading ── */
-.exam-loading {
-  display: flex; flex-direction: column;
-  align-items: center; justify-content: center;
-  min-height: 60vh; gap: 14px;
-}
-.exam-loading .spinner {
-  width: 40px; height: 40px;
-  border: 3px solid var(--border);
-  border-top-color: var(--primary);
-  border-radius: 50%;
-  animation: spin 0.8s linear infinite;
-}
-@keyframes spin { to { transform: rotate(360deg); } }
-
-/* ── Negative marking note ── */
-.negative-note {
-  font-size: 10px;
-  color: var(--text3);
-  padding: 6px 14px;
-  text-align: center;
-}
-
-/* ── Desktop centering ── */
-@media (min-width: 768px) {
-  .exam-header, .nav-grid-wrap, .exam-bottom {
-    max-width: 600px;
-    left: 50%; transform: translateX(-50%);
-    right: auto; width: 600px;
-  }
-}
+.toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--card);color:var(--text);padding:10px 18px;border-radius:10px;font-size:13px;font-weight:600;opacity:0;transition:all .3s;z-index:999;box-shadow:0 4px 16px rgba(0,0,0,.3);border:1px solid var(--border)}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 </style>
 </head>
 <body>
 
-<!-- ══ EXAM HEADER ══ -->
-<header class="exam-header">
-  <div class="exam-title">
-    <div id="examTitleMain">MCQ Exam</div>
-    <div class="exam-title-sub" id="examTitleSub"></div>
-  </div>
-  <div class="timer-box">
-    <span class="timer-icon">⏱️</span>
-    <div class="timer-display" id="timerDisplay">30:00</div>
-  </div>
-</header>
+<div id="toast" class="toast"></div>
 
-<!-- ══ SCORE TRACKER ══ -->
-<div class="score-track" id="scoreTrack">
-  <div class="score-item">
-    <div class="score-val score-correct" id="scoreCorrect">0</div>
-    <div class="score-lbl">সঠিক</div>
-  </div>
-  <div class="score-item">
-    <div class="score-val score-wrong" id="scoreWrong">0</div>
-    <div class="score-lbl">ভুল</div>
-  </div>
-  <div class="score-item">
-    <div class="score-val score-skip" id="scoreSkip">0</div>
-    <div class="score-lbl">বাদ</div>
-  </div>
-  <div class="score-item">
-    <div class="score-val score-marks" id="scoreMarks">0.00</div>
-    <div class="score-lbl">নম্বর</div>
-  </div>
-</div>
-<div class="progress-bar-wrap">
-  <div class="progress-bar-fill" id="progressFill" style="width:0%"></div>
-</div>
-<div class="negative-note">প্রতিটি সঠিক উত্তর +1 | প্রতিটি ভুল উত্তর -0.25</div>
-
-<!-- ══ QUESTION AREA ══ -->
-<div class="question-area" id="questionArea">
-  <div class="exam-loading" id="loadingState">
-    <div class="spinner"></div>
-    <div style="font-size:13px;color:var(--text2)">প্রশ্ন লোড হচ্ছে...</div>
+<!-- ██ PRE-SCREEN ██ -->
+<div id="preScreen" style="display:none">
+  <div class="pre">
+    <div class="pre-canvas-wrap" id="preCanvasWrap"></div>
+    <div class="pre-body">
+      <div class="pre-title" id="preTitle">MCQ Exam</div>
+      <div class="pre-sub" id="preSub"></div>
+      <div class="pre-stats">
+        <div class="pre-stat"><div class="pre-stat-val" id="preQCount">—</div><div class="pre-stat-lbl">📋 প্রশ্ন</div></div>
+        <div class="pre-stat"><div class="pre-stat-val" id="preTime">—</div><div class="pre-stat-lbl">⏱️ মোট সময়</div></div>
+        <div class="pre-stat"><div class="pre-stat-val" id="prePage">—</div><div class="pre-stat-lbl">📄 পেইজ</div></div>
+      </div>
+      <div class="pre-info">
+        <div class="pre-info-row"><span class="pre-info-key">Topic</span><span class="pre-info-val" id="piTopic">—</span></div>
+        <div class="pre-info-row"><span class="pre-info-key">Type</span><span class="pre-info-val" id="piType">—</span></div>
+        <div class="pre-info-row"><span class="pre-info-key">Negative</span><span class="pre-info-val" style="color:var(--red)">প্রতি ভুলে -0.25</span></div>
+        <div class="pre-info-row"><span class="pre-info-key">Timer</span><span class="pre-info-val" id="piTimer">—</span></div>
+      </div>
+      <button class="pre-start" onclick="beginExam()">▶ এক্সাম শুরু করুন</button>
+    </div>
   </div>
 </div>
 
-<!-- ══ NAV GRID ══ -->
-<div class="nav-grid-wrap" id="navGridWrap" style="display:none">
-  <div class="nav-grid" id="navGrid"></div>
+<!-- ██ EXAM SCREEN ██ -->
+<div id="examScreen" style="display:none">
+  <div class="ex-hdr">
+    <div class="ex-hdr-top">
+      <span class="atlas">ATLAS</span>
+      <span class="ex-hdr-title" id="exTitle"></span>
+      <span class="ex-timer" id="exTimer">00:00</span>
+    </div>
+    <div class="ex-hdr-sub">
+      <span id="exSubTitle"></span>
+      <span class="ex-progress" id="exProgress">0/0 (0%)</span>
+    </div>
+  </div>
+  <div class="q-list" id="qList"></div>
+  <div class="ex-submit-bar">
+    <button class="ex-submit-btn" onclick="openSubmitModal()">🏆 Submit করুন</button>
+  </div>
 </div>
 
-<!-- ══ BOTTOM BAR ══ -->
-<div class="exam-bottom" id="examBottom" style="display:none">
-  <button class="btn-nav" id="btnPrev" onclick="goPrev()" disabled>←</button>
-  <button class="btn-skip" onclick="skipQuestion()">বাদ দাও</button>
-  <button class="btn-nav" id="btnNext" onclick="goNext()">পরে →</button>
-  <button class="btn-submit" onclick="openSubmitModal()">জমা দাও ✔</button>
+<!-- ██ LOADING ██ -->
+<div id="loadScreen">
+  <div class="ctr"><div class="sp"></div><div style="font-size:13px;color:var(--text2)">প্রশ্ন লোড হচ্ছে...</div></div>
 </div>
 
-<!-- ══ CONFIRM SUBMIT MODAL ══ -->
+<!-- ██ SUBMIT MODAL ██ -->
 <div class="modal-overlay" id="submitModal">
   <div class="modal">
     <div class="modal-title">পরীক্ষা জমা দেবে?</div>
     <div class="modal-text">জমা দেওয়ার পর আর পরিবর্তন করা যাবে না।</div>
     <div class="modal-stats" id="modalStats"></div>
     <div class="modal-actions">
-      <button class="btn btn-outline btn-full" onclick="closeSubmitModal()">না, ফিরে যাই</button>
-      <button class="btn btn-primary btn-full" onclick="submitExam()">হ্যাঁ, জমা দাও</button>
+      <button class="mbtn-cancel" onclick="closeSubmitModal()">না, ফিরে যাই</button>
+      <button class="mbtn-confirm" onclick="submitExam()">হ্যাঁ, জমা দাও</button>
     </div>
   </div>
 </div>
-
-<!-- ══ TOAST ══ -->
-<div class="toast" id="toast" style="bottom:130px"></div>
 
 <script src="js/config.js"></script>
 <script src="js/auth.js"></script>
 <script src="js/theme.js"></script>
 <script>
-// ── URL Params ──
-const params       = new URLSearchParams(location.search);
-const PDF_ID       = params.get('pdf_id')       || '';
-const PDF_NAME     = params.get('pdf_name')      || '';
-const PAGES_STR    = params.get('pages')         || '';
-const CHAPTER_ID   = params.get('chapter_id')   || '';
-const CHAPTER_NAME = params.get('chapter_name') || '';
-const SUBJECT_NAME = params.get('subject_name') || '';
-const SUBJECT_ICON = params.get('icon')         || '';
+if(typeof pdfjsLib!=='undefined') pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
 
-// ── Exam State ──
-let questions    = [];
-let currentIdx   = 0;
-let answers      = {};      // { qIdx: optionIndex }
-let skipped      = new Set();
-let timerSecs    = 30 * 60;
-let timerInterval = null;
-let examStartTime = null;
+const P=new URLSearchParams(location.search);
+const PDF_ID=P.get('pdf_id')||'',PDF_NAME=P.get('pdf_name')||'',PAGES_STR=P.get('pages')||'',
+      TYPE=P.get('type')||'standard',CHAP_ID=P.get('chapter_id')||'',CHAP_NAME=P.get('chapter_name')||'',
+      SUBJ_NAME=P.get('subject_name')||'',SUBJ_ICON=P.get('icon')||'';
 
-// ── Bengali option labels ──
-const BN_LABELS = ['ক', 'খ', 'গ', 'ঘ'];
+let questions=[],answers={},timerSecs=0,timerInterval=null,examStartTime=null;
+const OPT_LABELS=['A','B','C','D'];
 
-// ── Toast ──
-function showToast(msg, duration = 2500) {
-  const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.classList.add('show');
-  setTimeout(() => t.classList.remove('show'), duration);
-}
+function showToast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500)}
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
 
-// ── Timer ──
-function startTimer() {
-  examStartTime = Date.now();
-  timerInterval = setInterval(() => {
-    timerSecs--;
-    updateTimerDisplay();
-    if (timerSecs <= 0) {
-      clearInterval(timerInterval);
-      showToast('⏰ সময় শেষ! স্বয়ংক্রিয়ভাবে জমা হচ্ছে...');
-      setTimeout(submitExam, 1500);
-    }
-  }, 1000);
-}
+function show(id){['preScreen','examScreen','loadScreen'].forEach(s=>{document.getElementById(s).style.display=s===id?'block':'none'})}
 
-function updateTimerDisplay() {
-  const m   = Math.floor(timerSecs / 60);
-  const s   = timerSecs % 60;
-  const txt = `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
-  const el  = document.getElementById('timerDisplay');
-  el.textContent = txt;
-  el.className   = timerSecs <= 60 ? 'timer-display danger'
-                 : timerSecs <= 300 ? 'timer-display warning'
-                 : 'timer-display';
-}
-
-// ── Score calculation ──
-function calcScores() {
-  let correct = 0, wrong = 0;
-  questions.forEach((q, i) => {
-    if (answers[i] === undefined) return;
-    if (answers[i] === q.correct_index) correct++;
-    else wrong++;
-  });
-  const skip  = questions.length - correct - wrong;
-  const marks = correct * 1 - wrong * 0.25;
-  return { correct, wrong, skip, marks: Math.max(0, marks) };
-}
-
-function updateScoreDisplay() {
-  const { correct, wrong, skip, marks } = calcScores();
-  document.getElementById('scoreCorrect').textContent = correct;
-  document.getElementById('scoreWrong').textContent   = wrong;
-  document.getElementById('scoreSkip').textContent    = skip;
-  document.getElementById('scoreMarks').textContent   = marks.toFixed(2);
-
-  const answered = Object.keys(answers).length;
-  document.getElementById('progressFill').style.width =
-    `${Math.round((answered / questions.length) * 100)}%`;
-}
-
-// ── Render question ──
-function renderQuestion(idx) {
-  currentIdx = idx;
-  const q    = questions[idx];
-  if (!q) return;
-
-  const opts = q.options || [];
-  const sel  = answers[idx];
-
-  document.getElementById('questionArea').innerHTML = `
-    <div class="q-header">
-      <div class="q-num">${idx + 1}</div>
-      <div style="flex:1">
-        <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px">
-          <span class="q-type-badge">${q.type === 'hard' ? '🔥 কঠিন' : q.type === 'true_false' ? '✅ সত্য/মিথ্যা' : '📝 MCQ'}</span>
-          <span style="font-size:10px;color:var(--text3)">পৃষ্ঠা ${q.page || '—'}</span>
-        </div>
-        <div class="q-text">${escHtml(q.question)}</div>
-      </div>
-    </div>
-    <div class="options-list">
-      ${opts.map((opt, oi) => `
-        <button
-          class="option-btn${sel === oi ? ' selected' : ''}"
-          onclick="selectOption(${idx}, ${oi})"
-          ${sel !== undefined && sel !== oi ? '' : ''}
-        >
-          <div class="option-label">${BN_LABELS[oi] || (oi + 1)}</div>
-          <div class="option-text">${escHtml(opt)}</div>
-        </button>`).join('')}
-    </div>`;
-
-  updateNavDots();
-  updateBottomNav();
-}
-
-// ── Select option ──
-function selectOption(qIdx, optIdx) {
-  answers[qIdx] = optIdx;
-  skipped.delete(qIdx);
-
-  // Re-render options to show selection
-  const btns = document.querySelectorAll('.option-btn');
-  btns.forEach((btn, i) => {
-    btn.classList.toggle('selected', i === optIdx);
-    btn.querySelector('.option-label').style.background = i === optIdx ? 'var(--primary)' : '';
-    btn.querySelector('.option-label').style.color      = i === optIdx ? '#fff' : '';
-    btn.querySelector('.option-label').style.borderColor = i === optIdx ? 'var(--primary)' : '';
-  });
-
-  updateNavDots();
-  updateScoreDisplay();
-}
-
-// ── Skip question ──
-function skipQuestion() {
-  skipped.add(currentIdx);
-  delete answers[currentIdx];
-  updateNavDots();
-  updateScoreDisplay();
-  if (currentIdx < questions.length - 1) goNext();
-  else showToast('এটাই শেষ প্রশ্ন। জমা দাও বা আগের প্রশ্নে যাও।');
-}
-
-// ── Nav grid ──
-function buildNavGrid() {
-  document.getElementById('navGrid').innerHTML = questions.map((_, i) => `
-    <button
-      class="nav-dot${i === currentIdx ? ' current' : ''}${answers[i] !== undefined ? ' answered' : ''}"
-      id="navDot_${i}"
-      onclick="goToQuestion(${i})"
-    >${i + 1}</button>`).join('');
-}
-
-function updateNavDots() {
-  questions.forEach((_, i) => {
-    const dot = document.getElementById(`navDot_${i}`);
-    if (!dot) return;
-    dot.className = 'nav-dot' +
-      (i === currentIdx       ? ' current'  : '') +
-      (answers[i] !== undefined ? ' answered' : '');
-  });
-}
-
-function updateBottomNav() {
-  document.getElementById('btnPrev').disabled = currentIdx <= 0;
-  document.getElementById('btnNext').disabled = currentIdx >= questions.length - 1;
-  document.getElementById('btnNext').textContent =
-    currentIdx >= questions.length - 1 ? '✔ শেষ' : 'পরে →';
-}
-
-function goNext()        { if (currentIdx < questions.length - 1) goToQuestion(currentIdx + 1); else openSubmitModal(); }
-function goPrev()        { if (currentIdx > 0) goToQuestion(currentIdx - 1); }
-function goToQuestion(i) { renderQuestion(i); }
-
-// ── Submit modal ──
-function openSubmitModal() {
-  const { correct, wrong, skip, marks } = calcScores();
-  document.getElementById('modalStats').innerHTML = `
-    <div class="modal-stat"><div class="modal-stat-val score-correct">${correct}</div><div class="modal-stat-lbl">সঠিক</div></div>
-    <div class="modal-stat"><div class="modal-stat-val score-wrong">${wrong}</div><div class="modal-stat-lbl">ভুল</div></div>
-    <div class="modal-stat"><div class="modal-stat-val score-skip">${skip}</div><div class="modal-stat-lbl">বাদ</div></div>
-    <div class="modal-stat"><div class="modal-stat-val score-marks">${marks.toFixed(2)}</div><div class="modal-stat-lbl">নম্বর</div></div>`;
-  document.getElementById('submitModal').classList.add('open');
-}
-function closeSubmitModal() {
-  document.getElementById('submitModal').classList.remove('open');
-}
-
-// ── Submit ──
-async function submitExam() {
-  clearInterval(timerInterval);
-  closeSubmitModal();
-
-  const { correct, wrong, skip, marks } = calcScores();
-  const timeTaken = Math.round((Date.now() - examStartTime) / 1000);
-
-  // Save result to Worker (best-effort — don't block navigation)
-  if (Auth.isLoggedIn()) {
-    Auth.api('/api/exam/submit', {
-      method: 'POST',
-      body: JSON.stringify({
-        pdf_id:      PDF_ID,
-        pdf_name:    PDF_NAME,
-        pages:       PAGES_STR,
-        chapter_id:  CHAPTER_ID,
-        subject_name: SUBJECT_NAME,
-        answers,
-        correct, wrong, skip,
-        marks:       parseFloat(marks.toFixed(2)),
-        total:       questions.length,
-        time_taken:  timeTaken,
-        questions:   questions.map((q, i) => ({
-          id:            q.id,
-          question:      q.question,
-          options:       q.options,
-          correct_index: q.correct_index,
-          user_answer:   answers[i] ?? null,
-        })),
-      }),
-    }).catch(() => {});
-  }
-
-  // Navigate to result page
-  const q = new URLSearchParams({
-    pdf_id:       PDF_ID,
-    pdf_name:     PDF_NAME,
-    pages:        PAGES_STR,
-    chapter_id:   CHAPTER_ID,
-    chapter_name: CHAPTER_NAME,
-    subject_name: SUBJECT_NAME,
-    icon:         SUBJECT_ICON,
-    correct:      correct,
-    wrong:        wrong,
-    skip:         skip,
-    marks:        marks.toFixed(2),
-    total:        questions.length,
-    time_taken:   timeTaken,
-    result_data:  encodeURIComponent(JSON.stringify(
-      questions.map((q, i) => ({
-        id:            q.id,
-        question:      q.question,
-        options:       q.options,
-        correct_index: q.correct_index,
-        user_answer:   answers[i] ?? null,
-        page:          q.page,
-        explanation:   q.explanation || '',
-      }))
-    )),
-  });
-  window.location.href = `result.html?${q}`;
-}
-
-// ── Load questions ──
-async function loadQuestions() {
-  const pages   = PAGES_STR ? PAGES_STR.split(',').filter(Boolean) : [];
-  const qParams = new URLSearchParams();
-  if (PDF_ID)    qParams.set('pdf_id', PDF_ID);
-  if (PAGES_STR) qParams.set('pages',  PAGES_STR);
-
-  const headers = Auth.isLoggedIn() ? Auth.headers() : {};
+async function loadQuestions(){
+  show('loadScreen');
+  const qp=new URLSearchParams();
+  if(PDF_ID)qp.set('pdf_id',PDF_ID);
+  if(PAGES_STR)qp.set('pages',PAGES_STR);
+  if(TYPE)qp.set('type',TYPE);
+  const hdrs=Auth.isLoggedIn()?Auth.headers():{};
   let res;
-  try {
-    res = await fetch(`${CONFIG.workerUrl}/api/exam/questions?${qParams}`, { headers });
-  } catch {
-    showExamError('নেটওয়ার্ক সমস্যা — ইন্টারনেট চেক করুন');
-    return;
-  }
-
-  if (!res.ok) { showExamError(`সার্ভার সমস্যা (${res.status})`); return; }
-
+  try{res=await fetch(`${CONFIG.workerUrl}/api/exam/questions?${qp}`,{headers:hdrs})}
+  catch(e){showError('নেটওয়ার্ক সমস্যা — ইন্টারনেট চেক করুন');return}
+  if(!res.ok){showError(`সার্ভার সমস্যা (${res.status})`);return}
   let data;
-  try { data = await res.json(); } catch { showExamError('ডেটা পড়তে সমস্যা'); return; }
+  try{data=await res.json()}catch(e){showError('ডেটা পড়তে সমস্যা');return}
 
-  questions = data.questions || [];
-  if (!questions.length) {
-    showExamError('এই page-গুলোতে কোনো MCQ প্রশ্ন নেই। Admin থেকে প্রশ্ন যোগ করুন।');
-    return;
+  if(data.coming_soon){
+    showComingSoon(data.message||'এই ধরনের MCQ এখনো চালু হয়নি');return
+  }
+  if(data.generating){
+    showGenerating(data);return
   }
 
-  // Shuffle questions
-  questions = questions.sort(() => Math.random() - 0.5);
+  questions=data.questions||[];
+  if(!questions.length){showError('এই page-গুলোতে কোনো MCQ পাওয়া যায়নি।');return}
+  questions.sort(()=>Math.random()-0.5);
+  timerSecs=Math.min(questions.length*60,45*60);
+  showPreScreen();
+}
 
-  // Set timer: 2 min per question, max 45 min
-  timerSecs = Math.min(questions.length * 120, 45 * 60);
+function showError(msg){
+  show('loadScreen');
+  document.getElementById('loadScreen').innerHTML=`
+    <div class="ctr"><div style="font-size:48px;margin-bottom:12px">😔</div>
+    <div style="font-size:15px;font-weight:700;color:var(--text2)">${esc(msg)}</div>
+    <button class="coming-btn" onclick="history.back()" style="margin-top:16px">← ফিরে যাও</button></div>`;
+}
 
-  // Title
-  const pageList = pages.length ? `পৃষ্ঠা: ${pages.join(', ')}` : '';
-  document.getElementById('examTitleMain').textContent = PDF_NAME || 'MCQ Exam';
-  document.getElementById('examTitleSub').textContent  = pageList;
+function showComingSoon(msg){
+  show('loadScreen');
+  document.getElementById('loadScreen').innerHTML=`
+    <div class="coming"><div class="coming-icon">🔒</div>
+    <div class="coming-title">Coming Soon</div>
+    <div class="coming-sub">${esc(msg)}</div>
+    <button class="coming-btn" onclick="history.back()">← ফিরে যাও</button></div>`;
+}
 
-  // Show UI
-  document.getElementById('loadingState').remove();
-  document.getElementById('navGridWrap').style.display = 'block';
-  document.getElementById('examBottom').style.display  = 'flex';
+function showGenerating(data){
+  show('loadScreen');
+  document.getElementById('loadScreen').innerHTML=`
+    <div class="ctr"><div class="sp"></div>
+    <div style="font-size:14px;font-weight:700">AI MCQ তৈরি হচ্ছে...</div>
+    <div style="font-size:12px;color:var(--text3)">আনুমানিক ${data.eta_seconds||30} সেকেন্ড বাকি</div></div>`;
+  setTimeout(()=>loadQuestions(),5000);
+}
 
-  buildNavGrid();
-  renderQuestion(0);
-  updateScoreDisplay();
+async function showPreScreen(){
+  show('preScreen');
+  const pages=PAGES_STR?PAGES_STR.split(',').filter(Boolean):[];
+  const typeName=TYPE==='hard'?'কঠিন MCQ':TYPE==='true_false'?'সত্য/মিথ্যা':'Standard MCQ';
+  const mins=Math.floor(timerSecs/60),secs=timerSecs%60;
+
+  document.getElementById('preTitle').textContent=`📝 ${PDF_NAME||'MCQ Exam'}`;
+  document.getElementById('preSub').textContent=typeName;
+  document.getElementById('preQCount').textContent=questions.length;
+  document.getElementById('preTime').textContent=`${String(mins).padStart(2,'0')}:${String(secs).padStart(2,'0')}`;
+  document.getElementById('prePage').textContent=pages.length?`Page ${pages.join(',')}`:'-';
+  document.getElementById('piTopic').textContent=PDF_NAME||'MCQ Exam';
+  document.getElementById('piType').textContent=typeName;
+  document.getElementById('piTimer').textContent=`মোট ${mins} মিনিট • শেষ হলে auto submit`;
+
+  if(PDF_ID){
+    try{
+      const r=await fetch(`${CONFIG.workerUrl}/api/pdf-url?pdf_id=${PDF_ID}`,{headers:Auth.isLoggedIn()?Auth.headers():{}});
+      const d=await r.json();
+      if(d.url){
+        const pdf=await pdfjsLib.getDocument({url:d.url}).promise;
+        const pg=parseInt(pages[0])||1;
+        const page=await pdf.getPage(Math.min(pg,pdf.numPages));
+        const vp=page.getViewport({scale:1.2});
+        const cv=document.createElement('canvas');
+        cv.width=vp.width;cv.height=vp.height;
+        await page.render({canvasContext:cv.getContext('2d'),viewport:vp}).promise;
+        document.getElementById('preCanvasWrap').appendChild(cv);
+      }
+    }catch(e){}
+  }
+}
+
+function beginExam(){
+  show('examScreen');
+  const pages=PAGES_STR?PAGES_STR.split(',').filter(Boolean):[];
+  const typeName=TYPE==='hard'?'কঠিন MCQ':TYPE==='true_false'?'সত্য/মিথ্যা':'Standard MCQ';
+  document.getElementById('exTitle').textContent=typeName;
+  document.getElementById('exSubTitle').textContent=`${PDF_NAME||'MCQ'} • Page ${pages.join(',')||'—'}`;
+  renderAllQuestions();
+  updateProgress();
   startTimer();
 }
 
-function showExamError(msg) {
-  document.getElementById('loadingState').remove();
-  document.getElementById('questionArea').innerHTML = `
-    <div style="text-align:center;padding:60px 20px">
-      <div style="font-size:48px;margin-bottom:12px">😔</div>
-      <div style="font-size:15px;font-weight:700;color:var(--text2);margin-bottom:8px">প্রশ্ন লোড হয়নি</div>
-      <div style="font-size:12px;color:var(--text3);margin-bottom:20px;line-height:1.6">${escHtml(msg)}</div>
-      <button class="btn btn-outline" onclick="history.back()">← ফিরে যাও</button>
-    </div>`;
+function renderAllQuestions(){
+  const list=document.getElementById('qList');
+  list.innerHTML=questions.map((q,i)=>`
+    <div class="q-card" id="qc-${i}">
+      <div class="q-top">
+        <span class="q-badge">প্রশ্ন ${i+1}/${questions.length}</span>
+        <span class="q-atlas">[ATLAS]</span>
+      </div>
+      <div class="q-text">${esc(q.question)}</div>
+      <div class="q-opts">
+        ${(q.options||[]).map((opt,oi)=>`
+          <div class="q-opt" id="opt-${i}-${oi}" onclick="selOpt(${i},${oi})">
+            <div class="q-opt-lbl">${OPT_LABELS[oi]}</div>
+            <div class="q-opt-txt">${esc(opt)}</div>
+          </div>`).join('')}
+      </div>
+    </div>`).join('');
 }
 
-function escHtml(str) {
-  return String(str)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
+function selOpt(qi,oi){
+  const prev=answers[qi];
+  answers[qi]=oi;
+  (questions[qi].options||[]).forEach((_,j)=>{
+    const el=document.getElementById(`opt-${qi}-${j}`);
+    if(el){el.classList.toggle('sel',j===oi)}
+  });
+  document.getElementById('qc-'+qi)?.classList.add('answered');
+  updateProgress();
 }
 
-// ── Keyboard shortcuts ──
-document.addEventListener('keydown', e => {
-  if (!questions.length) return;
-  const map = { '1': 0, '2': 1, '3': 2, '4': 3, 'ArrowRight': 'next', 'ArrowLeft': 'prev' };
-  const act = map[e.key];
-  if (act === 'next') { e.preventDefault(); goNext(); }
-  else if (act === 'prev') { e.preventDefault(); goPrev(); }
-  else if (typeof act === 'number') { e.preventDefault(); selectOption(currentIdx, act); }
-});
+function updateProgress(){
+  const ans=Object.keys(answers).length;
+  const pct=questions.length?Math.round(ans/questions.length*100):0;
+  document.getElementById('exProgress').textContent=`${ans}/${questions.length} (${pct}%)`;
+}
 
-// ── Boot ──
-document.addEventListener('DOMContentLoaded', () => {
-  Theme.init();
-  loadQuestions();
-});
+function startTimer(){
+  examStartTime=Date.now();
+  updateTimerDisplay();
+  timerInterval=setInterval(()=>{
+    timerSecs--;
+    updateTimerDisplay();
+    if(timerSecs<=0){clearInterval(timerInterval);showToast('⏰ সময় শেষ!');setTimeout(submitExam,1500)}
+  },1000);
+}
+
+function updateTimerDisplay(){
+  const m=Math.floor(timerSecs/60),s=timerSecs%60;
+  const el=document.getElementById('exTimer');
+  el.textContent=`${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+  el.className='ex-timer'+(timerSecs<=60?' danger':timerSecs<=300?' warn':'');
+}
+
+function calcScores(){
+  let correct=0,wrong=0;
+  questions.forEach((q,i)=>{if(answers[i]===undefined)return;if(answers[i]===q.correct_index)correct++;else wrong++});
+  const skip=questions.length-correct-wrong;
+  return{correct,wrong,skip,marks:Math.max(0,correct-wrong*0.25)};
+}
+
+function openSubmitModal(){
+  const{correct,wrong,skip,marks}=calcScores();
+  document.getElementById('modalStats').innerHTML=`
+    <div class="modal-stat"><div class="modal-stat-val" style="color:var(--green)">${correct}</div><div class="modal-stat-lbl">সঠিক</div></div>
+    <div class="modal-stat"><div class="modal-stat-val" style="color:var(--red)">${wrong}</div><div class="modal-stat-lbl">ভুল</div></div>
+    <div class="modal-stat"><div class="modal-stat-val" style="color:var(--text3)">${skip}</div><div class="modal-stat-lbl">বাদ</div></div>
+    <div class="modal-stat"><div class="modal-stat-val" style="color:var(--primary)">${marks.toFixed(2)}</div><div class="modal-stat-lbl">নম্বর</div></div>`;
+  document.getElementById('submitModal').classList.add('open');
+}
+function closeSubmitModal(){document.getElementById('submitModal').classList.remove('open')}
+
+async function submitExam(){
+  clearInterval(timerInterval);closeSubmitModal();
+  const{correct,wrong,skip,marks}=calcScores();
+  const timeTaken=Math.round((Date.now()-examStartTime)/1000);
+  if(Auth.isLoggedIn()){
+    Auth.api('/api/exam/submit',{method:'POST',body:JSON.stringify({
+      pdf_id:PDF_ID,page_numbers:PAGES_STR,mcq_type:TYPE,
+      total_questions:questions.length,correct_answers:correct,score:parseFloat(marks.toFixed(2)),
+      answers:questions.map((q,i)=>({mcq_id:q.id,question:q.question,
+        option_a:q.options?.[0]||'',option_b:q.options?.[1]||'',option_c:q.options?.[2]||'',option_d:q.options?.[3]||'',
+        correct_answer:OPT_LABELS[q.correct_index]||'A',selected_answer:answers[i]!==undefined?OPT_LABELS[answers[i]]:'',
+        is_correct:answers[i]===q.correct_index?1:0,explanation:q.explanation||''}))
+    })}).catch(()=>{});
+  }
+  const rp=new URLSearchParams({pdf_id:PDF_ID,pdf_name:PDF_NAME,pages:PAGES_STR,
+    chapter_id:CHAP_ID,chapter_name:CHAP_NAME,subject_name:SUBJ_NAME,icon:SUBJ_ICON,
+    correct,wrong,skip,marks:marks.toFixed(2),total:questions.length,time_taken:timeTaken,
+    result_data:encodeURIComponent(JSON.stringify(questions.map((q,i)=>({
+      id:q.id,question:q.question,options:q.options,correct_index:q.correct_index,
+      user_answer:answers[i]??null,page:q.page,explanation:q.explanation||''}))))});
+  window.location.href=`result.html?${rp}`;
+}
+
+document.addEventListener('DOMContentLoaded',()=>{if(typeof Theme!=='undefined')Theme.init();loadQuestions()});
 </script>
 </body>
 </html>
