@@ -254,12 +254,11 @@ body { padding-top: 56px; padding-bottom: 80px; }
   background: #111120; border: 1px solid var(--border);
   border-radius: var(--radius); margin-bottom: 14px;
   overflow: hidden; position: relative;
-  max-height: 200px; display: flex; align-items: center;
+  display: flex; align-items: center;
   justify-content: center;
 }
 .page-preview canvas {
-  max-width: 100%; max-height: 200px; display: block;
-  object-fit: contain;
+  max-width: 100%; display: block;
 }
 .page-preview-loading {
   position: absolute; inset: 0;
@@ -1134,7 +1133,7 @@ function deletePdf(id, title) {
   );
 }
 
-function openMcqPanel(pdfId, pdfTitle) {
+async function openMcqPanel(pdfId, pdfTitle) {
   activePdfId = pdfId;
   activePdfTitle = pdfTitle;
   currentPage = 1;
@@ -1158,7 +1157,7 @@ function openMcqPanel(pdfId, pdfTitle) {
   document.body.style.overflow = 'hidden';
   resetMcqForm();
   loadMcqs();
-  loadPagePreview();
+  await loadPagePreview();
   loadPageSummary();
 }
 
@@ -1205,13 +1204,16 @@ async function loadPagePreview() {
     const pageNum = Math.min(currentPage, cachedPdfDoc.numPages);
     if (pageNum < 1) { loading.classList.remove('show'); return; }
     const page = await cachedPdfDoc.getPage(pageNum);
-    const maxH = 200;
+    const dpr = window.devicePixelRatio || 2;
+    const maxW = Math.min(canvas.parentElement?.clientWidth || 400, 600);
     const origViewport = page.getViewport({ scale: 1 });
-    const scale = maxH / origViewport.height;
+    const scale = (maxW / origViewport.width) * dpr;
     const viewport = page.getViewport({ scale });
 
     canvas.width = viewport.width;
     canvas.height = viewport.height;
+    canvas.style.width = (viewport.width / dpr) + 'px';
+    canvas.style.height = (viewport.height / dpr) + 'px';
     const ctx = canvas.getContext('2d');
     await page.render({ canvasContext: ctx, viewport }).promise;
     loading.classList.remove('show');

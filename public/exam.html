@@ -72,8 +72,7 @@ body{background:var(--bg);color:var(--text);font-family:'Noto Sans Bengali','Int
 }
 .q-opt:hover{border-color:rgba(108,99,255,.4);background:rgba(108,99,255,.06)}
 .q-opt.sel{border-color:var(--primary);background:rgba(108,99,255,.12)}
-.q-opt.dimmed{opacity:0.5;pointer-events:auto}
-.q-opt.dimmed:hover{opacity:0.7}
+.q-opt.dimmed{opacity:0.5;pointer-events:none}
 .q-opt-lbl{
   width:28px;height:28px;border-radius:50%;
   background:var(--card);border:1.5px solid var(--border);
@@ -279,7 +278,7 @@ async function loadQuestions(){
   questions=data.questions||[];
   if(!questions.length){showError('এই page-গুলোতে কোনো MCQ পাওয়া যায়নি।');return}
   questions.sort(()=>Math.random()-0.5);
-  timerSecs=Math.min(questions.length*60,45*60);
+  timerSecs=questions.length*30;
   showPreScreen();
 }
 
@@ -378,9 +377,19 @@ function renderAllQuestions(){
 function buildQuestionNav(){
   const nav=document.getElementById('qNav');
   nav.style.display='flex';
-  nav.innerHTML=questions.map((_,i)=>`
+  nav.innerHTML=`<div id="navStatus" style="font-size:10px;color:var(--text3);text-align:center;padding:4px 2px;line-height:1.4;border-bottom:1px solid var(--border);margin-bottom:2px">
+    <span style="color:var(--green)">✓ 0</span> &bull; <span style="color:var(--text2)">… ${questions.length}</span>
+  </div>`+questions.map((_,i)=>`
     <button class="q-nav-btn" id="navBtn-${i}" onclick="scrollToQ(${i})">${i+1}</button>
   `).join('');
+}
+
+function updateNavStatus(){
+  const el=document.getElementById('navStatus');
+  if(!el) return;
+  const ans=Object.keys(answers).length;
+  const rem=questions.length-ans;
+  el.innerHTML=`<span style="color:var(--green)">✓ ${ans}</span> &bull; <span style="color:var(--text2)">… ${rem}</span>`;
 }
 
 function scrollToQ(qi){
@@ -401,6 +410,7 @@ function updateNavBtn(qi){
 
 /* ── Option Selection with Lock + Dimming + Auto-scroll ── */
 function selOpt(qi,oi){
+  if(answers[qi]!==undefined) return;
   answers[qi]=oi;
   const opts=questions[qi].options||[];
   opts.forEach((_,j)=>{
@@ -426,6 +436,7 @@ function updateProgress(){
   const ans=Object.keys(answers).length;
   const pct=questions.length?Math.round(ans/questions.length*100):0;
   document.getElementById('exProgress').textContent=`${ans}/${questions.length} (${pct}%)`;
+  updateNavStatus();
 }
 
 function startTimer(){

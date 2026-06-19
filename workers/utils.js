@@ -63,13 +63,14 @@ export async function callGemini(keys, body) {
   return null;
 }
 
-export async function callGroq(key, messages, maxTokens = 4096) {
+// Generic OpenAI-compatible API caller
+async function callOpenAICompat(endpoint, key, model, messages, maxTokens = 4096) {
   if (!key) return null;
   try {
-    const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+    const res = await fetch(endpoint, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${key}` },
-      body: JSON.stringify({ model: 'llama3-8b-8192', messages, max_tokens: maxTokens }),
+      body: JSON.stringify({ model, messages, max_tokens: maxTokens }),
     });
     if (!res.ok) return null;
     const d = await res.json();
@@ -77,19 +78,75 @@ export async function callGroq(key, messages, maxTokens = 4096) {
   } catch (_) { return null; }
 }
 
+export async function callGroq(key, messages, maxTokens = 4096) {
+  return callOpenAICompat('https://api.groq.com/openai/v1/chat/completions', key, 'llama-3.1-8b-instant', messages, maxTokens);
+}
+
+export async function callTogether(key, messages, maxTokens = 4096) {
+  return callOpenAICompat('https://api.together.xyz/v1/chat/completions', key, 'meta-llama/Llama-3.3-70B-Instruct-Turbo-Free', messages, maxTokens);
+}
+
+export async function callOpenRouter(key, messages, maxTokens = 4096) {
+  return callOpenAICompat('https://openrouter.ai/api/v1/chat/completions', key, 'meta-llama/llama-3.1-8b-instruct:free', messages, maxTokens);
+}
+
+export async function callCerebras(key, messages, maxTokens = 4096) {
+  return callOpenAICompat('https://api.cerebras.ai/v1/chat/completions', key, 'llama-3.3-70b', messages, maxTokens);
+}
+
 export async function callCfAi(env, prompt) {
   if (!env.AI) return null;
-  try {
-    const res = await env.AI.run('@cf/meta/llama-3-8b-instruct', {
-      messages: [{ role: 'user', content: prompt }],
+  const models = ['@cf/meta/llama-3.1-8b-instruct', '@cf/meta/llama-3-8b-instruct'];
+  for (const model of models) {
+    try {
+      const res = await env.AI.run(model, {
+        messages: [
+          { role: 'system', content: 'You are a helpful assistant. Always respond with valid JSON when asked. No extra text outside JSON.' },
+          { role: 'user', content: prompt }
+        ],
+      });
+      if (res?.response) return res.response;
+    } catch (_) {}
+  }
+  return null;
+}
+
+// Get all configured AI keys
+export function getAiKeys(env) {
+  return {
+    groq: env.GROQ_KEY || null,
+    together: env.TOGETHER_KEY || null,
+    openrouter: env.OPENROUTER_KEY || null,
+    cerebras: env.CEREBRAS_KEY || null,
+  };
+}
+
+// Full AI fallback chain (text-only, no vision)
+export async function callAiChain(env, prompt, maxTokens = 4096) {
+  const messages = [{ role: 'user', content: prompt }];
+  const keys = getAiKeys(env);
+
+  const geminiKeys = getGeminiKeys(env);
+  if (geminiKeys.length > 0) {
+    const t = await callGemini(geminiKeys, {
+      contents: [{ parts: [{ text: prompt }] }],
+      generationConfig: { maxOutputTokens: maxTokens },
     });
-    return res?.response || null;
-  } catch (_) { return null; }
+    if (t) return t;
+  }
+
+  if (keys.groq) { const t = await callGroq(keys.groq, messages, maxTokens); if (t) return t; }
+  if (keys.together) { const t = await callTogether(keys.together, messages, maxTokens); if (t) return t; }
+  if (keys.openrouter) { const t = await callOpenRouter(keys.openrouter, messages, maxTokens); if (t) return t; }
+  if (keys.cerebras) { const t = await callCerebras(keys.cerebras, messages, maxTokens); if (t) return t; }
+
+  return callCfAi(env, prompt);
 }
 
 export function parseMcqJson(text) {
   if (!text) return [];
-  const m = text.match(/\[[\s\S]*\]/);
+  let cleaned = text.replace(/```json\s*/gi, '').replace(/```\s*/g, '').trim();
+  const m = cleaned.match(/\[[\s\S]*\]/);
   if (!m) return [];
   try { return JSON.parse(m[0]); } catch (_) { return []; }
 }

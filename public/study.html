@@ -2,7 +2,7 @@
 <html lang="bn" data-theme="dark">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>মূল বই পড়াশোনা — AtlasPro</title>
 <link rel="stylesheet" href="css/style.css">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -41,14 +41,29 @@ body{background:var(--bg);color:var(--text);font-family:'Noto Sans Bengali','Int
 
 .subj-list{padding:0 14px 80px;display:flex;flex-direction:column;gap:10px}
 .subj-card{
-  border-radius:12px;padding:16px 14px;
-  display:flex;align-items:center;gap:12px;
-  cursor:pointer;transition:transform .15s,box-shadow .15s;
-  border:1px solid rgba(255,255,255,0.08);color:#fff;
+  border-radius:14px;padding:18px 16px;
+  display:flex;align-items:center;gap:14px;
+  cursor:pointer;transition:transform .2s,box-shadow .2s;
+  border:1px solid rgba(255,255,255,0.12);color:#fff;
+  position:relative;overflow:hidden;
 }
+.subj-card::before{
+  content:'';position:absolute;top:-50%;left:-50%;width:200%;height:200%;
+  background:linear-gradient(45deg,transparent 30%,rgba(255,255,255,0.08) 50%,transparent 70%);
+  animation:cardShimmer 3s ease-in-out infinite;
+  pointer-events:none;
+}
+@keyframes cardShimmer{0%{transform:translateX(-100%) rotate(45deg)}100%{transform:translateX(100%) rotate(45deg)}}
 .subj-card:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,.35)}
 .subj-card:active{transform:scale(.98)}
-.subj-icon{font-size:26px;width:44px;height:44px;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.15);border-radius:10px;flex-shrink:0}
+.subj-icon{
+  font-size:22px;width:48px;height:48px;
+  display:flex;align-items:center;justify-content:center;
+  background:rgba(255,255,255,0.2);backdrop-filter:blur(8px);
+  border-radius:14px;flex-shrink:0;
+  border:1px solid rgba(255,255,255,0.15);
+  font-weight:900;
+}
 .subj-info{flex:1}
 .subj-name{font-size:15px;font-weight:700}
 .subj-desc{font-size:11px;opacity:.75;margin-top:2px}
@@ -163,16 +178,17 @@ body{background:var(--bg);color:var(--text);font-family:'Noto Sans Bengali','Int
 
 /* Float multi-exam button */
 .multi-float{
-  position:fixed;bottom:20px;left:50%;transform:translateX(-50%);
+  position:fixed;right:16px;top:50%;transform:translateY(-50%);
   z-index:200;display:none;
 }
 .multi-float-btn{
   background:linear-gradient(135deg,#6C63FF,#3D35B0);
-  color:#fff;border:none;border-radius:14px;
-  padding:14px 28px;font-size:14px;font-weight:900;
+  color:#fff;border:none;border-radius:16px;
+  padding:16px 20px;font-size:13px;font-weight:900;
   cursor:pointer;font-family:inherit;
   box-shadow:0 8px 28px rgba(108,99,255,.45);
-  white-space:nowrap;transition:transform .15s;
+  writing-mode:vertical-rl;text-orientation:mixed;
+  transition:transform .15s;
 }
 .multi-float-btn:hover{transform:scale(1.03)}
 
@@ -242,7 +258,7 @@ body{background:var(--bg);color:var(--text);font-family:'Noto Sans Bengali','Int
   </div>
   <div class="subj-banner">
     <div class="subj-banner-t">📖 বিষয় নির্বাচন করো</div>
-    <div class="subj-banner-s">যে বিষয় পড়তে চাও সেটি বেছে নাও</div>
+    <div class="subj-banner-s" id="subj-banner-sub">যে বিষয় পড়তে চাও সেটি বেছে নাও</div>
   </div>
   <div id="subj-list"><div class="ctr"><div class="sp"></div><div>বিষয় লোড হচ্ছে...</div></div></div>
 </div>
@@ -279,7 +295,7 @@ body{background:var(--bg);color:var(--text);font-family:'Noto Sans Bengali','Int
   <div class="pages-wrap" id="pages-wrap"></div>
   <div class="multi-float" id="multi-float">
     <button class="multi-float-btn" onclick="openSheet(null)">
-      📝 এক্সাম দাও (<span id="sel-cnt">0</span> পেইজ)
+      <span id="sel-cnt">0</span> পেইজ নির্বাচিত ― এক্সাম দাও
     </button>
   </div>
 </div>
@@ -340,10 +356,12 @@ async function loadSubjects(){
     const d=await r.json();
     const c=document.getElementById('subj-list');
     if(!d.subjects?.length){c.innerHTML='<div class="ctr">কোনো বিষয় পাওয়া যায়নি</div>';return}
+    document.getElementById('subj-banner-sub').textContent=d.subjects.length+' টি বিষয় পাওয়া গেছে';
     const GS=['g0','g1','g2','g3','g4','g5','g6','g7'];
+    const STICKERS=['✶','☆','⚓','☢','☣','✡','✦','❖'];
     c.innerHTML='<div class="subj-list">'+d.subjects.map((s,i)=>`
       <div class="subj-card ${GS[i%8]}" onclick="openSubject(${s.id},'${esc(s.name)}')">
-        <div class="subj-icon">${s.icon||'📚'}</div>
+        <div class="subj-icon">${STICKERS[i%8]}</div>
         <div class="subj-info">
           <div class="subj-name">${esc(s.name)}</div>
           <div class="subj-desc">${esc(s.description||'অধ্যায় দেখতে ক্লিক করো')}</div>
@@ -362,6 +380,7 @@ async function openSubject(id,name){
     const r=await fetch(BASE()+'/api/chapters?subject_id='+id,{headers:hdrs()});
     const d=await r.json();
     if(!d.chapters?.length){c.innerHTML='<div class="ctr">কোনো অধ্যায় পাওয়া যায়নি</div>';return}
+    document.getElementById('chap-title').textContent=name+' ('+d.chapters.length+' টি অধ্যায়)';
     c.innerHTML='<div class="item-list">'+d.chapters.map((ch,i)=>`
       <div class="list-item" onclick="openChapter(${ch.id},'${esc(ch.name)}')">
         <div class="list-num">${i+1}</div>
@@ -380,6 +399,7 @@ async function openChapter(id,name){
     const r=await fetch(BASE()+'/api/pdfs?chapter_id='+id,{headers:hdrs()});
     const d=await r.json();
     if(!d.pdfs?.length){c.innerHTML='<div class="ctr">কোনো PDF পাওয়া যায়নি</div>';return}
+    document.getElementById('pdfs-title').textContent=name+' ('+d.pdfs.length+' টি PDF)';
     /* Issue 1: If only 1 PDF, skip list and go directly to viewer */
     if(d.pdfs.length===1){
       openPdf(d.pdfs[0].id, d.pdfs[0].title);
@@ -460,8 +480,11 @@ async function renderPage(p){
   if(!cv)return;
   try{
     const page=await pdfDoc.getPage(p);
-    const vp=page.getViewport({scale});
+    const dpr=window.devicePixelRatio||1;
+    const vp=page.getViewport({scale:scale*dpr});
     cv.width=vp.width; cv.height=vp.height;
+    cv.style.width=(vp.width/dpr)+'px';
+    cv.style.height=(vp.height/dpr)+'px';
     await page.render({canvasContext:cv.getContext('2d'),viewport:vp}).promise;
     if(ph)ph.style.display='none';
     cv.style.display='block';
@@ -493,8 +516,9 @@ function toggleSel(p){
 
 function updateMultiBtn(){
   const f=document.getElementById('multi-float');
-  document.getElementById('sel-cnt').textContent=selPages.size;
-  f.style.display=selPages.size>0?'block':'none';
+  const cnt=selPages.size;
+  document.getElementById('sel-cnt').textContent=cnt;
+  f.style.display=cnt>0?'block':'none';
 }
 
 /* ── Exam Sheet ── */

@@ -1,5 +1,5 @@
 // admin-worker.js — AtlasPro Admin API
-import { supabaseUpload, supabaseDelete, getGeminiKeys, callGemini, callGroq, callCfAi, parseMcqJson } from './utils.js';
+import { supabaseUpload, supabaseDelete, getGeminiKeys, callGemini, callGroq, callCfAi, callAiChain, parseMcqJson, callTogether, callOpenRouter, callCerebras, getAiKeys } from './utils.js';
 
 export default {
   async fetch(request, env) {
@@ -306,20 +306,8 @@ export default {
         const geminiPrompt = `${prompt}\n\nContent: Page ${page_number} of the educational PDF.\n\nReturn ONLY a JSON array like: [{"question":"...","option_a":"...","option_b":"...","option_c":"...","option_d":"...","correct_answer":"A","explanation":"..."}]`;
 
         let mcqs = [];
-        const keys = getGeminiKeys(env);
-        const gText = await callGemini(keys, {
-          contents: [{ parts: [{ text: geminiPrompt }] }],
-          generationConfig: { maxOutputTokens: 2048 },
-        });
-        if (gText) mcqs = parseMcqJson(gText);
-        if (!mcqs.length) {
-          const gr = await callGroq(env.GROQ_KEY, [{ role: 'user', content: geminiPrompt }], 2048);
-          if (gr) mcqs = parseMcqJson(gr);
-        }
-        if (!mcqs.length) {
-          const cf = await callCfAi(env, geminiPrompt);
-          if (cf) mcqs = parseMcqJson(cf);
-        }
+        const aiText = await callAiChain(env, geminiPrompt, 2048);
+        if (aiText) mcqs = parseMcqJson(aiText);
 
         for (const mcq of mcqs) {
           await env.DB.prepare(`
@@ -392,7 +380,8 @@ export default {
         let mcqs = [];
         const keys = getGeminiKeys(env);
 
-        if (pdfBase64) {
+        // Try Gemini vision with actual PDF content
+        if (pdfBase64 && keys.length > 0) {
           const geminiBody = {
             contents: [{
               parts: [
@@ -406,16 +395,11 @@ export default {
           if (text) mcqs = parseMcqJson(text);
         }
 
+        // Fallback: full AI chain (text-only)
         if (!mcqs.length) {
           const textPrompt = `${prompt}\n\nPage: ${page_number}`;
-          const groqText = await callGroq(env.GROQ_KEY, [{ role: 'user', content: textPrompt }]);
-          if (groqText) mcqs = parseMcqJson(groqText);
-        }
-
-        // Fallback: Cloudflare AI
-        if (!mcqs.length) {
-          const cfText = await callCfAi(env, `${prompt}\n\nPage: ${page_number}`);
-          if (cfText) mcqs = parseMcqJson(cfText);
+          const aiText = await callAiChain(env, textPrompt, 4096);
+          if (aiText) mcqs = parseMcqJson(aiText);
         }
 
         return json({ count: mcqs.length, mcqs });

@@ -25,6 +25,9 @@ SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS
 binding = "AI"
 
 # Secrets (set via: wrangler secret put <NAME>)
-# GEMINI_KEYS — comma-separated Google Gemini API keys (rotation)
-# GEMINI_KEY  — single Gemini key (fallback if GEMINI_KEYS not set)
-# GROQ_KEY    — Groq API key (fallback for Gemini)
+# GEMINI_KEYS    — comma-separated Google Gemini API keys (rotation)
+# GEMINI_KEY     — single Gemini key (fallback if GEMINI_KEYS not set)
+# GROQ_KEY       — Groq API key (https://console.groq.com — free)
+# TOGETHER_KEY   — Together AI key (https://api.together.xyz — free tier)
+# OPENROUTER_KEY — OpenRouter key (https://openrouter.ai — free models)
+# CEREBRAS_KEY   — Cerebras key (https://cloud.cerebras.ai — free tier)

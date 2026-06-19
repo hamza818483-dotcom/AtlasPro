@@ -1,6 +1,6 @@
 // home-pdf-worker.js
 // Routes: /api/subjects, /api/chapters, /api/pdfs, /api/pdf-url, /api/pdf-stream/:id
-import { getGeminiKeys, callGemini, callGroq, parseMcqJson } from './utils.js';
+import { getGeminiKeys, callGemini, callGroq, callAiChain, parseMcqJson } from './utils.js';
 
 export default {
   async fetch(request, env) {
@@ -211,19 +211,9 @@ async function getPrompt(env, pdfId, type) {
 
 async function generateMcqs(env, prompt, pageNumber) {
   const fullPrompt = `${prompt}\n\nPage: ${pageNumber}`;
-  const body = {
-    contents: [{ parts: [{ text: fullPrompt }] }],
-    generationConfig: { maxOutputTokens: 4096 },
-  };
-  const keys = getGeminiKeys(env);
-  const geminiText = await callGemini(keys, body);
-  if (geminiText) {
-    const r = parseMcqJson(geminiText);
-    if (r.length) return r;
-  }
-  const groqText = await callGroq(env.GROQ_KEY, [{ role: 'user', content: fullPrompt }]);
-  if (groqText) {
-    const r = parseMcqJson(groqText);
+  const aiText = await callAiChain(env, fullPrompt, 4096);
+  if (aiText) {
+    const r = parseMcqJson(aiText);
     if (r.length) return r;
   }
   return [];

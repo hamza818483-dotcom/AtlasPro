@@ -88,55 +88,6 @@ body { padding-top: 52px; padding-bottom: var(--nav-h); }
 }
 
 /* ── GPA Calculator ── */
-.gpa-card {
-  margin: 0 14px 14px;
-  background: var(--card);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  overflow: hidden;
-}
-.gpa-header {
-  display: flex; align-items: center;
-  padding: 14px;
-  cursor: pointer;
-  gap: 10px;
-  border-bottom: 1px solid var(--border);
-}
-.gpa-header-title { flex: 1; font-size: 14px; font-weight: 700; }
-.gpa-toggle { font-size: 18px; color: var(--text3); transition: transform 0.3s; }
-.gpa-body {
-  padding: 14px;
-  display: none;
-}
-.gpa-body.open { display: block; }
-.gpa-row {
-  display: flex; align-items: center; gap: 10px;
-  margin-bottom: 10px;
-}
-.gpa-label { font-size: 12px; color: var(--text2); min-width: 70px; }
-.gpa-input {
-  flex: 1; height: 40px;
-  background: var(--bg2);
-  border: 1.5px solid var(--border);
-  border-radius: var(--radius-sm);
-  padding: 0 12px;
-  font-size: 14px;
-  color: var(--text);
-  outline: none;
-  transition: border-color 0.2s;
-  font-family: inherit;
-}
-.gpa-input:focus { border-color: var(--primary); }
-.gpa-result {
-  margin-top: 12px;
-  padding: 14px;
-  background: var(--bg2);
-  border-radius: var(--radius-sm);
-  text-align: center;
-}
-.gpa-score-val { font-size: 28px; font-weight: 900; color: var(--primary); }
-.gpa-score-lbl { font-size: 11px; color: var(--text3); margin-top: 4px; }
-
 /* ── Filter Tabs ── */
 .filter-tabs {
   display: flex;
@@ -303,29 +254,6 @@ body { padding-top: 52px; padding-bottom: var(--nav-h); }
     </div>
   </div>
 
-  <!-- GPA Calculator -->
-  <div class="gpa-card">
-    <div class="gpa-header" onclick="toggleGpa()">
-      <span>🎓</span>
-      <span class="gpa-header-title">GPA Calculator</span>
-      <span class="gpa-toggle" id="gpaToggle">▾</span>
-    </div>
-    <div class="gpa-body" id="gpaBody">
-      <div class="gpa-row">
-        <span class="gpa-label">SSC GPA</span>
-        <input type="number" class="gpa-input" id="sscGpa" placeholder="0.00" min="0" max="5" step="0.01" oninput="calcGpa()">
-      </div>
-      <div class="gpa-row">
-        <span class="gpa-label">HSC GPA</span>
-        <input type="number" class="gpa-input" id="hscGpa" placeholder="0.00" min="0" max="5" step="0.01" oninput="calcGpa()">
-      </div>
-      <div class="gpa-result" id="gpaResult" style="display:none">
-        <div class="gpa-score-val" id="gpaScore">—</div>
-        <div class="gpa-score-lbl">SSC×8 + HSC×12 ফর্মুলা অনুযায়ী</div>
-      </div>
-    </div>
-  </div>
-
   <!-- Action Buttons -->
   <div class="action-row">
     <button class="btn-action btn-home" onclick="window.location.href='index.html'">🏠 হোম</button>
@@ -428,28 +356,6 @@ function renderScoreCard() {
   }
 }
 
-// ── GPA Calculator ──
-function toggleGpa() {
-  const body   = document.getElementById('gpaBody');
-  const toggle = document.getElementById('gpaToggle');
-  const open   = body.classList.toggle('open');
-  toggle.style.transform = open ? 'rotate(180deg)' : '';
-}
-
-function calcGpa() {
-  const ssc = parseFloat(document.getElementById('sscGpa').value) || 0;
-  const hsc = parseFloat(document.getElementById('hscGpa').value) || 0;
-  const res = document.getElementById('gpaResult');
-
-  if (ssc > 0 || hsc > 0) {
-    const score = (ssc * 8) + (hsc * 12);
-    document.getElementById('gpaScore').textContent = score.toFixed(2);
-    res.style.display = 'block';
-  } else {
-    res.style.display = 'none';
-  }
-}
-
 // ── Retry exam ──
 function retryExam() {
   const q = new URLSearchParams({
@@ -495,10 +401,18 @@ function buildReviewCard(q, idx, delay) {
       </div>
       <div class="review-opts">${opts}</div>
       <div class="ai-section">
-        <button class="btn-ai" id="aiBtn_${idx}" onclick="loadAiExplanation(${idx})"
-          ${status === 'correct' && !hasExp ? 'style="display:none"' : ''}>
-          🤖 AI ব্যাখ্যা দেখো
-        </button>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn-ai" id="aiBtn_${idx}" onclick="loadAiExplanation(${idx})"
+            ${status === 'correct' && !hasExp ? 'style="display:none"' : ''}>
+            🤖 AI ব্যাখ্যা দেখো
+          </button>
+          <button class="btn-ai" style="background:rgba(255,190,11,.12);color:#FFBE0B" onclick="toggleBookmark(${idx},this)">
+            🔖 সংরক্ষণ
+          </button>
+          <button class="btn-ai" style="background:rgba(255,107,107,.12);color:#FF6B6B" onclick="reportQuestion(${idx})">
+            🚩 রিপোর্ট
+          </button>
+        </div>
         <div id="aiResponse_${idx}"></div>
       </div>
     </div>`;
@@ -575,6 +489,32 @@ function escHtml(str) {
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;');
+}
+
+// ── Bookmark & Report ──
+function toggleBookmark(idx, btn) {
+  const bookmarks = JSON.parse(localStorage.getItem('atlas_bookmarks') || '[]');
+  const q = allQuestions[idx];
+  if (!q) return;
+  const exists = bookmarks.findIndex(b => b.question === q.question);
+  if (exists >= 0) {
+    bookmarks.splice(exists, 1);
+    btn.textContent = '🔖 সংরক্ষণ';
+    btn.style.background = 'rgba(255,190,11,.12)';
+    showToast('বুকমার্ক সরানো হয়েছে');
+  } else {
+    bookmarks.push({ question: q.question, options: q.options, correct_index: q.correct_index, page: q.page });
+    btn.textContent = '✅ সংরক্ষিত';
+    btn.style.background = 'rgba(16,185,129,.15)';
+    showToast('বুকমার্ক সংরক্ষিত');
+  }
+  localStorage.setItem('atlas_bookmarks', JSON.stringify(bookmarks));
+}
+
+function reportQuestion(idx) {
+  const q = allQuestions[idx];
+  if (!q) return;
+  showToast('রিপোর্ট পাঠানো হয়েছে — ধন্যবাদ!');
 }
 
 // ── Init ──

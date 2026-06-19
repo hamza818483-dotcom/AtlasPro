@@ -1,5 +1,5 @@
 // workers/exam-worker.js
-import { getGeminiKeys, callGemini, callGroq, callCfAi, parseMcqJson } from './utils.js';
+import { getGeminiKeys, callGemini, callGroq, callCfAi, callAiChain, parseMcqJson } from './utils.js';
 
 export default {
   async fetch(request, env) {
@@ -99,23 +99,9 @@ Return ONLY a JSON array: [{"question":"...","option_a":"...","option_b":"...","
             } catch (_) {}
           }
 
-          // Fallback: Gemini text-only
-          if (!aiText && geminiKeys.length > 0) {
-            const body = {
-              contents: [{ parts: [{ text: prompt }] }],
-              generationConfig: { temperature: 0.7, maxOutputTokens: 4096 }
-            };
-            aiText = await callGemini(geminiKeys, body);
-          }
-
-          // Fallback: Groq
-          if (!aiText && env.GROQ_KEY) {
-            aiText = await callGroq(env.GROQ_KEY, [{ role: 'user', content: prompt }], 4096);
-          }
-
-          // Fallback: Cloudflare AI
+          // Fallback: full AI chain (text-only, all providers)
           if (!aiText) {
-            aiText = await callCfAi(env, prompt);
+            aiText = await callAiChain(env, prompt, 4096);
           }
 
           if (aiText) {

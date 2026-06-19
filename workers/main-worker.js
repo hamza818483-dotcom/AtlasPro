@@ -6,7 +6,7 @@ import examWorker         from './exam-worker.js';
 import adminWorker        from './admin-worker.js';
 import focusProfileWorker from './focus-profile-worker.js';
 import publicWorker       from './public-worker.js';
-import { getGeminiKeys, callGemini, callGroq, callCfAi } from './utils.js';
+import { getGeminiKeys, callGemini, callGroq, callCfAi, callAiChain } from './utils.js';
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
@@ -100,19 +100,7 @@ ${(options||[]).map((o, i) => `${optLabels[i]}) ${o}`).join('\n')}
 
 বাংলায় সংক্ষেপে (৩-৪ বাক্যে) ব্যাখ্যা করো কেন সঠিক উত্তরটি সঠিক।`;
 
-    const keys = getGeminiKeys(env);
-    let explanation = await callGemini(keys, {
-      contents: [{ parts: [{ text: prompt }] }],
-      generationConfig: { maxOutputTokens: 512 },
-    });
-
-    if (!explanation) {
-      explanation = await callGroq(env.GROQ_KEY, [{ role: 'user', content: prompt }], 512);
-    }
-
-    if (!explanation) {
-      explanation = await callCfAi(env, prompt);
-    }
+    let explanation = await callAiChain(env, prompt, 512);
 
     return json({ explanation: explanation || 'AI ব্যাখ্যা পাওয়া যায়নি। সঠিক উত্তর: ' + correctLabel });
   } catch (e) {
