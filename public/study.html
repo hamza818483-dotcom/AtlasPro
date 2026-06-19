@@ -178,19 +178,22 @@ body{background:var(--bg);color:var(--text);font-family:'Noto Sans Bengali','Int
 
 /* Float multi-exam button */
 .multi-float{
-  position:fixed;right:16px;top:50%;transform:translateY(-50%);
+  position:fixed;right:12px;top:50%;transform:translateY(-50%);
   z-index:200;display:none;
 }
 .multi-float-btn{
   background:linear-gradient(135deg,#6C63FF,#3D35B0);
-  color:#fff;border:none;border-radius:16px;
-  padding:16px 20px;font-size:13px;font-weight:900;
+  color:#fff;border:none;border-radius:24px;
+  padding:10px 14px;font-size:12px;font-weight:900;
   cursor:pointer;font-family:inherit;
-  box-shadow:0 8px 28px rgba(108,99,255,.45);
-  writing-mode:vertical-rl;text-orientation:mixed;
+  box-shadow:0 6px 24px rgba(108,99,255,.5);
   transition:transform .15s;
+  display:flex;align-items:center;gap:6px;
+  white-space:nowrap;
 }
-.multi-float-btn:hover{transform:scale(1.03)}
+.multi-float-btn:hover{transform:scale(1.06)}
+.multi-float-btn .mf-icon{font-size:16px;line-height:1}
+.multi-float-btn .mf-text{font-size:12px;font-weight:900;line-height:1}
 
 /* Exam type sheet */
 .overlay{
@@ -288,14 +291,15 @@ body{background:var(--bg);color:var(--text);font-family:'Noto Sans Bengali','Int
     <span class="scr-title" id="view-title">PDF</span>
     <div class="zoom-wrap">
       <button class="z-btn" onclick="zoom(-0.25)">−</button>
-      <span class="z-lbl" id="zoom-lbl">150%</span>
+      <span class="z-lbl" id="zoom-lbl">50%</span>
       <button class="z-btn" onclick="zoom(0.25)">+</button>
     </div>
   </div>
   <div class="pages-wrap" id="pages-wrap"></div>
   <div class="multi-float" id="multi-float">
     <button class="multi-float-btn" onclick="openSheet(null)">
-      <span id="sel-cnt">0</span> পেইজ নির্বাচিত ― এক্সাম দাও
+      <span class="mf-icon">📝</span>
+      <span class="mf-text"><span id="sel-cnt">0</span> পেইজ ✓</span>
     </button>
   </div>
 </div>
@@ -335,7 +339,7 @@ body{background:var(--bg);color:var(--text);font-family:'Noto Sans Bengali','Int
 if(typeof pdfjsLib!=='undefined')
   pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
 
-let scale=1.5, pdfDoc=null, curPdfId=null, curPdfTitle='', selPages=new Set(), sheetTarget=null;
+let scale=0.5, pdfDoc=null, curPdfId=null, curPdfTitle='', selPages=new Set(), sheetTarget=null;
 const BASE=()=>(typeof CONFIG!=='undefined'?CONFIG.workerUrl:'');
 const token=()=>localStorage.getItem('session_token')||'';
 const hdrs=()=>({'Authorization':'Bearer '+token(),'Content-Type':'application/json'});

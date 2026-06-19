@@ -299,13 +299,31 @@ function showComingSoon(msg){
     <button class="coming-btn" onclick="history.back()">← ফিরে যাও</button></div>`;
 }
 
+let genStartTime=null, genEta=30;
 function showGenerating(data){
   show('loadScreen');
+  const eta=data.eta_seconds||30;
+  if(!genStartTime){ genStartTime=Date.now(); genEta=eta; }
+  const elapsed=Math.floor((Date.now()-genStartTime)/1000);
+  const pct=Math.min(95,Math.round((elapsed/genEta)*100));
+  const pages=PAGES_STR?PAGES_STR.split(',').filter(Boolean):[];
+  const pageLabel=pages.length>1?`${pages.length} টি পেইজ`:pages.length===1?`পেইজ ${pages[0]}`:'';
+
   document.getElementById('loadScreen').innerHTML=`
-    <div class="ctr"><div class="sp"></div>
-    <div style="font-size:14px;font-weight:700">AI MCQ তৈরি হচ্ছে...</div>
-    <div style="font-size:12px;color:var(--text3)">আনুমানিক ${data.eta_seconds||30} সেকেন্ড বাকি</div></div>`;
-  setTimeout(()=>loadQuestions(),5000);
+    <div class="ctr" style="gap:18px">
+      <div class="sp"></div>
+      <div style="font-size:15px;font-weight:900;color:var(--text)">AI দিয়ে MCQ তৈরি হচ্ছে... ${pageLabel?pageLabel:''}</div>
+      <div style="width:80%;max-width:280px">
+        <div style="background:var(--bg2);border-radius:8px;height:10px;overflow:hidden;border:1px solid var(--border)">
+          <div id="genBar" style="height:100%;border-radius:8px;background:linear-gradient(90deg,#6C63FF,#8B5CF6);transition:width .5s ease;width:${pct}%"></div>
+        </div>
+        <div style="display:flex;justify-content:space-between;margin-top:6px">
+          <span style="font-size:11px;color:var(--text3)">আনুমানিক ${Math.max(0,eta-elapsed)} সেকেন্ড বাকি</span>
+          <span style="font-size:12px;font-weight:900;color:var(--primary)">${pct}%</span>
+        </div>
+      </div>
+    </div>`;
+  setTimeout(()=>loadQuestions(),3000);
 }
 
 async function showPreScreen(){

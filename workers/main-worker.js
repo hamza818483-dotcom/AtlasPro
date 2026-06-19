@@ -39,9 +39,12 @@ export default {
       return publicWorker.fetch(request, env, ctx);
     }
 
-    // AI explain (result.html)
+    // AI endpoints
     if (path === '/api/ai/explain' && request.method === 'POST') {
       return handleAiExplain(request, env);
+    }
+    if (path === '/api/ai/chat' && request.method === 'POST') {
+      return handleAiChat(request, env);
     }
 
     // Exam
@@ -77,6 +80,25 @@ export default {
     return json({ error: 'Not found' }, 404);
   },
 };
+
+async function handleAiChat(request, env) {
+  try {
+    const token = (request.headers.get('Authorization') || '').replace('Bearer ', '');
+    if (!token) return json({ error: 'Unauthorized' }, 401);
+    const user = await env.DB.prepare('SELECT id FROM users WHERE session_token=?').bind(token).first();
+    if (!user) return json({ error: 'Unauthorized' }, 401);
+
+    const { message } = await request.json();
+    if (!message?.trim()) return json({ error: 'Message required' }, 400);
+
+    const prompt = `You are Atlas AI, a helpful educational assistant. You help students with their studies, explain concepts, solve problems, and give study tips. Respond in the same language as the user's message. If they write in Bengali, reply in Bengali. If English, reply in English. Be concise and helpful.\n\nUser: ${message}`;
+
+    const reply = await callAiChain(env, prompt, 1024);
+    return json({ reply: reply || 'দুঃখিত, উত্তর তৈরি করা যায়নি। আবার চেষ্টা করুন।' });
+  } catch (e) {
+    return json({ error: e.message }, 500);
+  }
+}
 
 async function handleAiExplain(request, env) {
   try {

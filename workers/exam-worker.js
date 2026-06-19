@@ -69,7 +69,14 @@ export default {
           const geminiKeys = getGeminiKeys(env);
           const pageList = pages.length ? pages.join(', ') : 'all';
           const typePrompt = type === 'true_false' ? 'True/False questions' : type === 'hard' ? 'hard/advanced MCQs' : 'standard MCQs';
-          const prompt = `Generate 5 ${typePrompt} from page ${pageList} of a textbook PDF titled "${pdf.title || 'Unknown'}".
+
+          // Check if admin saved a custom prompt for this type
+          const savedPrompt = await env.DB.prepare(
+            'SELECT prompt FROM ai_prompts WHERE pdf_id=? AND type=?'
+          ).bind(pdfId, type).first().catch(() => null);
+
+          const prompt = savedPrompt?.prompt || `Generate 15 ${typePrompt} from page ${pageList} of a textbook PDF titled "${pdf.title || 'Unknown'}".
+IMPORTANT: The MCQ language MUST match the PDF content language. If the content is in Bengali/বাংলা, generate Bengali MCQs. If English, generate English MCQs.
 Each question must have 4 options (A, B, C, D), one correct answer, and a brief explanation.
 Return ONLY a JSON array: [{"question":"...","option_a":"...","option_b":"...","option_c":"...","option_d":"...","correct_answer":"A","explanation":"..."}]`;
 

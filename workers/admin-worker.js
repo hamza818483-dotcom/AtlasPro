@@ -357,12 +357,17 @@ export default {
         const pdf = await env.DB.prepare('SELECT r2_url FROM pdfs WHERE id=?').bind(pdf_id).first();
         if (!pdf?.r2_url) return json({ error: 'PDF not found' }, 404);
 
+        // Check if admin saved a custom prompt for this type
+        const savedPrompt = await env.DB.prepare(
+          'SELECT prompt FROM ai_prompts WHERE pdf_id=? AND type=?'
+        ).bind(pdf_id, type).first().catch(() => null);
+
         const defaults = {
-          standard:   'এই PDF পেইজের content থেকে ২০টি সাধারণ MCQ তৈরি করো। Return ONLY JSON array: [{"question":"","option_a":"","option_b":"","option_c":"","option_d":"","correct_answer":"A","explanation":""}]',
-          true_false: 'এই PDF পেইজের content থেকে ২০টি সত্য/মিথ্যা প্রশ্ন তৈরি করো। A=সত্য B=মিথ্যা। Return ONLY JSON array: [{"question":"","option_a":"সত্য","option_b":"মিথ্যা","option_c":"","option_d":"","correct_answer":"A","explanation":""}]',
-          hard:       'এই PDF পেইজের content থেকে ২০টি কঠিন বিশ্লেষণমূলক MCQ তৈরি করো। Return ONLY JSON array: [{"question":"","option_a":"","option_b":"","option_c":"","option_d":"","correct_answer":"A","explanation":""}]',
+          standard:   'এই PDF পেইজের content থেকে ১৫টি সাধারণ MCQ তৈরি করো। IMPORTANT: Content যে ভাষায় আছে সেই ভাষায় MCQ তৈরি করো (বাংলা হলে বাংলায়, ইংরেজি হলে ইংরেজিতে)। Return ONLY JSON array: [{"question":"","option_a":"","option_b":"","option_c":"","option_d":"","correct_answer":"A","explanation":""}]',
+          true_false: 'এই PDF পেইজের content থেকে ১৫টি সত্য/মিথ্যা প্রশ্ন তৈরি করো। Content যে ভাষায় আছে সেই ভাষায়। A=সত্য B=মিথ্যা। Return ONLY JSON array: [{"question":"","option_a":"সত্য","option_b":"মিথ্যা","option_c":"","option_d":"","correct_answer":"A","explanation":""}]',
+          hard:       'এই PDF পেইজের content থেকে ১৫টি কঠিন বিশ্লেষণমূলক MCQ তৈরি করো। Content যে ভাষায় আছে সেই ভাষায়। Return ONLY JSON array: [{"question":"","option_a":"","option_b":"","option_c":"","option_d":"","correct_answer":"A","explanation":""}]',
         };
-        const prompt = customPrompt || defaults[type] || defaults.standard;
+        const prompt = customPrompt || savedPrompt?.prompt || defaults[type] || defaults.standard;
 
         // Fetch PDF and convert to base64
         let pdfBase64 = null;

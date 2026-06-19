@@ -722,7 +722,7 @@ body { padding-top: 56px; padding-bottom: 80px; }
         <div class="card-body">
           <div class="card-title">🤖 AI দিয়ে MCQ তৈরি</div>
           <div class="ai-info-box">
-            <strong>Gemini 2.5 Flash</strong> দিয়ে PDF এর page content থেকে স্বয়ংক্রিয়ভাবে MCQ তৈরি হবে।
+            <strong>AI</strong> (Gemini/Groq/OpenRouter) দিয়ে PDF এর page content থেকে স্বয়ংক্রিয়ভাবে ১৫টি MCQ তৈরি হবে। Content যে ভাষায় আছে সেই ভাষায়।
             বর্তমানে নির্বাচিত পেইজ ব্যবহার করা হবে।
           </div>
           <div class="form-group">
@@ -736,7 +736,7 @@ body { padding-top: 56px; padding-bottom: 80px; }
           </div>
           <div class="form-group">
             <label class="form-label">কাস্টম প্রম্পট (ঐচ্ছিক)</label>
-            <textarea class="form-textarea" id="aiPrompt" rows="3" placeholder="ডিফল্ট: এই PDF পেইজ থেকে ৫টি MCQ তৈরি করো। প্রতিটি প্রশ্নে ৪টি বিকল্প এবং সঠিক উত্তরের ব্যাখ্যা দাও।"></textarea>
+            <textarea class="form-textarea" id="aiPrompt" rows="3" placeholder="ডিফল্ট: এই PDF পেইজ থেকে ১৫টি MCQ তৈরি করো। Content যে ভাষায় আছে সেই ভাষায়।"></textarea>
           </div>
           <div class="ai-spinner-wrap" id="aiSpinner">
             <div class="ai-spinner"></div>
@@ -1560,12 +1560,18 @@ async function aiGenerate() {
   if (!activePdfId) return showToast('PDF নির্বাচন করুন', 'error');
   const type = document.getElementById('aiType').value || 'standard';
   const promptVal = document.getElementById('aiPrompt').value.trim();
-  const defaultPrompt = 'এই PDF পেইজ থেকে ৫টি MCQ তৈরি করো। প্রতিটি প্রশ্নে ৪টি বিকল্প এবং সঠিক উত্তরের ব্যাখ্যা দাও।';
 
   const spin = document.getElementById('aiSpinner');
   const genBtn = document.getElementById('aiGenBtn');
   const result = document.getElementById('aiResult');
   spin.classList.add('show'); genBtn.disabled = true; result.classList.remove('show'); aiData = [];
+  genBtn.innerHTML = '⏳ পেইজ ' + currentPage + ' — MCQ তৈরি হচ্ছে...';
+
+  let progressPct = 0;
+  const progressTimer = setInterval(() => {
+    progressPct = Math.min(progressPct + 3, 95);
+    genBtn.innerHTML = '⏳ পেইজ ' + currentPage + ' — ' + progressPct + '% তৈরি হচ্ছে...';
+  }, 1000);
 
   try {
     const r = await api('/api/admin/mcq/generate-vision', {
@@ -1574,16 +1580,18 @@ async function aiGenerate() {
         pdf_id: activePdfId,
         page_number: currentPage,
         type,
-        prompt: promptVal || defaultPrompt,
+        prompt: promptVal || undefined,
       })
     });
+    clearInterval(progressTimer);
     if (!r.ok) throw new Error((await r.json()).error || 'AI ব্যর্থ');
     const d = await r.json();
     aiData = d.mcqs || [];
     if (!aiData.length) throw new Error('কোনো প্রশ্ন তৈরি হয়নি');
     renderAiPreview(aiData);
-  } catch (e) { showToast('AI ত্রুটি: ' + e.message, 'error'); }
-  finally { spin.classList.remove('show'); genBtn.disabled = false; }
+    showToast(aiData.length + ' টি MCQ তৈরি হয়েছে ✓', 'success');
+  } catch (e) { clearInterval(progressTimer); showToast('AI ত্রুটি: ' + e.message, 'error'); }
+  finally { spin.classList.remove('show'); genBtn.disabled = false; genBtn.innerHTML = '🤖 AI দিয়ে MCQ তৈরি করো'; }
 }
 
 function renderAiPreview(qs) {
