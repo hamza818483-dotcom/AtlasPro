@@ -45,17 +45,20 @@ export function getGeminiKeys(env) {
 }
 
 export async function callGemini(keys, body) {
+  const models = ['gemini-2.0-flash', 'gemini-1.5-flash'];
   for (const key of keys) {
-    try {
-      const res = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${key}`,
-        { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }
-      );
-      if (!res.ok) continue;
-      const d = await res.json();
-      const text = d.candidates?.[0]?.content?.parts?.[0]?.text;
-      if (text) return text;
-    } catch (_) {}
+    for (const model of models) {
+      try {
+        const res = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`,
+          { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }
+        );
+        if (!res.ok) continue;
+        const d = await res.json();
+        const text = d.candidates?.[0]?.content?.parts?.[0]?.text;
+        if (text) return text;
+      } catch (_) {}
+    }
   }
   return null;
 }

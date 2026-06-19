@@ -517,15 +517,16 @@ export default {
         const body = await request.json();
         const bodyText = body.content ?? body.body ?? '';
         const res = await env.DB.prepare(`
-          INSERT INTO announcements (title, body, link, emoji, color, active)
-          VALUES (?,?,?,?,?,?)
+          INSERT INTO announcements (title, body, link, emoji, color, active, image_url)
+          VALUES (?,?,?,?,?,?,?)
         `).bind(
           body.title,
           bodyText,
           body.link || '',
           body.emoji || '📢',
           body.color || '#6C63FF',
-          body.active ? 1 : 0
+          body.active ? 1 : 0,
+          body.image_url || ''
         ).run();
         return json({ id: res.meta.last_row_id }, 201);
       }
@@ -535,7 +536,7 @@ export default {
         const body = await request.json();
         const bodyText = body.content ?? body.body ?? '';
         await env.DB.prepare(`
-          UPDATE announcements SET title=?, body=?, link=?, emoji=?, color=?, active=? WHERE id=?
+          UPDATE announcements SET title=?, body=?, link=?, emoji=?, color=?, active=?, image_url=? WHERE id=?
         `).bind(
           body.title,
           bodyText,
@@ -543,6 +544,7 @@ export default {
           body.emoji || '📢',
           body.color || '#6C63FF',
           body.active ? 1 : 0,
+          body.image_url || '',
           id
         ).run();
         return json({ message: 'Updated' });
@@ -552,6 +554,16 @@ export default {
         const id = path.split('/').pop();
         await env.DB.prepare('DELETE FROM announcements WHERE id=?').bind(id).run();
         return json({ message: 'Deleted' });
+      }
+
+      if (path === '/api/admin/announcements/image' && method === 'POST') {
+        const formData = await request.formData();
+        const file = formData.get('file');
+        if (!file) return json({ error: 'No file' }, 400);
+        const key = `announcements/${Date.now()}_${file.name.replace(/[^a-zA-Z0-9._-]/g, '_')}`;
+        const buffer = await file.arrayBuffer();
+        const imageUrl = await supabaseUpload(env, key, buffer, file.type || 'image/jpeg');
+        return json({ url: imageUrl });
       }
 
       if (path === '/api/admin/announcements/order' && method === 'PUT') {

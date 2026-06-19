@@ -202,6 +202,15 @@ body{background:var(--bg);color:var(--text);font-family:'Noto Sans Bengali','Int
 .type-name{font-size:14px;font-weight:700}
 .type-desc{font-size:11px;color:var(--text3);margin-top:2px}
 
+/* Per-page exam buttons in sheet */
+.perpage-btn{
+  background:var(--card);border:1.5px solid var(--border);
+  border-radius:10px;padding:10px 16px;
+  color:var(--text);font-family:inherit;font-size:13px;font-weight:700;
+  cursor:pointer;transition:all .15s;min-width:56px;text-align:center;
+}
+.perpage-btn:hover{border-color:var(--primary);background:rgba(108,99,255,.08)}
+
 /* Loader / Error */
 .ctr{
   display:flex;flex-direction:column;align-items:center;justify-content:center;
@@ -270,7 +279,7 @@ body{background:var(--bg);color:var(--text);font-family:'Noto Sans Bengali','Int
   <div class="pages-wrap" id="pages-wrap"></div>
   <div class="multi-float" id="multi-float">
     <button class="multi-float-btn" onclick="openSheet(null)">
-      📝 এক্সাম দাও (<span id="sel-cnt">0</span> পেইজ) →
+      📝 এক্সাম দাও (<span id="sel-cnt">0</span> পেইজ)
     </button>
   </div>
 </div>
@@ -279,8 +288,15 @@ body{background:var(--bg);color:var(--text);font-family:'Noto Sans Bengali','Int
 <div class="overlay" id="sheet" style="display:none" onclick="closeSheet(event)">
   <div class="type-sheet" onclick="event.stopPropagation()">
     <div class="sheet-handle"></div>
-    <div class="sheet-title">MCQ ধরন বেছে নাও</div>
-    <div class="type-btns">
+    <div class="sheet-title" id="sheet-main-title">MCQ ধরন বেছে নাও</div>
+    <!-- Per-page section (only shown for multi-page float button) -->
+    <div id="sheet-perpage" style="display:none;margin-bottom:16px">
+      <div style="font-size:13px;font-weight:700;color:var(--text2);margin-bottom:10px">📄 আলাদা পেইজ</div>
+      <div id="sheet-perpage-btns" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px"></div>
+      <div style="width:100%;height:1px;background:var(--border);margin-bottom:16px"></div>
+      <div style="font-size:13px;font-weight:700;color:var(--text2);margin-bottom:10px">📝 সব পেইজ একসাথে</div>
+    </div>
+    <div class="type-btns" id="sheet-type-btns">
       <button class="type-btn" onclick="startExam('standard')">
         <span class="type-icon">📝</span>
         <div class="type-info"><div class="type-name">Standard MCQ</div><div class="type-desc">সাধারণ বহুনির্বাচনী প্রশ্ন</div></div>→
@@ -364,6 +380,11 @@ async function openChapter(id,name){
     const r=await fetch(BASE()+'/api/pdfs?chapter_id='+id,{headers:hdrs()});
     const d=await r.json();
     if(!d.pdfs?.length){c.innerHTML='<div class="ctr">কোনো PDF পাওয়া যায়নি</div>';return}
+    /* Issue 1: If only 1 PDF, skip list and go directly to viewer */
+    if(d.pdfs.length===1){
+      openPdf(d.pdfs[0].id, d.pdfs[0].title);
+      return;
+    }
     c.innerHTML='<div class="item-list">'+d.pdfs.map(p=>`
       <div class="list-item" onclick="openPdf(${p.id},'${esc(p.title)}')">
         <div style="font-size:28px">📕</div>
@@ -477,21 +498,62 @@ function updateMultiBtn(){
 }
 
 /* ── Exam Sheet ── */
+let sheetSinglePage=null; /* tracks if user picked a single page from per-page section */
+
 function openSheet(page){
   sheetTarget=page;
+  sheetSinglePage=null;
+  const perpageSection=document.getElementById('sheet-perpage');
+  const perpageBtns=document.getElementById('sheet-perpage-btns');
+  const mainTitle=document.getElementById('sheet-main-title');
+
+  if(page!==null){
+    /* Single page exam from page footer button — show MCQ types directly */
+    perpageSection.style.display='none';
+    mainTitle.textContent='MCQ ধরন বেছে নাও';
+  }else{
+    /* Multi-page float button — show per-page section + combined section */
+    const sorted=[...selPages].sort((a,b)=>a-b);
+    if(sorted.length>1){
+      perpageSection.style.display='block';
+      mainTitle.textContent='এক্সাম ধরন বেছে নাও';
+      perpageBtns.innerHTML=sorted.map(p=>
+        `<button class="perpage-btn" onclick="pickSinglePage(${p})">পেইজ ${p}</button>`
+      ).join('');
+    }else{
+      perpageSection.style.display='none';
+      mainTitle.textContent='MCQ ধরন বেছে নাও';
+    }
+  }
   document.getElementById('sheet').style.display='flex';
 }
-function closeSheet(e){if(e.target.id==='sheet')document.getElementById('sheet').style.display='none'}
+
+function pickSinglePage(p){
+  sheetSinglePage=p;
+  document.getElementById('sheet-perpage').style.display='none';
+  document.getElementById('sheet-main-title').textContent='পেইজ '+p+' — MCQ ধরন বেছে নাও';
+}
+
+function closeSheet(e){
+  if(e.target.id==='sheet'){
+    document.getElementById('sheet').style.display='none';
+    sheetSinglePage=null;
+  }
+}
 
 function startExam(type){
   document.getElementById('sheet').style.display='none';
   let pages;
-  if(sheetTarget!==null){
+  if(sheetSinglePage!==null){
+    /* User picked a specific page from per-page section */
+    pages=String(sheetSinglePage);
+  }else if(sheetTarget!==null){
     pages=String(sheetTarget);
   }else{
     pages=[...selPages].sort((a,b)=>a-b).join(',');
     if(!pages){showToast('পেইজ নির্বাচন করো');return}
   }
+  sheetSinglePage=null;
   const url=`exam.html?pdf_id=${curPdfId}&pages=${pages}&type=${type}&pdf_name=${encodeURIComponent(curPdfTitle)}`;
   window.location.href=url;
 }

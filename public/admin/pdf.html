@@ -7,6 +7,7 @@
 <link rel="stylesheet" href="../css/style.css">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Bengali:wght@400;600;700;900&family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <style>
 body { padding-top: 56px; padding-bottom: 80px; }
 
@@ -140,6 +141,13 @@ body { padding-top: 56px; padding-bottom: 80px; }
   color: var(--green); font-weight: 600;
 }
 
+.selected-context {
+  display: none; margin-bottom: 12px; padding: 8px 14px;
+  background: rgba(108,99,255,0.08); border: 1px solid rgba(108,99,255,0.2);
+  border-radius: var(--radius-sm); font-size: 12px; font-weight: 600;
+  color: #9C8BFF;
+}
+
 .pdf-list { display: flex; flex-direction: column; gap: 10px; }
 .pdf-card {
   background: var(--bg2); border: 1px solid var(--border);
@@ -235,6 +243,52 @@ body { padding-top: 56px; padding-bottom: 80px; }
 }
 .mcq-panel-title { flex: 1; font-size: 13px; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .mcq-panel-body { flex: 1; overflow-y: auto; padding: 14px; }
+
+.mcq-panel-context {
+  display: none; padding: 6px 14px; font-size: 11px; font-weight: 600;
+  color: var(--text3); background: rgba(108,99,255,0.05);
+  border-bottom: 1px solid var(--border);
+}
+
+.page-preview {
+  background: #111120; border: 1px solid var(--border);
+  border-radius: var(--radius); margin-bottom: 14px;
+  overflow: hidden; position: relative;
+  max-height: 200px; display: flex; align-items: center;
+  justify-content: center;
+}
+.page-preview canvas {
+  max-width: 100%; max-height: 200px; display: block;
+  object-fit: contain;
+}
+.page-preview-loading {
+  position: absolute; inset: 0;
+  display: none; align-items: center; justify-content: center;
+  font-size: 12px; color: var(--text3); background: rgba(17,17,32,0.85);
+}
+.page-preview-loading.show { display: flex; }
+
+.page-summary {
+  display: flex; flex-wrap: wrap; gap: 6px;
+  margin-bottom: 14px;
+}
+.page-pill {
+  padding: 4px 10px; border-radius: 20px; font-size: 11px;
+  font-weight: 700; cursor: pointer; transition: all 0.2s;
+  border: 1px solid var(--border); background: var(--card);
+  color: var(--text3);
+}
+.page-pill:hover { border-color: var(--primary); color: var(--primary); }
+.page-pill.active {
+  background: rgba(108,99,255,0.15); border-color: var(--primary); color: #9C8BFF;
+}
+.page-pill .pill-count {
+  display: inline-block; min-width: 14px; text-align: center;
+  padding: 0 4px; border-radius: 10px; margin-left: 4px;
+  background: rgba(108,99,255,0.2); font-size: 10px;
+}
+.page-pill.active .pill-count { background: rgba(108,99,255,0.35); }
+.page-pill.has-mcqs { color: var(--text2); }
 
 .page-nav {
   display: flex; align-items: center; gap: 10px;
@@ -453,78 +507,6 @@ body { padding-top: 56px; padding-bottom: 80px; }
 .confirm-actions .btn { flex: 1; }
 
 .toast { bottom: 72px !important; }
-
-/* Combo input — type + dropdown */
-.combo-wrap { position: relative; }
-.combo-row { display: flex; gap: 0; }
-.combo-input {
-  flex: 1; background: var(--bg2); border: 1.5px solid var(--border);
-  border-radius: var(--radius-sm) 0 0 var(--radius-sm);
-  color: var(--text); font-size: 14px; padding: 12px 14px;
-  outline: none; font-family: inherit; transition: border-color 0.2s;
-  box-sizing: border-box; border-right: none;
-}
-.combo-input:focus { border-color: var(--primary); }
-.combo-input::placeholder { color: var(--text3); }
-.combo-toggle {
-  width: 48px; background: var(--card); border: 1.5px solid var(--border);
-  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
-  display: flex; align-items: center; justify-content: center;
-  cursor: pointer; font-size: 16px; color: var(--text2);
-  transition: all 0.2s; flex-shrink: 0;
-}
-.combo-toggle:hover { background: rgba(108,99,255,0.1); color: var(--primary); border-color: var(--primary); }
-.combo-toggle.open { background: var(--primary); color: #fff; border-color: var(--primary); }
-.combo-dropdown {
-  position: absolute; top: calc(100% + 4px); left: 0; right: 0;
-  background: var(--bg2); border: 1.5px solid var(--primary);
-  border-radius: var(--radius-sm); max-height: 200px; overflow-y: auto;
-  z-index: 50; display: none; box-shadow: 0 8px 24px rgba(0,0,0,0.3);
-}
-.combo-dropdown.open { display: block; }
-.combo-item {
-  padding: 10px 14px; font-size: 13px; cursor: pointer;
-  display: flex; align-items: center; gap: 8px;
-  transition: background 0.15s; border-bottom: 1px solid var(--border);
-}
-.combo-item:last-child { border-bottom: none; }
-.combo-item:hover { background: rgba(108,99,255,0.1); }
-.combo-item.sel { background: rgba(108,99,255,0.15); color: var(--primary); font-weight: 700; }
-.combo-empty { padding: 14px; text-align: center; font-size: 12px; color: var(--text3); }
-.combo-icon-input {
-  width: 52px; background: var(--bg2); border: 1.5px solid var(--border);
-  border-radius: var(--radius-sm); color: var(--text); font-size: 18px;
-  padding: 10px; outline: none; text-align: center; font-family: inherit;
-  transition: border-color 0.2s; flex-shrink: 0;
-}
-.combo-icon-input:focus { border-color: var(--primary); }
-.combo-add-btn {
-  padding: 10px 16px; border-radius: var(--radius-sm); border: none;
-  background: var(--primary); color: #fff; font-size: 13px; font-weight: 700;
-  cursor: pointer; font-family: inherit; white-space: nowrap;
-  transition: background 0.2s; flex-shrink: 0;
-}
-.combo-add-btn:hover { background: #5A52E0; }
-.combo-add-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-
-.selected-tag {
-  display: inline-flex; align-items: center; gap: 6px;
-  background: rgba(108,99,255,0.12); border: 1px solid rgba(108,99,255,0.3);
-  border-radius: 20px; padding: 5px 12px; font-size: 12px;
-  font-weight: 600; color: #9C8BFF; margin-top: 8px;
-}
-.selected-tag .tag-x {
-  cursor: pointer; font-size: 14px; color: var(--text3);
-  transition: color 0.2s; margin-left: 4px;
-}
-.selected-tag .tag-x:hover { color: var(--red); }
-.step-num {
-  width: 24px; height: 24px; border-radius: 50%;
-  background: var(--primary); color: #fff;
-  display: inline-flex; align-items: center; justify-content: center;
-  font-size: 12px; font-weight: 900; flex-shrink: 0;
-}
-.step-disabled { opacity: 0.4; pointer-events: none; }
 </style>
 </head>
 <body>
@@ -537,47 +519,44 @@ body { padding-top: 56px; padding-bottom: 80px; }
 
 <main class="main-content">
 
-  <!-- ═══ STEP 1: বিষয় ═══ -->
   <div class="section-card card-purple">
     <div class="card-body">
-      <div class="card-title"><span class="step-num">1</span> বিষয় (Subject)</div>
-      <div style="display:flex;gap:8px;align-items:flex-start">
-        <div class="combo-wrap" style="flex:1">
-          <div class="combo-row">
-            <input class="combo-input" id="subjectInput" placeholder="বিষয়ের নাম লিখো..." autocomplete="off" oninput="filterSubjects()">
-            <button class="combo-toggle" id="subjectToggle" onclick="toggleSubjectDD()">▼</button>
-          </div>
-          <div class="combo-dropdown" id="subjectDD"></div>
-        </div>
-        <input class="combo-icon-input" id="subjectIcon" placeholder="📚" title="Icon">
-        <button class="combo-add-btn" id="subjectAddBtn" onclick="saveSubject()">+ যোগ</button>
+      <div class="card-title">📚 বিষয় ও অধ্যায় নির্বাচন</div>
+      <div class="form-group">
+        <label class="form-label">বিষয়</label>
+        <select class="form-select" id="selSubject" onchange="onSubjectChange()">
+          <option value="">-- বিষয় বেছে নিন --</option>
+        </select>
       </div>
-      <div id="subjectSelectedTag"></div>
+      <button class="link-btn" onclick="toggleNewSubject()">+ নতুন বিষয় যোগ করো</button>
+      <div class="inline-add" id="newSubjectBox">
+        <div class="inline-add-row">
+          <input class="form-input" id="newSubjectName" placeholder="বিষয়ের নাম (যেমন: পদার্থবিজ্ঞান)" style="flex:1">
+          <input class="form-input" id="newSubjectIcon" placeholder="Icon (যেমন: ⚗️)" style="width:70px">
+          <button class="btn btn-primary btn-sm" onclick="createSubject()">যোগ করো</button>
+          <button class="btn btn-sm btn-outline" onclick="toggleNewSubject()">✕</button>
+        </div>
+      </div>
+      <div class="form-group" style="margin-bottom:6px;margin-top:10px">
+        <label class="form-label">অধ্যায়</label>
+        <select class="form-select" id="selChapter" disabled onchange="onChapterChange()">
+          <option value="">-- অধ্যায় বেছে নিন --</option>
+        </select>
+      </div>
+      <button class="link-btn" onclick="toggleNewChapter()">+ নতুন অধ্যায় যোগ করো</button>
+      <div class="inline-add" id="newChapterBox">
+        <div class="inline-add-row">
+          <input class="form-input" id="newChapterName" placeholder="অধ্যায়ের নাম" style="flex:1">
+          <button class="btn btn-primary btn-sm" onclick="createChapter()">যোগ করো</button>
+          <button class="btn btn-sm btn-outline" onclick="toggleNewChapter()">✕</button>
+        </div>
+      </div>
     </div>
   </div>
 
-  <!-- ═══ STEP 2: অধ্যায় ═══ -->
-  <div class="section-card card-green" id="chapterSection">
+  <div class="section-card card-green" id="uploadSection" style="display:none">
     <div class="card-body">
-      <div class="card-title"><span class="step-num">2</span> অধ্যায় (Chapter)</div>
-      <div style="display:flex;gap:8px;align-items:flex-start">
-        <div class="combo-wrap" style="flex:1">
-          <div class="combo-row">
-            <input class="combo-input" id="chapterInput" placeholder="অধ্যায়ের নাম লিখো..." autocomplete="off" oninput="filterChapters()">
-            <button class="combo-toggle" id="chapterToggle" onclick="toggleChapterDD()">▼</button>
-          </div>
-          <div class="combo-dropdown" id="chapterDD"></div>
-        </div>
-        <button class="combo-add-btn" id="chapterAddBtn" onclick="saveChapter()">+ যোগ</button>
-      </div>
-      <div id="chapterSelectedTag"></div>
-    </div>
-  </div>
-
-  <!-- ═══ STEP 3: PDF আপলোড ═══ -->
-  <div class="section-card card-amber" id="uploadSection">
-    <div class="card-body">
-      <div class="card-title"><span class="step-num">3</span> PDF আপলোড</div>
+      <div class="card-title">📤 PDF আপলোড</div>
       <div class="drop-zone" id="dropZone"
         ondragover="dzOver(event)" ondragleave="dzLeave()" ondrop="dzDrop(event)">
         <input type="file" id="pdfFileInput" accept=".pdf" onchange="onFileSelect(event)">
@@ -594,16 +573,17 @@ body { padding-top: 56px; padding-bottom: 80px; }
         <div class="progress-label" id="progressLabel">আপলোড হচ্ছে...</div>
         <div class="progress-bar-bg"><div class="progress-bar-fill" id="progressFill"></div></div>
       </div>
-      <div class="upload-success" id="uploadSuccess">✅ আপলোড সম্পন্ন!</div>
-      <button class="btn btn-green btn-full" id="uploadBtn" onclick="uploadPdf()">📤 আপলোড করো</button>
+      <div class="upload-success" id="uploadSuccess">✅ আপলোড সম্পন্ন! PDF তালিকা আপডেট হচ্ছে...</div>
+      <button class="btn btn-green btn-full" id="uploadBtn" onclick="uploadPdf()">আপলোড করো</button>
     </div>
   </div>
 
-  <!-- ═══ Saved PDF List ═══ -->
-  <div id="pdfListSection">
-    <div class="section-heading">📕 সংরক্ষিত PDF সমূহ</div>
+  <div id="pdfListSection" style="display:none">
+    <div class="selected-context" id="selectedContext"></div>
+    <div class="section-heading">এই অধ্যায়ের PDF সমূহ</div>
     <div class="pdf-list" id="pdfList">
-      <div class="empty-state"><div class="empty-state-icon">📄</div><div class="empty-state-text">বিষয় ও অধ্যায় নির্বাচন করুন</div></div>
+      <div class="skeleton skel-row"></div>
+      <div class="skeleton skel-row"></div>
     </div>
   </div>
 
@@ -614,7 +594,15 @@ body { padding-top: 56px; padding-bottom: 80px; }
     <button class="back-btn" onclick="closeMcqPanel()">← ফিরে যাও</button>
     <div class="mcq-panel-title" id="mcqPanelTitle">MCQ সম্পাদনা</div>
   </div>
+  <div class="mcq-panel-context" id="mcqPanelContext"></div>
   <div class="mcq-panel-body">
+
+    <div class="page-preview" id="pagePreview">
+      <canvas id="previewCanvas"></canvas>
+      <div class="page-preview-loading" id="previewLoading">PDF পেইজ লোড হচ্ছে...</div>
+    </div>
+
+    <div class="page-summary" id="pageSummary"></div>
 
     <div class="page-nav">
       <span class="page-nav-label">পেইজ নং:</span>
@@ -805,6 +793,9 @@ body { padding-top: 56px; padding-bottom: 80px; }
 <script>
 if (!Auth.isAdmin()) window.location.href = '../auth.html';
 
+if (typeof pdfjsLib !== 'undefined')
+  pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
 function esc(s) {
   if (s == null) return '';
   return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
@@ -841,178 +832,155 @@ function closeConfirm() {
 }
 document.getElementById('confirmOkBtn').onclick = () => { if (confirmCb) confirmCb(); closeConfirm(); };
 
-let selSubjectId = null, selSubjectName = '';
-let selChapterId = null, selChapterName = '';
-let activePdfId = null, activePdfTitle = '';
+let selSubjectId = null;
+let selChapterId = null;
+let activePdfId = null;
+let activePdfTitle = '';
 let currentPage = 1;
-let allMcqs = [], csvData = [], aiData = [];
-let editingMcqId = null, selAnswerKey = null;
-let selTypeKey = 'standard', selAiType = 'standard';
+let allMcqs = [];
+let allPdfMcqs = [];
+let csvData = [];
+let aiData = [];
+let editingMcqId = null;
+let selAnswerKey = null;
+let selTypeKey = 'standard';
+let selAiType = 'standard';
 let selectedPdfFile = null;
-let subjectsCache = [], chaptersCache = [];
+let cachedPdfDoc = null;
+let cachedPdfUrl = null;
 
-// ── Subject/Chapter combo-input logic ──
+function getSelectedSubjectName() {
+  const sel = document.getElementById('selSubject');
+  return sel.selectedIndex > 0 ? sel.options[sel.selectedIndex].textContent.trim() : '';
+}
+function getSelectedChapterName() {
+  const sel = document.getElementById('selChapter');
+  return sel.selectedIndex > 0 ? sel.options[sel.selectedIndex].textContent.trim() : '';
+}
+
+function updateSelectedContext() {
+  const ctx = document.getElementById('selectedContext');
+  const subName = getSelectedSubjectName();
+  const chName = getSelectedChapterName();
+  if (subName && chName) {
+    ctx.innerHTML = '📚 ' + esc(subName) + ' &gt; 📖 ' + esc(chName);
+    ctx.style.display = 'block';
+  } else {
+    ctx.style.display = 'none';
+  }
+}
 
 async function loadSubjects() {
+  const sel = document.getElementById('selSubject');
   try {
     const r = await api('/api/admin/subjects');
     if (!r.ok) throw new Error();
     const d = await r.json();
-    subjectsCache = d.subjects || [];
+    (d.subjects || []).forEach(s => {
+      const o = document.createElement('option');
+      o.value = s.id; o.textContent = (s.icon || '') + ' ' + s.name;
+      sel.appendChild(o);
+    });
   } catch { showToast('বিষয় লোড ব্যর্থ', 'error'); }
 }
 
-function filterSubjects() {
-  const q = document.getElementById('subjectInput').value.trim().toLowerCase();
-  const dd = document.getElementById('subjectDD');
-  const filtered = q ? subjectsCache.filter(s => s.name.toLowerCase().includes(q)) : subjectsCache;
-  renderSubjectDD(filtered);
-  dd.classList.add('open');
-  document.getElementById('subjectToggle').classList.add('open');
-}
-
-function renderSubjectDD(list) {
-  const dd = document.getElementById('subjectDD');
-  if (!list.length) { dd.innerHTML = '<div class="combo-empty">কোনো বিষয় নেই</div>'; return; }
-  dd.innerHTML = list.map(s =>
-    `<div class="combo-item ${selSubjectId == s.id ? 'sel' : ''}" onclick="pickSubject(${s.id},'${esc(s.name)}','${esc(s.icon||'📚')}')">
-      <span>${s.icon || '📚'}</span> <span>${esc(s.name)}</span>
-    </div>`
-  ).join('');
-}
-
-function toggleSubjectDD() {
-  const dd = document.getElementById('subjectDD');
-  const btn = document.getElementById('subjectToggle');
-  if (dd.classList.contains('open')) { dd.classList.remove('open'); btn.classList.remove('open'); return; }
-  renderSubjectDD(subjectsCache);
-  dd.classList.add('open'); btn.classList.add('open');
-}
-
-function pickSubject(id, name, icon) {
-  selSubjectId = id; selSubjectName = name;
-  document.getElementById('subjectInput').value = name;
-  document.getElementById('subjectIcon').value = icon;
-  document.getElementById('subjectDD').classList.remove('open');
-  document.getElementById('subjectToggle').classList.remove('open');
-  document.getElementById('subjectSelectedTag').innerHTML =
-    `<div class="selected-tag">${icon} ${esc(name)} <span class="tag-x" onclick="clearSubject()">✕</span></div>`;
-  loadChapters();
-}
-
-function clearSubject() {
-  selSubjectId = null; selSubjectName = '';
-  document.getElementById('subjectInput').value = '';
-  document.getElementById('subjectIcon').value = '';
-  document.getElementById('subjectSelectedTag').innerHTML = '';
-  clearChapter();
-  chaptersCache = [];
-  document.getElementById('pdfList').innerHTML = '<div class="empty-state"><div class="empty-state-icon">📄</div><div class="empty-state-text">বিষয় ও অধ্যায় নির্বাচন করুন</div></div>';
-}
-
-async function saveSubject() {
-  const name = document.getElementById('subjectInput').value.trim();
-  const icon = document.getElementById('subjectIcon').value.trim() || '📚';
-  if (!name) return showToast('বিষয়ের নাম লিখো', 'error');
-  const existing = subjectsCache.find(s => s.name.toLowerCase() === name.toLowerCase());
-  if (existing) { pickSubject(existing.id, existing.name, existing.icon || '📚'); return; }
-  const btn = document.getElementById('subjectAddBtn');
-  btn.disabled = true; btn.textContent = '...';
-  try {
-    const r = await api('/api/admin/subjects', { method: 'POST', body: JSON.stringify({ name, icon, description: '' }) });
-    if (!r.ok) throw new Error((await r.json()).error || 'ব্যর্থ');
-    const d = await r.json();
-    showToast('বিষয় যোগ ✓', 'success');
-    await loadSubjects();
-    pickSubject(d.id, name, icon);
-  } catch (e) { showToast(e.message, 'error'); }
-  finally { btn.disabled = false; btn.textContent = '+ যোগ'; }
-}
-
-async function loadChapters() {
-  if (!selSubjectId) { chaptersCache = []; return; }
+async function onSubjectChange() {
+  selSubjectId = document.getElementById('selSubject').value || null;
+  selChapterId = null;
+  const chSel = document.getElementById('selChapter');
+  chSel.innerHTML = '<option value="">-- অধ্যায় বেছে নিন --</option>';
+  chSel.disabled = true;
+  hideUploadAndList();
+  updateSelectedContext();
+  if (!selSubjectId) return;
   try {
     const r = await api('/api/admin/chapters?subject_id=' + selSubjectId);
     if (!r.ok) throw new Error();
     const d = await r.json();
-    chaptersCache = d.chapters || [];
-  } catch { chaptersCache = []; }
+    (d.chapters || []).forEach(ch => {
+      const o = document.createElement('option');
+      o.value = ch.id; o.textContent = ch.name;
+      chSel.appendChild(o);
+    });
+    chSel.disabled = false;
+  } catch { showToast('অধ্যায় লোড ব্যর্থ', 'error'); }
 }
 
-function filterChapters() {
-  const q = document.getElementById('chapterInput').value.trim().toLowerCase();
-  const dd = document.getElementById('chapterDD');
-  const filtered = q ? chaptersCache.filter(c => c.name.toLowerCase().includes(q)) : chaptersCache;
-  renderChapterDD(filtered);
-  dd.classList.add('open');
-  document.getElementById('chapterToggle').classList.add('open');
-}
-
-function renderChapterDD(list) {
-  const dd = document.getElementById('chapterDD');
-  if (!list.length) { dd.innerHTML = '<div class="combo-empty">কোনো অধ্যায় নেই</div>'; return; }
-  dd.innerHTML = list.map(c =>
-    `<div class="combo-item ${selChapterId == c.id ? 'sel' : ''}" onclick="pickChapter(${c.id},'${esc(c.name)}')">
-      <span>📖</span> <span>${esc(c.name)}</span>
-    </div>`
-  ).join('');
-}
-
-function toggleChapterDD() {
-  const dd = document.getElementById('chapterDD');
-  const btn = document.getElementById('chapterToggle');
-  if (dd.classList.contains('open')) { dd.classList.remove('open'); btn.classList.remove('open'); return; }
-  renderChapterDD(chaptersCache);
-  dd.classList.add('open'); btn.classList.add('open');
-}
-
-function pickChapter(id, name) {
-  selChapterId = id; selChapterName = name;
-  document.getElementById('chapterInput').value = name;
-  document.getElementById('chapterDD').classList.remove('open');
-  document.getElementById('chapterToggle').classList.remove('open');
-  document.getElementById('chapterSelectedTag').innerHTML =
-    `<div class="selected-tag">📖 ${esc(name)} <span class="tag-x" onclick="clearChapter()">✕</span></div>`;
+async function onChapterChange() {
+  selChapterId = document.getElementById('selChapter').value || null;
+  updateSelectedContext();
+  if (!selChapterId) { hideUploadAndList(); return; }
+  showUploadAndList();
   loadPdfs();
 }
 
-function clearChapter() {
-  selChapterId = null; selChapterName = '';
-  document.getElementById('chapterInput').value = '';
-  document.getElementById('chapterSelectedTag').innerHTML = '';
-  document.getElementById('pdfList').innerHTML = '<div class="empty-state"><div class="empty-state-icon">📄</div><div class="empty-state-text">অধ্যায় নির্বাচন করুন</div></div>';
+function hideUploadAndList() {
+  document.getElementById('uploadSection').style.display = 'none';
+  document.getElementById('pdfListSection').style.display = 'none';
+}
+function showUploadAndList() {
+  document.getElementById('uploadSection').style.display = 'block';
+  document.getElementById('pdfListSection').style.display = 'block';
 }
 
-async function saveChapter() {
-  if (!selSubjectId) return showToast('আগে বিষয় নির্বাচন করো', 'error');
-  const name = document.getElementById('chapterInput').value.trim();
-  if (!name) return showToast('অধ্যায়ের নাম লিখো', 'error');
-  const existing = chaptersCache.find(c => c.name.toLowerCase() === name.toLowerCase());
-  if (existing) { pickChapter(existing.id, existing.name); return; }
-  const btn = document.getElementById('chapterAddBtn');
-  btn.disabled = true; btn.textContent = '...';
+function toggleNewSubject() {
+  const box = document.getElementById('newSubjectBox');
+  box.classList.toggle('show');
+  if (box.classList.contains('show')) document.getElementById('newSubjectName').focus();
+  else { document.getElementById('newSubjectName').value = ''; document.getElementById('newSubjectIcon').value = ''; }
+}
+
+async function createSubject() {
+  const name = document.getElementById('newSubjectName').value.trim();
+  const icon = document.getElementById('newSubjectIcon').value.trim() || '📚';
+  if (!name) return showToast('বিষয়ের নাম লিখুন', 'error');
+  try {
+    const r = await api('/api/admin/subjects', { method: 'POST', body: JSON.stringify({ name, icon, description: '' }) });
+    if (!r.ok) throw new Error((await r.json()).error || 'ব্যর্থ');
+    const d = await r.json();
+    showToast('বিষয় যোগ হয়েছে ✓', 'success');
+    document.getElementById('newSubjectBox').classList.remove('show');
+    document.getElementById('newSubjectName').value = '';
+    document.getElementById('newSubjectIcon').value = '';
+    await loadSubjects();
+    document.getElementById('selSubject').value = d.id || '';
+    await onSubjectChange();
+  } catch(e) { showToast('সমস্যা: ' + e.message, 'error'); }
+}
+
+function toggleNewChapter() {
+  const box = document.getElementById('newChapterBox');
+  box.classList.toggle('show');
+  if (box.classList.contains('show')) document.getElementById('newChapterName').focus();
+  else document.getElementById('newChapterName').value = '';
+}
+
+async function createChapter() {
+  if (!selSubjectId) return showToast('আগে বিষয় নির্বাচন করুন', 'error');
+  const name = document.getElementById('newChapterName').value.trim();
+  if (!name) return showToast('অধ্যায়ের নাম লিখুন', 'error');
   try {
     const r = await api('/api/admin/chapters', { method: 'POST', body: JSON.stringify({ subject_id: parseInt(selSubjectId), name }) });
     if (!r.ok) throw new Error((await r.json()).error || 'ব্যর্থ');
-    const d = await r.json();
-    showToast('অধ্যায় যোগ ✓', 'success');
-    await loadChapters();
-    pickChapter(d.id, name);
-  } catch (e) { showToast(e.message, 'error'); }
-  finally { btn.disabled = false; btn.textContent = '+ যোগ'; }
+    showToast('অধ্যায় যোগ হয়েছে ✓', 'success');
+    document.getElementById('newChapterName').value = '';
+    document.getElementById('newChapterBox').classList.remove('show');
+    await onSubjectChange();
+    document.getElementById('selSubject').value = selSubjectId;
+    await onSubjectChange();
+    const chSel = document.getElementById('selChapter');
+    document.getElementById('selSubject').value = selSubjectId;
+    const r2 = await api('/api/admin/chapters?subject_id=' + selSubjectId);
+    const d2 = await r2.json();
+    chSel.innerHTML = '<option value="">-- অধ্যায় বেছে নিন --</option>';
+    (d2.chapters || []).forEach(ch => {
+      const o = document.createElement('option');
+      o.value = ch.id; o.textContent = ch.name;
+      chSel.appendChild(o);
+    });
+    chSel.disabled = false;
+  } catch (e) { showToast('ত্রুটি: ' + e.message, 'error'); }
 }
-
-// Close dropdowns on outside click
-document.addEventListener('click', e => {
-  if (!e.target.closest('#subjectInput') && !e.target.closest('#subjectToggle') && !e.target.closest('#subjectDD')) {
-    document.getElementById('subjectDD').classList.remove('open');
-    document.getElementById('subjectToggle').classList.remove('open');
-  }
-  if (!e.target.closest('#chapterInput') && !e.target.closest('#chapterToggle') && !e.target.closest('#chapterDD')) {
-    document.getElementById('chapterDD').classList.remove('open');
-    document.getElementById('chapterToggle').classList.remove('open');
-  }
-});
 
 function dzOver(e) { e.preventDefault(); document.getElementById('dropZone').classList.add('dragover'); }
 function dzLeave() { document.getElementById('dropZone').classList.remove('dragover'); }
@@ -1032,8 +1000,7 @@ function setFile(f) {
 }
 
 async function uploadPdf() {
-  if (!selSubjectId) return showToast('আগে বিষয় নির্বাচন করো', 'error');
-  if (!selChapterId) return showToast('আগে অধ্যায় নির্বাচন করো', 'error');
+  if (!selChapterId) return showToast('অধ্যায় নির্বাচন করুন', 'error');
   if (!selectedPdfFile) return showToast('PDF ফাইল নির্বাচন করুন', 'error');
   const title = document.getElementById('pdfTitle').value.trim();
   if (!title) return showToast('শিরোনাম লিখুন', 'error');
@@ -1085,6 +1052,7 @@ async function uploadPdf() {
     document.getElementById('pdfFileInput').value = '';
     setTimeout(() => { us.style.display = 'none'; }, 3000);
     showToast('PDF আপলোড সম্পন্ন ✓', 'success');
+    updateSelectedContext();
     loadPdfs();
   } catch (e) {
     showToast('আপলোড ব্যর্থ: ' + e.message, 'error');
@@ -1096,10 +1064,7 @@ async function uploadPdf() {
 }
 
 async function loadPdfs() {
-  if (!selChapterId) {
-    document.getElementById('pdfList').innerHTML = '<div class="empty-state"><div class="empty-state-icon">📄</div><div class="empty-state-text">অধ্যায় নির্বাচন করুন</div></div>';
-    return;
-  }
+  if (!selChapterId) return;
   const listEl = document.getElementById('pdfList');
   listEl.innerHTML = '<div class="skeleton skel-row"></div><div class="skeleton skel-sm"></div>';
   try {
@@ -1129,6 +1094,9 @@ function renderPdfs(pdfs) {
     listEl.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📄</div><div class="empty-state-title">কোনো PDF নেই</div><div class="empty-state-text">উপরে PDF আপলোড করুন</div></div>';
     return;
   }
+  const subName = getSelectedSubjectName();
+  const chName = getSelectedChapterName();
+  const contextLine = (subName && chName) ? '<div style="font-size:10px;color:var(--text3);margin-top:2px">📚 ' + esc(subName) + ' &gt; 📖 ' + esc(chName) + '</div>' : '';
   listEl.innerHTML = pdfs.map(p => `
     <div class="pdf-card" id="pdf-${p.id}">
       <div class="pdf-card-top">
@@ -1140,6 +1108,7 @@ function renderPdfs(pdfs) {
             ${p.page_count ? p.page_count + ' পৃষ্ঠা · ' : ''}
             ${p.created_at ? fmtDate(p.created_at) : ''}
           </div>
+          ${contextLine}
         </div>
         <div class="pdf-card-actions">
           <button class="act-btn act-edit" title="MCQ সম্পাদনা" onclick="openMcqPanel(${p.id}, '${esc(p.title)}')">📝</button>
@@ -1169,18 +1138,132 @@ function openMcqPanel(pdfId, pdfTitle) {
   activePdfId = pdfId;
   activePdfTitle = pdfTitle;
   currentPage = 1;
+  cachedPdfDoc = null;
+  cachedPdfUrl = null;
+
+  const subName = getSelectedSubjectName();
+  const chName = getSelectedChapterName();
   document.getElementById('mcqPanelTitle').textContent = pdfTitle + ' — MCQ সম্পাদনা';
+
+  const ctxEl = document.getElementById('mcqPanelContext');
+  if (subName && chName) {
+    ctxEl.innerHTML = '📕 ' + esc(pdfTitle) + ' &nbsp;|&nbsp; 📚 ' + esc(subName) + ' &gt; 📖 ' + esc(chName);
+    ctxEl.style.display = 'block';
+  } else {
+    ctxEl.style.display = 'none';
+  }
+
   document.getElementById('pageInput').value = 1;
   document.getElementById('mcqPanel').classList.add('open');
   document.body.style.overflow = 'hidden';
   resetMcqForm();
   loadMcqs();
+  loadPagePreview();
+  loadPageSummary();
 }
 
 function closeMcqPanel() {
   document.getElementById('mcqPanel').classList.remove('open');
   document.body.style.overflow = '';
-  activePdfId = null; allMcqs = [];
+  activePdfId = null; allMcqs = []; allPdfMcqs = [];
+  cachedPdfDoc = null; cachedPdfUrl = null;
+  document.getElementById('pageSummary').innerHTML = '';
+  document.getElementById('mcqPanelContext').style.display = 'none';
+  const canvas = document.getElementById('previewCanvas');
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  canvas.width = 0; canvas.height = 0;
+}
+
+async function fetchPdfUrl(pdfId) {
+  try {
+    const r = await fetch(CONFIG.workerUrl + '/api/pdf-url?pdf_id=' + pdfId, {
+      headers: { 'Authorization': 'Bearer ' + Auth.getToken() }
+    });
+    if (!r.ok) throw new Error('URL fetch failed');
+    const d = await r.json();
+    return d.url || null;
+  } catch {
+    return null;
+  }
+}
+
+async function loadPagePreview() {
+  if (!activePdfId || typeof pdfjsLib === 'undefined') return;
+  const loading = document.getElementById('previewLoading');
+  const canvas = document.getElementById('previewCanvas');
+  loading.classList.add('show');
+
+  try {
+    if (!cachedPdfDoc) {
+      const url = await fetchPdfUrl(activePdfId);
+      if (!url) { loading.classList.remove('show'); return; }
+      cachedPdfUrl = url;
+      cachedPdfDoc = await pdfjsLib.getDocument(url).promise;
+    }
+
+    const pageNum = Math.min(currentPage, cachedPdfDoc.numPages);
+    if (pageNum < 1) { loading.classList.remove('show'); return; }
+    const page = await cachedPdfDoc.getPage(pageNum);
+    const maxH = 200;
+    const origViewport = page.getViewport({ scale: 1 });
+    const scale = maxH / origViewport.height;
+    const viewport = page.getViewport({ scale });
+
+    canvas.width = viewport.width;
+    canvas.height = viewport.height;
+    const ctx = canvas.getContext('2d');
+    await page.render({ canvasContext: ctx, viewport }).promise;
+    loading.classList.remove('show');
+  } catch {
+    loading.classList.remove('show');
+  }
+}
+
+async function loadPageSummary() {
+  if (!activePdfId) return;
+  const summaryEl = document.getElementById('pageSummary');
+  try {
+    const r = await api('/api/admin/mcq?pdf_id=' + activePdfId);
+    if (!r.ok) throw new Error();
+    const d = await r.json();
+    const allMcqsForPdf = d.mcqs || [];
+    allPdfMcqs = allMcqsForPdf;
+
+    const pageCounts = {};
+    allMcqsForPdf.forEach(m => {
+      const pg = m.page_number || m.page || 1;
+      pageCounts[pg] = (pageCounts[pg] || 0) + 1;
+    });
+
+    const maxPage = Math.max(
+      ...Object.keys(pageCounts).map(Number),
+      currentPage,
+      cachedPdfDoc ? cachedPdfDoc.numPages : 0,
+      1
+    );
+    const totalPages = Math.min(maxPage, 50);
+
+    let html = '';
+    for (let p = 1; p <= totalPages; p++) {
+      const count = pageCounts[p] || 0;
+      const active = p === currentPage ? ' active' : '';
+      const hasMcqs = count > 0 ? ' has-mcqs' : '';
+      html += '<span class="page-pill' + active + hasMcqs + '" onclick="goToPage(' + p + ')">P' + p + '<span class="pill-count">' + count + '</span></span>';
+    }
+    summaryEl.innerHTML = html;
+  } catch {
+    summaryEl.innerHTML = '';
+  }
+}
+
+function goToPage(pg) {
+  currentPage = pg;
+  document.getElementById('pageInput').value = pg;
+  resetMcqForm();
+  loadMcqs();
+  loadPagePreview();
+  loadPageSummary();
 }
 
 function onPageChange() {
@@ -1189,6 +1272,8 @@ function onPageChange() {
   else currentPage = v;
   resetMcqForm();
   loadMcqs();
+  loadPagePreview();
+  loadPageSummary();
 }
 
 function pageStep(d) {
@@ -1198,6 +1283,8 @@ function pageStep(d) {
   currentPage = nxt;
   resetMcqForm();
   loadMcqs();
+  loadPagePreview();
+  loadPageSummary();
 }
 
 async function loadMcqs() {
@@ -1356,7 +1443,7 @@ async function saveMcq(e) {
       : await api('/api/admin/mcq', { method: 'POST', body: JSON.stringify(body) });
     if (!r.ok) throw new Error((await r.json()).error || 'ব্যর্থ');
     showToast(mcqId ? 'প্রশ্ন আপডেট ✓' : 'প্রশ্ন যোগ ✓', 'success');
-    resetMcqForm(); loadMcqs();
+    resetMcqForm(); loadMcqs(); loadPageSummary();
   } catch (err) { showToast('ত্রুটি: ' + err.message, 'error'); }
   finally { btn.disabled = false; btn.textContent = editingMcqId ? '✓ আপডেট করো' : '✓ প্রশ্ন সংরক্ষণ'; }
 }
@@ -1372,7 +1459,7 @@ function deleteMcq(id) {
         const r = await api('/api/admin/mcq/' + id, { method: 'DELETE' });
         if (!r.ok) throw new Error('ব্যর্থ');
         showToast('প্রশ্ন মুছে গেছে', 'success');
-        loadMcqs();
+        loadMcqs(); loadPageSummary();
       } catch { showToast('মুছতে ব্যর্থ', 'error'); }
     }
   );
@@ -1461,7 +1548,8 @@ async function importCsv() {
     csvData = []; document.getElementById('csvPreviewInfo').style.display = 'none';
     btn.style.display = 'none'; document.getElementById('csvFileInput').value = '';
     showToast(done + ' টি প্রশ্ন আমদানি ✓', 'success');
-    currentPage = pg; document.getElementById('pageInput').value = pg; loadMcqs();
+    currentPage = pg; document.getElementById('pageInput').value = pg;
+    loadMcqs(); loadPageSummary();
   } catch (e) { showToast('আমদানি ব্যর্থ: ' + e.message, 'error'); }
   finally { btn.disabled = false; pw.style.display = 'none'; }
 }
@@ -1559,14 +1647,12 @@ async function saveAiMcqs() {
     const r = await api('/api/admin/mcq/batch', { method: 'POST', body: JSON.stringify({ mcqs }) });
     if (!r.ok) throw new Error((await r.json()).error || 'ব্যর্থ');
     showToast(mcqs.length + ' টি AI প্রশ্ন সংরক্ষিত ✓', 'success');
-    discardAi(); loadMcqs();
+    discardAi(); loadMcqs(); loadPageSummary();
   } catch (e) { showToast('সংরক্ষণ ব্যর্থ: ' + e.message, 'error'); }
   finally { btn.disabled = false; btn.textContent = '✓ সব সংরক্ষণ করো'; }
 }
 
-loadSubjects().then(() => {
-  if (subjectsCache.length) renderSubjectDD(subjectsCache);
-});
+loadSubjects();
 </script>
 </body>
 </html>

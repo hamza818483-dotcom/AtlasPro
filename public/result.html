@@ -360,27 +360,29 @@ body { padding-top: 52px; padding-bottom: var(--nav-h); }
 <script src="js/auth.js"></script>
 <script src="js/theme.js"></script>
 <script>
-// ── URL Params ──
+// ── URL Params (used as fallback for score card and for retry/nav) ──
 const params       = new URLSearchParams(location.search);
-const CORRECT      = parseInt(params.get('correct')   || '0', 10);
-const WRONG        = parseInt(params.get('wrong')     || '0', 10);
-const SKIP         = parseInt(params.get('skip')      || '0', 10);
-const MARKS        = parseFloat(params.get('marks')   || '0');
-const TOTAL        = parseInt(params.get('total')     || '0', 10);
-const TIME_TAKEN   = parseInt(params.get('time_taken')|| '0', 10);
 const PDF_ID       = params.get('pdf_id')       || '';
 const PDF_NAME     = params.get('pdf_name')     || '';
 const PAGES_STR    = params.get('pages')        || '';
-const CHAPTER_ID   = params.get('chapter_id')  || '';
-const CHAPTER_NAME = params.get('chapter_name')|| '';
-const SUBJECT_NAME = params.get('subject_name')|| '';
-const ICON         = params.get('icon')         || '';
+const CHAPTER_ID   = params.get('chapter_id')   || '';
+const CHAPTER_NAME = params.get('chapter_name') || '';
+const SUBJECT_NAME = params.get('subject_name') || '';
+const ICON         = params.get('icon')          || '';
 
 const BN_LABELS = ['ক', 'খ', 'গ', 'ঘ'];
 
-let allQuestions = [];
-let currentFilter = 'all';
-const aiCache = {};
+let allQuestions   = [];
+let currentFilter  = 'all';
+const aiCache      = {};
+
+// Score values — will be populated from sessionStorage or URL params
+let CORRECT    = 0;
+let WRONG      = 0;
+let SKIP       = 0;
+let MARKS      = 0;
+let TOTAL      = 0;
+let TIME_TAKEN = 0;
 
 // ── Toast ──
 function showToast(msg, d = 2500) {
@@ -566,25 +568,60 @@ function renderReviewList(list) {
   el.innerHTML = list.map((q, i) => buildReviewCard(q, allQuestions.indexOf(q), i)).join('');
 }
 
-// ── Init ──
-function init() {
-  renderScoreCard();
-
-  // Parse result data
-  try {
-    const raw = params.get('result_data');
-    if (raw) allQuestions = JSON.parse(decodeURIComponent(raw));
-  } catch { allQuestions = []; }
-
-  renderReviewList(allQuestions);
-}
-
+// ── Escape HTML ──
 function escHtml(str) {
   return String(str)
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;');
+}
+
+// ── Init ──
+function init() {
+  let sessionData = null;
+
+  // 1. Try reading from sessionStorage (preferred source)
+  try {
+    const stored = sessionStorage.getItem('atlas_exam_result');
+    if (stored) {
+      sessionData = JSON.parse(stored);
+      sessionStorage.removeItem('atlas_exam_result');
+    }
+  } catch { sessionData = null; }
+
+  // 2. Load scores: prefer sessionStorage scores, fall back to URL params
+  if (sessionData && sessionData.scores) {
+    const s   = sessionData.scores;
+    CORRECT    = parseInt(s.correct, 10)    || 0;
+    WRONG      = parseInt(s.wrong, 10)      || 0;
+    SKIP       = parseInt(s.skip, 10)       || 0;
+    MARKS      = parseFloat(s.marks)        || 0;
+    TOTAL      = parseInt(s.total, 10)      || 0;
+    TIME_TAKEN = parseInt(s.time_taken, 10) || 0;
+  } else {
+    // Fallback: read scores from URL params
+    CORRECT    = parseInt(params.get('correct')    || '0', 10);
+    WRONG      = parseInt(params.get('wrong')      || '0', 10);
+    SKIP       = parseInt(params.get('skip')       || '0', 10);
+    MARKS      = parseFloat(params.get('marks')    || '0');
+    TOTAL      = parseInt(params.get('total')      || '0', 10);
+    TIME_TAKEN = parseInt(params.get('time_taken') || '0', 10);
+  }
+
+  // 3. Load questions: prefer sessionStorage, fall back to URL result_data
+  if (sessionData && sessionData.questions && sessionData.questions.length > 0) {
+    allQuestions = sessionData.questions;
+  } else {
+    try {
+      const raw = params.get('result_data');
+      if (raw) allQuestions = JSON.parse(decodeURIComponent(raw));
+    } catch { allQuestions = []; }
+  }
+
+  // 4. Render
+  renderScoreCard();
+  renderReviewList(allQuestions);
 }
 
 document.addEventListener('DOMContentLoaded', init);

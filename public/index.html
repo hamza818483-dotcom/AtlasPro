@@ -63,7 +63,7 @@
 
   <!-- Announcement Slideshow -->
   <div class="slideshow-wrap" id="slideshowWrap" style="display:none">
-    <div id="slideshowInner"></div>
+    <div class="slideshow-track" id="slideshowTrack"></div>
     <div class="slide-dots" id="slideDots"></div>
   </div>
 
@@ -247,22 +247,86 @@ async function loadAnnouncements() {
     if (!items.length) return;
 
     const wrap = document.getElementById('slideshowWrap');
-    const inner = document.getElementById('slideshowInner');
-    const dots = document.getElementById('slideDots');
+    const track = document.getElementById('slideshowTrack');
+    const dotsEl = document.getElementById('slideDots');
     wrap.style.display = 'block';
 
+    // Build slides
+    track.innerHTML = items.map(a => {
+      const bg = a.color
+        ? `background:linear-gradient(135deg,${a.color},var(--bg2));`
+        : '';
+      const imgTag = a.image_url
+        ? `<img class="slide-image" src="${a.image_url}" alt="" loading="lazy" onerror="this.style.display='none'">`
+        : '';
+      const emoji = a.emoji ? `<span>${a.emoji}</span>` : '';
+      const linkTag = a.link
+        ? `<a class="slide-link" href="${a.link}" target="_blank" rel="noopener">আরো দেখো &rarr;</a>`
+        : '';
+      return `<div class="slide" style="${bg}">
+        ${imgTag}
+        <div class="slide-body">
+          <div class="slide-title">${emoji}${a.title || ''}</div>
+          <div class="slide-text">${a.body || a.content || ''}</div>
+          ${linkTag}
+        </div>
+      </div>`;
+    }).join('');
+
+    // Dots
+    dotsEl.innerHTML = items.map((_, i) =>
+      `<div class="slide-dot ${i === 0 ? 'active' : ''}" data-idx="${i}"></div>`
+    ).join('');
+
     let current = 0;
-    function render() {
-      inner.innerHTML = items.map((a, i) => `
-        <div class="slide ${i===current?'active':''}" style="background:linear-gradient(135deg,${a.color||'var(--card)'},var(--bg2));border-color:${a.color||'var(--border)'}20">
-          <div class="slide-title">${a.title||''}</div>
-          <div class="slide-text">${a.content||''}</div>
-        </div>`).join('');
-      dots.innerHTML = items.map((_, i) =>
-        `<div class="slide-dot ${i===current?'active':''}"></div>`).join('');
+    const total = items.length;
+
+    function goTo(idx) {
+      current = ((idx % total) + total) % total;
+      track.style.transform = `translateX(-${current * 100}%)`;
+      dotsEl.querySelectorAll('.slide-dot').forEach((d, i) =>
+        d.classList.toggle('active', i === current));
     }
-    render();
-    setInterval(() => { current = (current+1) % items.length; render(); }, 3000);
+
+    // Dot clicks
+    dotsEl.addEventListener('click', e => {
+      const dot = e.target.closest('.slide-dot');
+      if (dot) goTo(Number(dot.dataset.idx));
+    });
+
+    // Auto-slide every 4 seconds
+    let autoTimer = setInterval(() => goTo(current + 1), 4000);
+
+    // Touch swipe support
+    let startX = 0, moveX = 0, isSwiping = false;
+
+    wrap.addEventListener('touchstart', e => {
+      startX = e.touches[0].clientX;
+      moveX = 0;
+      isSwiping = true;
+      track.classList.add('dragging');
+      clearInterval(autoTimer);
+    }, { passive: true });
+
+    wrap.addEventListener('touchmove', e => {
+      if (!isSwiping) return;
+      moveX = e.touches[0].clientX - startX;
+      const offset = -(current * 100) + (moveX / wrap.offsetWidth) * 100;
+      track.style.transform = `translateX(${offset}%)`;
+    }, { passive: true });
+
+    wrap.addEventListener('touchend', () => {
+      if (!isSwiping) return;
+      isSwiping = false;
+      track.classList.remove('dragging');
+      const threshold = wrap.offsetWidth * 0.2;
+      if (moveX < -threshold) goTo(current + 1);
+      else if (moveX > threshold) goTo(current - 1);
+      else goTo(current);
+      // Restart auto-slide after swipe
+      autoTimer = setInterval(() => goTo(current + 1), 4000);
+    });
+
   } catch(_) {}
 }
 

@@ -81,6 +81,16 @@ body{padding-top:56px;padding-bottom:66px;}
       <textarea class="form-textarea" id="annContent" placeholder="ঘোষণার বিবরণ লিখুন..."></textarea>
     </div>
     <div class="form-group">
+      <label class="form-label">ছবি (ঐচ্ছিক)</label>
+      <div style="display:flex;gap:8px;align-items:center">
+        <input type="file" class="form-input" id="annImageFile" accept="image/*" style="padding:8px;height:auto;flex:1" onchange="previewAnnImage(event)">
+        <button type="button" class="btn btn-outline" style="padding:6px 12px;font-size:11px;white-space:nowrap" onclick="clearAnnImage()">✕ মুছো</button>
+      </div>
+      <img id="annImagePreview" style="display:none;max-width:100%;max-height:120px;margin-top:8px;border-radius:8px;object-fit:cover">
+      <input type="hidden" id="annImageUrl">
+      <div id="annImageUploading" style="display:none;font-size:11px;color:var(--text3);margin-top:6px">আপলোড হচ্ছে...</div>
+    </div>
+    <div class="form-group">
       <label class="form-label">রঙ বেছে নাও</label>
       <div class="color-swatches" id="colorSwatches"></div>
     </div>
@@ -123,11 +133,48 @@ function selectColor(c,el){
   el.classList.add('selected');
 }
 
+function previewAnnImage(e){
+  const file=e.target.files[0];
+  if(!file)return;
+  const prev=document.getElementById('annImagePreview');
+  prev.src=URL.createObjectURL(file);
+  prev.style.display='block';
+}
+function clearAnnImage(){
+  document.getElementById('annImageFile').value='';
+  document.getElementById('annImagePreview').style.display='none';
+  document.getElementById('annImageUrl').value='';
+}
+async function uploadAnnImage(){
+  const file=document.getElementById('annImageFile').files[0];
+  if(!file)return document.getElementById('annImageUrl').value;
+  const existing=document.getElementById('annImageUrl').value;
+  if(existing)return existing;
+  const el=document.getElementById('annImageUploading');
+  el.style.display='block';
+  try{
+    const fd=new FormData();fd.append('file',file);
+    const res=await fetch(CONFIG.workerUrl+'/api/admin/announcements/image',{
+      method:'POST',headers:{'Authorization':'Bearer '+Auth.getToken()},body:fd
+    });
+    if(!res.ok)throw new Error();
+    const d=await res.json();
+    document.getElementById('annImageUrl').value=d.url;
+    return d.url;
+  }catch{showToast('ছবি আপলোড ব্যর্থ');return '';}
+  finally{el.style.display='none';}
+}
+
 function openModal(ann=null){
   document.getElementById('modalTitle').textContent=ann?'ঘোষণা সম্পাদনা':'নতুন ঘোষণা';
   document.getElementById('editId').value=ann?.id||'';
   document.getElementById('annTitle').value=ann?.title||'';
   document.getElementById('annContent').value=ann?.content||'';
+  document.getElementById('annImageUrl').value=ann?.image_url||'';
+  document.getElementById('annImageFile').value='';
+  const prev=document.getElementById('annImagePreview');
+  if(ann?.image_url){prev.src=ann.image_url;prev.style.display='block';}
+  else{prev.style.display='none';}
   selectedColor=ann?.color||COLORS[0];
   const active=document.getElementById('annActive');
   ann?.active===false?active.classList.remove('on'):active.classList.add('on');
@@ -142,7 +189,8 @@ async function saveAnnouncement(){
   if(!title||!content){showToast('শিরোনাম ও বিবরণ দাও');return;}
   const id=document.getElementById('editId').value;
   const isActive=document.getElementById('annActive').classList.contains('on');
-  const body={title,content,color:selectedColor,active:isActive};
+  const imageUrl=await uploadAnnImage();
+  const body={title,content,color:selectedColor,active:isActive,image_url:imageUrl||''};
   try{
     const res=await Auth.api(id?'/api/admin/announcements/'+id:'/api/admin/announcements',{method:id?'PUT':'POST',body:JSON.stringify(body)});
     if(!res.ok) throw new Error();
@@ -183,6 +231,7 @@ async function loadAnnouncements(){
     if(!items.length){list.innerHTML='<div style="text-align:center;padding:40px;color:var(--text3)"><div style="font-size:40px;margin-bottom:10px">📢</div><div>কোনো ঘোষণা নেই</div></div>';return;}
     list.innerHTML=items.map((a,i)=>`
       <div class="announce-card" style="animation-delay:${i*50}ms">
+        ${a.image_url?`<img src="${a.image_url}" style="width:100%;max-height:140px;object-fit:cover" onerror="this.style.display='none'">`:''}
         <div class="announce-preview" style="background:linear-gradient(135deg,${a.color||'var(--card)'},var(--bg2))">
           <div class="announce-title">${escHtml(a.title||'')}</div>
           <div class="announce-content">${escHtml(a.content||'')}</div>

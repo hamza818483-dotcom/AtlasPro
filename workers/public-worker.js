@@ -58,9 +58,9 @@ export default {
 
       if (path === '/api/public/announcements' && method === 'GET') {
         const { results } = await env.DB.prepare(
-          "SELECT id, title, body, link, emoji, color FROM announcements WHERE active=1 ORDER BY sort_order ASC"
+          "SELECT id, title, body, link, emoji, color, image_url FROM announcements WHERE active=1 ORDER BY sort_order ASC"
         ).all();
-        return json({ announcements: results.map(r => ({ ...r, active: true })) });
+        return json({ announcements: results.map(r => ({ ...r, content: r.body, active: true })) });
       }
 
       if (path === '/api/public/packages' && method === 'GET') {
