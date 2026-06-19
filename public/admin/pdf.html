@@ -7,6 +7,7 @@
 <link rel="stylesheet" href="../css/style.css">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Bengali:wght@400;600;700;900&family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <style>
 body { padding-top: 56px; padding-bottom: 80px; }
 
@@ -140,6 +141,13 @@ body { padding-top: 56px; padding-bottom: 80px; }
   color: var(--green); font-weight: 600;
 }
 
+.selected-context {
+  display: none; margin-bottom: 12px; padding: 8px 14px;
+  background: rgba(108,99,255,0.08); border: 1px solid rgba(108,99,255,0.2);
+  border-radius: var(--radius-sm); font-size: 12px; font-weight: 600;
+  color: #9C8BFF;
+}
+
 .pdf-list { display: flex; flex-direction: column; gap: 10px; }
 .pdf-card {
   background: var(--bg2); border: 1px solid var(--border);
@@ -235,6 +243,52 @@ body { padding-top: 56px; padding-bottom: 80px; }
 }
 .mcq-panel-title { flex: 1; font-size: 13px; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .mcq-panel-body { flex: 1; overflow-y: auto; padding: 14px; }
+
+.mcq-panel-context {
+  display: none; padding: 6px 14px; font-size: 11px; font-weight: 600;
+  color: var(--text3); background: rgba(108,99,255,0.05);
+  border-bottom: 1px solid var(--border);
+}
+
+.page-preview {
+  background: #111120; border: 1px solid var(--border);
+  border-radius: var(--radius); margin-bottom: 14px;
+  overflow: hidden; position: relative;
+  max-height: 200px; display: flex; align-items: center;
+  justify-content: center;
+}
+.page-preview canvas {
+  max-width: 100%; max-height: 200px; display: block;
+  object-fit: contain;
+}
+.page-preview-loading {
+  position: absolute; inset: 0;
+  display: none; align-items: center; justify-content: center;
+  font-size: 12px; color: var(--text3); background: rgba(17,17,32,0.85);
+}
+.page-preview-loading.show { display: flex; }
+
+.page-summary {
+  display: flex; flex-wrap: wrap; gap: 6px;
+  margin-bottom: 14px;
+}
+.page-pill {
+  padding: 4px 10px; border-radius: 20px; font-size: 11px;
+  font-weight: 700; cursor: pointer; transition: all 0.2s;
+  border: 1px solid var(--border); background: var(--card);
+  color: var(--text3);
+}
+.page-pill:hover { border-color: var(--primary); color: var(--primary); }
+.page-pill.active {
+  background: rgba(108,99,255,0.15); border-color: var(--primary); color: #9C8BFF;
+}
+.page-pill .pill-count {
+  display: inline-block; min-width: 14px; text-align: center;
+  padding: 0 4px; border-radius: 10px; margin-left: 4px;
+  background: rgba(108,99,255,0.2); font-size: 10px;
+}
+.page-pill.active .pill-count { background: rgba(108,99,255,0.35); }
+.page-pill.has-mcqs { color: var(--text2); }
 
 .page-nav {
   display: flex; align-items: center; gap: 10px;
@@ -525,6 +579,7 @@ body { padding-top: 56px; padding-bottom: 80px; }
   </div>
 
   <div id="pdfListSection" style="display:none">
+    <div class="selected-context" id="selectedContext"></div>
     <div class="section-heading">এই অধ্যায়ের PDF সমূহ</div>
     <div class="pdf-list" id="pdfList">
       <div class="skeleton skel-row"></div>
@@ -539,7 +594,15 @@ body { padding-top: 56px; padding-bottom: 80px; }
     <button class="back-btn" onclick="closeMcqPanel()">← ফিরে যাও</button>
     <div class="mcq-panel-title" id="mcqPanelTitle">MCQ সম্পাদনা</div>
   </div>
+  <div class="mcq-panel-context" id="mcqPanelContext"></div>
   <div class="mcq-panel-body">
+
+    <div class="page-preview" id="pagePreview">
+      <canvas id="previewCanvas"></canvas>
+      <div class="page-preview-loading" id="previewLoading">PDF পেইজ লোড হচ্ছে...</div>
+    </div>
+
+    <div class="page-summary" id="pageSummary"></div>
 
     <div class="page-nav">
       <span class="page-nav-label">পেইজ নং:</span>
@@ -730,6 +793,9 @@ body { padding-top: 56px; padding-bottom: 80px; }
 <script>
 if (!Auth.isAdmin()) window.location.href = '../auth.html';
 
+if (typeof pdfjsLib !== 'undefined')
+  pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
 function esc(s) {
   if (s == null) return '';
   return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
@@ -772,6 +838,7 @@ let activePdfId = null;
 let activePdfTitle = '';
 let currentPage = 1;
 let allMcqs = [];
+let allPdfMcqs = [];
 let csvData = [];
 let aiData = [];
 let editingMcqId = null;
@@ -779,6 +846,29 @@ let selAnswerKey = null;
 let selTypeKey = 'standard';
 let selAiType = 'standard';
 let selectedPdfFile = null;
+let cachedPdfDoc = null;
+let cachedPdfUrl = null;
+
+function getSelectedSubjectName() {
+  const sel = document.getElementById('selSubject');
+  return sel.selectedIndex > 0 ? sel.options[sel.selectedIndex].textContent.trim() : '';
+}
+function getSelectedChapterName() {
+  const sel = document.getElementById('selChapter');
+  return sel.selectedIndex > 0 ? sel.options[sel.selectedIndex].textContent.trim() : '';
+}
+
+function updateSelectedContext() {
+  const ctx = document.getElementById('selectedContext');
+  const subName = getSelectedSubjectName();
+  const chName = getSelectedChapterName();
+  if (subName && chName) {
+    ctx.innerHTML = '📚 ' + esc(subName) + ' &gt; 📖 ' + esc(chName);
+    ctx.style.display = 'block';
+  } else {
+    ctx.style.display = 'none';
+  }
+}
 
 async function loadSubjects() {
   const sel = document.getElementById('selSubject');
@@ -801,6 +891,7 @@ async function onSubjectChange() {
   chSel.innerHTML = '<option value="">-- অধ্যায় বেছে নিন --</option>';
   chSel.disabled = true;
   hideUploadAndList();
+  updateSelectedContext();
   if (!selSubjectId) return;
   try {
     const r = await api('/api/admin/chapters?subject_id=' + selSubjectId);
@@ -817,6 +908,7 @@ async function onSubjectChange() {
 
 async function onChapterChange() {
   selChapterId = document.getElementById('selChapter').value || null;
+  updateSelectedContext();
   if (!selChapterId) { hideUploadAndList(); return; }
   showUploadAndList();
   loadPdfs();
@@ -960,6 +1052,7 @@ async function uploadPdf() {
     document.getElementById('pdfFileInput').value = '';
     setTimeout(() => { us.style.display = 'none'; }, 3000);
     showToast('PDF আপলোড সম্পন্ন ✓', 'success');
+    updateSelectedContext();
     loadPdfs();
   } catch (e) {
     showToast('আপলোড ব্যর্থ: ' + e.message, 'error');
@@ -1001,6 +1094,9 @@ function renderPdfs(pdfs) {
     listEl.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📄</div><div class="empty-state-title">কোনো PDF নেই</div><div class="empty-state-text">উপরে PDF আপলোড করুন</div></div>';
     return;
   }
+  const subName = getSelectedSubjectName();
+  const chName = getSelectedChapterName();
+  const contextLine = (subName && chName) ? '<div style="font-size:10px;color:var(--text3);margin-top:2px">📚 ' + esc(subName) + ' &gt; 📖 ' + esc(chName) + '</div>' : '';
   listEl.innerHTML = pdfs.map(p => `
     <div class="pdf-card" id="pdf-${p.id}">
       <div class="pdf-card-top">
@@ -1012,6 +1108,7 @@ function renderPdfs(pdfs) {
             ${p.page_count ? p.page_count + ' পৃষ্ঠা · ' : ''}
             ${p.created_at ? fmtDate(p.created_at) : ''}
           </div>
+          ${contextLine}
         </div>
         <div class="pdf-card-actions">
           <button class="act-btn act-edit" title="MCQ সম্পাদনা" onclick="openMcqPanel(${p.id}, '${esc(p.title)}')">📝</button>
@@ -1041,18 +1138,132 @@ function openMcqPanel(pdfId, pdfTitle) {
   activePdfId = pdfId;
   activePdfTitle = pdfTitle;
   currentPage = 1;
+  cachedPdfDoc = null;
+  cachedPdfUrl = null;
+
+  const subName = getSelectedSubjectName();
+  const chName = getSelectedChapterName();
   document.getElementById('mcqPanelTitle').textContent = pdfTitle + ' — MCQ সম্পাদনা';
+
+  const ctxEl = document.getElementById('mcqPanelContext');
+  if (subName && chName) {
+    ctxEl.innerHTML = '📕 ' + esc(pdfTitle) + ' &nbsp;|&nbsp; 📚 ' + esc(subName) + ' &gt; 📖 ' + esc(chName);
+    ctxEl.style.display = 'block';
+  } else {
+    ctxEl.style.display = 'none';
+  }
+
   document.getElementById('pageInput').value = 1;
   document.getElementById('mcqPanel').classList.add('open');
   document.body.style.overflow = 'hidden';
   resetMcqForm();
   loadMcqs();
+  loadPagePreview();
+  loadPageSummary();
 }
 
 function closeMcqPanel() {
   document.getElementById('mcqPanel').classList.remove('open');
   document.body.style.overflow = '';
-  activePdfId = null; allMcqs = [];
+  activePdfId = null; allMcqs = []; allPdfMcqs = [];
+  cachedPdfDoc = null; cachedPdfUrl = null;
+  document.getElementById('pageSummary').innerHTML = '';
+  document.getElementById('mcqPanelContext').style.display = 'none';
+  const canvas = document.getElementById('previewCanvas');
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  canvas.width = 0; canvas.height = 0;
+}
+
+async function fetchPdfUrl(pdfId) {
+  try {
+    const r = await fetch(CONFIG.workerUrl + '/api/pdf-url?pdf_id=' + pdfId, {
+      headers: { 'Authorization': 'Bearer ' + Auth.getToken() }
+    });
+    if (!r.ok) throw new Error('URL fetch failed');
+    const d = await r.json();
+    return d.url || null;
+  } catch {
+    return null;
+  }
+}
+
+async function loadPagePreview() {
+  if (!activePdfId || typeof pdfjsLib === 'undefined') return;
+  const loading = document.getElementById('previewLoading');
+  const canvas = document.getElementById('previewCanvas');
+  loading.classList.add('show');
+
+  try {
+    if (!cachedPdfDoc) {
+      const url = await fetchPdfUrl(activePdfId);
+      if (!url) { loading.classList.remove('show'); return; }
+      cachedPdfUrl = url;
+      cachedPdfDoc = await pdfjsLib.getDocument(url).promise;
+    }
+
+    const pageNum = Math.min(currentPage, cachedPdfDoc.numPages);
+    if (pageNum < 1) { loading.classList.remove('show'); return; }
+    const page = await cachedPdfDoc.getPage(pageNum);
+    const maxH = 200;
+    const origViewport = page.getViewport({ scale: 1 });
+    const scale = maxH / origViewport.height;
+    const viewport = page.getViewport({ scale });
+
+    canvas.width = viewport.width;
+    canvas.height = viewport.height;
+    const ctx = canvas.getContext('2d');
+    await page.render({ canvasContext: ctx, viewport }).promise;
+    loading.classList.remove('show');
+  } catch {
+    loading.classList.remove('show');
+  }
+}
+
+async function loadPageSummary() {
+  if (!activePdfId) return;
+  const summaryEl = document.getElementById('pageSummary');
+  try {
+    const r = await api('/api/admin/mcq?pdf_id=' + activePdfId);
+    if (!r.ok) throw new Error();
+    const d = await r.json();
+    const allMcqsForPdf = d.mcqs || [];
+    allPdfMcqs = allMcqsForPdf;
+
+    const pageCounts = {};
+    allMcqsForPdf.forEach(m => {
+      const pg = m.page_number || m.page || 1;
+      pageCounts[pg] = (pageCounts[pg] || 0) + 1;
+    });
+
+    const maxPage = Math.max(
+      ...Object.keys(pageCounts).map(Number),
+      currentPage,
+      cachedPdfDoc ? cachedPdfDoc.numPages : 0,
+      1
+    );
+    const totalPages = Math.min(maxPage, 50);
+
+    let html = '';
+    for (let p = 1; p <= totalPages; p++) {
+      const count = pageCounts[p] || 0;
+      const active = p === currentPage ? ' active' : '';
+      const hasMcqs = count > 0 ? ' has-mcqs' : '';
+      html += '<span class="page-pill' + active + hasMcqs + '" onclick="goToPage(' + p + ')">P' + p + '<span class="pill-count">' + count + '</span></span>';
+    }
+    summaryEl.innerHTML = html;
+  } catch {
+    summaryEl.innerHTML = '';
+  }
+}
+
+function goToPage(pg) {
+  currentPage = pg;
+  document.getElementById('pageInput').value = pg;
+  resetMcqForm();
+  loadMcqs();
+  loadPagePreview();
+  loadPageSummary();
 }
 
 function onPageChange() {
@@ -1061,6 +1272,8 @@ function onPageChange() {
   else currentPage = v;
   resetMcqForm();
   loadMcqs();
+  loadPagePreview();
+  loadPageSummary();
 }
 
 function pageStep(d) {
@@ -1070,6 +1283,8 @@ function pageStep(d) {
   currentPage = nxt;
   resetMcqForm();
   loadMcqs();
+  loadPagePreview();
+  loadPageSummary();
 }
 
 async function loadMcqs() {
@@ -1228,7 +1443,7 @@ async function saveMcq(e) {
       : await api('/api/admin/mcq', { method: 'POST', body: JSON.stringify(body) });
     if (!r.ok) throw new Error((await r.json()).error || 'ব্যর্থ');
     showToast(mcqId ? 'প্রশ্ন আপডেট ✓' : 'প্রশ্ন যোগ ✓', 'success');
-    resetMcqForm(); loadMcqs();
+    resetMcqForm(); loadMcqs(); loadPageSummary();
   } catch (err) { showToast('ত্রুটি: ' + err.message, 'error'); }
   finally { btn.disabled = false; btn.textContent = editingMcqId ? '✓ আপডেট করো' : '✓ প্রশ্ন সংরক্ষণ'; }
 }
@@ -1244,7 +1459,7 @@ function deleteMcq(id) {
         const r = await api('/api/admin/mcq/' + id, { method: 'DELETE' });
         if (!r.ok) throw new Error('ব্যর্থ');
         showToast('প্রশ্ন মুছে গেছে', 'success');
-        loadMcqs();
+        loadMcqs(); loadPageSummary();
       } catch { showToast('মুছতে ব্যর্থ', 'error'); }
     }
   );
@@ -1333,7 +1548,8 @@ async function importCsv() {
     csvData = []; document.getElementById('csvPreviewInfo').style.display = 'none';
     btn.style.display = 'none'; document.getElementById('csvFileInput').value = '';
     showToast(done + ' টি প্রশ্ন আমদানি ✓', 'success');
-    currentPage = pg; document.getElementById('pageInput').value = pg; loadMcqs();
+    currentPage = pg; document.getElementById('pageInput').value = pg;
+    loadMcqs(); loadPageSummary();
   } catch (e) { showToast('আমদানি ব্যর্থ: ' + e.message, 'error'); }
   finally { btn.disabled = false; pw.style.display = 'none'; }
 }
@@ -1431,7 +1647,7 @@ async function saveAiMcqs() {
     const r = await api('/api/admin/mcq/batch', { method: 'POST', body: JSON.stringify({ mcqs }) });
     if (!r.ok) throw new Error((await r.json()).error || 'ব্যর্থ');
     showToast(mcqs.length + ' টি AI প্রশ্ন সংরক্ষিত ✓', 'success');
-    discardAi(); loadMcqs();
+    discardAi(); loadMcqs(); loadPageSummary();
   } catch (e) { showToast('সংরক্ষণ ব্যর্থ: ' + e.message, 'error'); }
   finally { btn.disabled = false; btn.textContent = '✓ সব সংরক্ষণ করো'; }
 }

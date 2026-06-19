@@ -6,6 +6,7 @@ import examWorker         from './exam-worker.js';
 import adminWorker        from './admin-worker.js';
 import focusProfileWorker from './focus-profile-worker.js';
 import publicWorker       from './public-worker.js';
+import { getGeminiKeys, callGemini, callGroq, callCfAi } from './utils.js';
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
@@ -84,47 +85,36 @@ async function handleAiExplain(request, env) {
     const user = await env.DB.prepare('SELECT id FROM users WHERE session_token=?').bind(token).first();
     if (!user) return json({ error: 'Unauthorized' }, 401);
 
-    const { question, options, correct, user_answer } = await request.json();
+    const { question, options, correct, correct_index, user_answer } = await request.json();
+    const optLabels = ['ক','খ','গ','ঘ'];
+    const correctLabel = correct || (correct_index !== undefined ? optLabels[correct_index] : 'ক');
+    const userLabel = user_answer !== undefined && user_answer !== null
+      ? (typeof user_answer === 'number' ? optLabels[user_answer] : user_answer)
+      : 'কোনো উত্তর দেয়নি';
+
     const prompt = `প্রশ্ন: ${question}
 বিকল্পগুলো:
-${options.map((o, i) => `${['ক','খ','গ','ঘ'][i]}) ${o}`).join('\n')}
-সঠিক উত্তর: ${correct}
-শিক্ষার্থীর উত্তর: ${user_answer || 'কোনো উত্তর দেয়নি'}
+${(options||[]).map((o, i) => `${optLabels[i]}) ${o}`).join('\n')}
+সঠিক উত্তর: ${correctLabel}
+শিক্ষার্থীর উত্তর: ${userLabel}
 
 বাংলায় সংক্ষেপে (৩-৪ বাক্যে) ব্যাখ্যা করো কেন সঠিক উত্তরটি সঠিক।`;
 
-    // Try Gemini first
-    if (env.GEMINI_KEY) {
-      try {
-        const res = await fetch(
-          `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${env.GEMINI_KEY}`,
-          {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig: { maxOutputTokens: 512 } }),
-          }
-        );
-        const d = await res.json();
-        const explanation = d.candidates?.[0]?.content?.parts?.[0]?.text || '';
-        if (explanation) return json({ explanation });
-      } catch (_) {}
+    const keys = getGeminiKeys(env);
+    let explanation = await callGemini(keys, {
+      contents: [{ parts: [{ text: prompt }] }],
+      generationConfig: { maxOutputTokens: 512 },
+    });
+
+    if (!explanation) {
+      explanation = await callGroq(env.GROQ_KEY, [{ role: 'user', content: prompt }], 512);
     }
 
-    // Fallback Groq
-    if (env.GROQ_KEY) {
-      try {
-        const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${env.GROQ_KEY}` },
-          body: JSON.stringify({ model: 'llama3-8b-8192', messages: [{ role: 'user', content: prompt }], max_tokens: 512 }),
-        });
-        const d = await res.json();
-        const explanation = d.choices?.[0]?.message?.content || '';
-        if (explanation) return json({ explanation });
-      } catch (_) {}
+    if (!explanation) {
+      explanation = await callCfAi(env, prompt);
     }
 
-    return json({ explanation: 'AI ব্যাখ্যা পাওয়া যায়নি। সঠিক উত্তর: ' + correct });
+    return json({ explanation: explanation || 'AI ব্যাখ্যা পাওয়া যায়নি। সঠিক উত্তর: ' + correctLabel });
   } catch (e) {
     return json({ error: e.message }, 500);
   }

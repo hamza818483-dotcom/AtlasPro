@@ -68,9 +68,12 @@ body{background:var(--bg);color:var(--text);font-family:'Noto Sans Bengali','Int
   display:flex;align-items:center;gap:10px;
   padding:12px;background:var(--bg2);border:1.5px solid var(--border);
   border-radius:10px;cursor:pointer;transition:all .15s;
+  position:relative;
 }
 .q-opt:hover{border-color:rgba(108,99,255,.4);background:rgba(108,99,255,.06)}
 .q-opt.sel{border-color:var(--primary);background:rgba(108,99,255,.12)}
+.q-opt.dimmed{opacity:0.5;pointer-events:auto}
+.q-opt.dimmed:hover{opacity:0.7}
 .q-opt-lbl{
   width:28px;height:28px;border-radius:50%;
   background:var(--card);border:1.5px solid var(--border);
@@ -79,6 +82,47 @@ body{background:var(--bg);color:var(--text);font-family:'Noto Sans Bengali','Int
 }
 .q-opt.sel .q-opt-lbl{background:var(--primary);border-color:var(--primary);color:#fff}
 .q-opt-txt{flex:1;font-size:14px;line-height:1.5}
+.q-opt-lock{
+  font-size:14px;flex-shrink:0;margin-left:auto;
+  opacity:0;transition:opacity .2s;
+}
+.q-opt.sel .q-opt-lock{opacity:1}
+
+/* ── Question Nav Bar (floating right) ── */
+.q-nav{
+  position:fixed;
+  right:6px;
+  top:50%;
+  transform:translateY(-50%);
+  z-index:90;
+  display:flex;flex-direction:column;gap:4px;
+  background:rgba(0,0,0,0.45);
+  backdrop-filter:blur(10px);
+  -webkit-backdrop-filter:blur(10px);
+  border:1px solid var(--border);
+  border-radius:12px;
+  padding:6px 4px;
+  max-height:70vh;
+  overflow-y:auto;
+  scrollbar-width:none;
+}
+.q-nav::-webkit-scrollbar{display:none}
+.q-nav-btn{
+  width:30px;height:30px;
+  border-radius:8px;
+  border:none;
+  background:var(--bg2);
+  color:var(--text2);
+  font-size:11px;font-weight:700;
+  cursor:pointer;
+  transition:all .15s;
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Inter',sans-serif;
+  flex-shrink:0;
+}
+.q-nav-btn:hover{background:rgba(108,99,255,.25);color:var(--text)}
+.q-nav-btn.answered{background:var(--green);color:#fff}
+.q-nav-btn.current{box-shadow:0 0 0 2px var(--primary);color:var(--primary)}
 
 /* ── Fixed Submit ── */
 .ex-submit-bar{
@@ -165,6 +209,10 @@ body{background:var(--bg);color:var(--text);font-family:'Noto Sans Bengali','Int
     </div>
   </div>
   <div class="q-list" id="qList"></div>
+
+  <!-- Question Navigation Bar -->
+  <div class="q-nav" id="qNav" style="display:none"></div>
+
   <div class="ex-submit-bar">
     <button class="ex-submit-btn" onclick="openSubmitModal()">🏆 Submit করুন</button>
   </div>
@@ -301,6 +349,7 @@ function beginExam(){
   document.getElementById('exTitle').textContent=typeName;
   document.getElementById('exSubTitle').textContent=`${PDF_NAME||'MCQ'} • Page ${pages.join(',')||'—'}`;
   renderAllQuestions();
+  buildQuestionNav();
   updateProgress();
   startTimer();
 }
@@ -319,20 +368,58 @@ function renderAllQuestions(){
           <div class="q-opt" id="opt-${i}-${oi}" onclick="selOpt(${i},${oi})">
             <div class="q-opt-lbl">${OPT_LABELS[oi]}</div>
             <div class="q-opt-txt">${esc(opt)}</div>
+            <span class="q-opt-lock">🔒</span>
           </div>`).join('')}
       </div>
     </div>`).join('');
 }
 
+/* ── Question Navigation Bar ── */
+function buildQuestionNav(){
+  const nav=document.getElementById('qNav');
+  nav.style.display='flex';
+  nav.innerHTML=questions.map((_,i)=>`
+    <button class="q-nav-btn" id="navBtn-${i}" onclick="scrollToQ(${i})">${i+1}</button>
+  `).join('');
+}
+
+function scrollToQ(qi){
+  const el=document.getElementById('qc-'+qi);
+  if(el) el.scrollIntoView({behavior:'smooth',block:'center'});
+  // highlight current in nav
+  document.querySelectorAll('.q-nav-btn').forEach((btn,i)=>{
+    btn.classList.toggle('current',i===qi);
+  });
+}
+
+function updateNavBtn(qi){
+  const btn=document.getElementById('navBtn-'+qi);
+  if(btn){
+    btn.classList.add('answered');
+  }
+}
+
+/* ── Option Selection with Lock + Dimming + Auto-scroll ── */
 function selOpt(qi,oi){
-  const prev=answers[qi];
   answers[qi]=oi;
-  (questions[qi].options||[]).forEach((_,j)=>{
+  const opts=questions[qi].options||[];
+  opts.forEach((_,j)=>{
     const el=document.getElementById(`opt-${qi}-${j}`);
-    if(el){el.classList.toggle('sel',j===oi)}
+    if(el){
+      el.classList.toggle('sel',j===oi);
+      el.classList.toggle('dimmed',j!==oi);
+    }
   });
   document.getElementById('qc-'+qi)?.classList.add('answered');
   updateProgress();
+  updateNavBtn(qi);
+
+  // Auto-scroll to next question after 400ms delay
+  if(qi<questions.length-1){
+    setTimeout(()=>{
+      scrollToQ(qi+1);
+    },400);
+  }
 }
 
 function updateProgress(){
@@ -386,16 +473,26 @@ async function submitExam(){
       total_questions:questions.length,correct_answers:correct,score:parseFloat(marks.toFixed(2)),
       answers:questions.map((q,i)=>({mcq_id:q.id,question:q.question,
         option_a:q.options?.[0]||'',option_b:q.options?.[1]||'',option_c:q.options?.[2]||'',option_d:q.options?.[3]||'',
-        correct_answer:OPT_LABELS[q.correct_index]||'A',selected_answer:answers[i]!==undefined?OPT_LABELS[answers[i]]:'',
-        is_correct:answers[i]===q.correct_index?1:0,explanation:q.explanation||''}))
+        correct_answer:OPT_LABELS[q.correct_index]||'A',user_answer:answers[i]!==undefined?OPT_LABELS[answers[i]]:null,
+        is_correct:answers[i]===q.correct_index?1:0,explanation:q.explanation||'',page_number:q.page||1}))
     })}).catch(()=>{});
   }
-  const rp=new URLSearchParams({pdf_id:PDF_ID,pdf_name:PDF_NAME,pages:PAGES_STR,
-    chapter_id:CHAP_ID,chapter_name:CHAP_NAME,subject_name:SUBJ_NAME,icon:SUBJ_ICON,
-    correct,wrong,skip,marks:marks.toFixed(2),total:questions.length,time_taken:timeTaken,
-    result_data:encodeURIComponent(JSON.stringify(questions.map((q,i)=>({
+
+  // Store full question result data in sessionStorage instead of URL params
+  const resultData={
+    questions:questions.map((q,i)=>({
       id:q.id,question:q.question,options:q.options,correct_index:q.correct_index,
-      user_answer:answers[i]??null,page:q.page,explanation:q.explanation||''}))))});
+      user_answer:answers[i]??null,page:q.page,explanation:q.explanation||''})),
+    scores:{correct,wrong,skip,marks:parseFloat(marks.toFixed(2)),total:questions.length,time_taken:timeTaken}
+  };
+  sessionStorage.setItem('atlas_exam_result',JSON.stringify(resultData));
+
+  // Only pass simple score params in URL
+  const rp=new URLSearchParams({
+    pdf_id:PDF_ID,pdf_name:PDF_NAME,pages:PAGES_STR,
+    chapter_id:CHAP_ID,chapter_name:CHAP_NAME,subject_name:SUBJ_NAME,icon:SUBJ_ICON,
+    correct,wrong,skip,marks:marks.toFixed(2),total:questions.length,time_taken:timeTaken
+  });
   window.location.href=`result.html?${rp}`;
 }
 
