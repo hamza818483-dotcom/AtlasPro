@@ -55,13 +55,6 @@ export default {
 
         // If no MCQs found, try AI generation
         if (allMcqs.length === 0) {
-          if (type !== 'standard') {
-            const isPremium = user.is_premium === 1 || user.is_premium === true;
-            if (!isPremium) {
-              return json({ coming_soon: true, message: 'এই ধরনের MCQ Premium ব্যবহারকারীদের জন্য। Standard MCQ সবার জন্য উপলব্ধ।' });
-            }
-          }
-
           // Fetch PDF info for AI prompt
           const pdf = await env.DB.prepare('SELECT * FROM pdfs WHERE id=?').bind(pdfId).first();
           if (!pdf) return json({ error: 'PDF not found' }, 404);

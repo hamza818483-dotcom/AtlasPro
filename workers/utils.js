@@ -122,9 +122,12 @@ export function getAiKeys(env) {
 }
 
 // Full AI fallback chain (text-only, no vision)
+// Order: Groq (fastest) → Gemini → OpenRouter → Together → Cerebras → CF AI
 export async function callAiChain(env, prompt, maxTokens = 4096) {
   const messages = [{ role: 'user', content: prompt }];
   const keys = getAiKeys(env);
+
+  if (keys.groq) { const t = await callGroq(keys.groq, messages, maxTokens); if (t) return t; }
 
   const geminiKeys = getGeminiKeys(env);
   if (geminiKeys.length > 0) {
@@ -135,9 +138,8 @@ export async function callAiChain(env, prompt, maxTokens = 4096) {
     if (t) return t;
   }
 
-  if (keys.groq) { const t = await callGroq(keys.groq, messages, maxTokens); if (t) return t; }
-  if (keys.together) { const t = await callTogether(keys.together, messages, maxTokens); if (t) return t; }
   if (keys.openrouter) { const t = await callOpenRouter(keys.openrouter, messages, maxTokens); if (t) return t; }
+  if (keys.together) { const t = await callTogether(keys.together, messages, maxTokens); if (t) return t; }
   if (keys.cerebras) { const t = await callCerebras(keys.cerebras, messages, maxTokens); if (t) return t; }
 
   return callCfAi(env, prompt);

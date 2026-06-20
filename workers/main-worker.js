@@ -6,7 +6,7 @@ import examWorker         from './exam-worker.js';
 import adminWorker        from './admin-worker.js';
 import focusProfileWorker from './focus-profile-worker.js';
 import publicWorker       from './public-worker.js';
-import { getGeminiKeys, callGemini, callGroq, callCfAi, callAiChain } from './utils.js';
+import { getGeminiKeys, callGemini, callGroq, callCfAi, callAiChain, getAiKeys } from './utils.js';
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
@@ -88,12 +88,36 @@ async function handleAiChat(request, env) {
     const user = await env.DB.prepare('SELECT id FROM users WHERE session_token=?').bind(token).first();
     if (!user) return json({ error: 'Unauthorized' }, 401);
 
-    const { message } = await request.json();
-    if (!message?.trim()) return json({ error: 'Message required' }, 400);
+    const { message, image } = await request.json();
+    if (!message?.trim() && !image) return json({ error: 'Message required' }, 400);
 
-    const prompt = `You are Atlas AI, a helpful educational assistant. You help students with their studies, explain concepts, solve problems, and give study tips. Respond in the same language as the user's message. If they write in Bengali, reply in Bengali. If English, reply in English. Be concise and helpful.\n\nUser: ${message}`;
+    const systemPrompt = 'You are Atlas AI, a helpful educational assistant. You help students with their studies, explain concepts, solve problems, and give study tips. Respond in the same language as the user\'s message. If they write in Bengali, reply in Bengali. If English, reply in English. Be concise and helpful.';
+    const userMsg = message?.trim() || 'এই ছবিটি বিশ্লেষণ করো';
 
-    const reply = await callAiChain(env, prompt, 1024);
+    let reply = null;
+
+    if (image) {
+      const geminiKeys = getGeminiKeys(env);
+      if (geminiKeys.length > 0) {
+        const base64Data = image.replace(/^data:image\/[^;]+;base64,/, '');
+        const mimeMatch = image.match(/^data:(image\/[^;]+);base64,/);
+        const mimeType = mimeMatch ? mimeMatch[1] : 'image/jpeg';
+        const body = {
+          contents: [{ parts: [
+            { inline_data: { mime_type: mimeType, data: base64Data } },
+            { text: `${systemPrompt}\n\nUser: ${userMsg}` },
+          ]}],
+          generationConfig: { maxOutputTokens: 1024 },
+        };
+        reply = await callGemini(geminiKeys, body);
+      }
+      if (!reply) {
+        reply = await callAiChain(env, `${systemPrompt}\n\nUser: ${userMsg}\n\n(Note: user sent an image but vision is not available. Respond based on text only.)`, 1024);
+      }
+    } else {
+      reply = await callAiChain(env, `${systemPrompt}\n\nUser: ${userMsg}`, 1024);
+    }
+
     return json({ reply: reply || 'দুঃখিত, উত্তর তৈরি করা যায়নি। আবার চেষ্টা করুন।' });
   } catch (e) {
     return json({ error: e.message }, 500);

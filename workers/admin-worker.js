@@ -410,6 +410,28 @@ export default {
         return json({ count: mcqs.length, mcqs });
       }
 
+      // ===== AI PROMPTS (save/load per PDF/type) =====
+      if (path === '/api/admin/ai-prompts' && method === 'GET') {
+        const pdfId = url.searchParams.get('pdf_id');
+        if (!pdfId) return json({ error: 'pdf_id required' }, 400);
+        const { results } = await env.DB.prepare(
+          'SELECT * FROM ai_prompts WHERE pdf_id=?'
+        ).bind(pdfId).all();
+        return json({ prompts: results });
+      }
+
+      if (path === '/api/admin/ai-prompts' && method === 'PUT') {
+        const body = await request.json();
+        const { pdf_id, type, prompt, enabled } = body;
+        if (!pdf_id || !type) return json({ error: 'pdf_id and type required' }, 400);
+        await env.DB.prepare(`
+          INSERT INTO ai_prompts (pdf_id, type, prompt, enabled)
+          VALUES (?,?,?,?)
+          ON CONFLICT(pdf_id, type) DO UPDATE SET prompt=excluded.prompt, enabled=excluded.enabled
+        `).bind(pdf_id, type || 'standard', prompt || '', enabled !== undefined ? (enabled ? 1 : 0) : 1).run();
+        return json({ message: 'Prompt saved' });
+      }
+
       // ===== USERS =====
       if (path === '/api/admin/users' && method === 'GET') {
         const { results } = await env.DB.prepare(`

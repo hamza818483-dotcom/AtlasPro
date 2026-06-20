@@ -737,6 +737,11 @@ body { padding-top: 56px; padding-bottom: 80px; }
           <div class="form-group">
             <label class="form-label">কাস্টম প্রম্পট (ঐচ্ছিক)</label>
             <textarea class="form-textarea" id="aiPrompt" rows="3" placeholder="ডিফল্ট: এই PDF পেইজ থেকে ১৫টি MCQ তৈরি করো। Content যে ভাষায় আছে সেই ভাষায়।"></textarea>
+            <div style="display:flex;gap:8px;margin-top:6px">
+              <button type="button" class="btn btn-outline btn-sm" onclick="saveAiPrompt()" id="savePromptBtn" style="flex:1">💾 প্রম্পট সেভ করো</button>
+              <button type="button" class="btn btn-sm" style="flex:1;background:rgba(108,99,255,0.1);color:#9C8BFF;border:1px solid rgba(108,99,255,0.3)" onclick="loadAiPrompt()" id="loadPromptBtn">📂 সেভ করা প্রম্পট</button>
+            </div>
+            <div id="promptSaveStatus" style="display:none;font-size:11px;margin-top:4px;color:var(--green);font-weight:600"></div>
           </div>
           <div class="ai-spinner-wrap" id="aiSpinner">
             <div class="ai-spinner"></div>
@@ -1373,6 +1378,21 @@ function selectAiType(type) {
   selAiType = type;
   document.getElementById('aiType').value = type;
   document.querySelectorAll('#aiTypeSelector .type-opt').forEach(el => el.classList.toggle('selected', el.dataset.type === type));
+  if (activePdfId) autoLoadPrompt(type);
+}
+
+async function autoLoadPrompt(type) {
+  try {
+    const r = await api('/api/admin/ai-prompts?pdf_id=' + activePdfId);
+    if (!r.ok) return;
+    const d = await r.json();
+    const match = (d.prompts || []).find(p => p.type === type);
+    if (match && match.prompt) {
+      document.getElementById('aiPrompt').value = match.prompt;
+    } else {
+      document.getElementById('aiPrompt').value = '';
+    }
+  } catch (_) {}
 }
 
 function resetMcqForm() {
@@ -1660,6 +1680,45 @@ async function saveAiMcqs() {
     discardAi(); loadMcqs(); loadPageSummary();
   } catch (e) { showToast('সংরক্ষণ ব্যর্থ: ' + e.message, 'error'); }
   finally { btn.disabled = false; btn.textContent = '✓ সব সংরক্ষণ করো'; }
+}
+
+async function saveAiPrompt() {
+  if (!activePdfId) return showToast('PDF নির্বাচন করুন', 'error');
+  const type = document.getElementById('aiType').value || 'standard';
+  const prompt = document.getElementById('aiPrompt').value.trim();
+  if (!prompt) return showToast('প্রম্পট লিখুন', 'error');
+  const btn = document.getElementById('savePromptBtn');
+  btn.disabled = true;
+  try {
+    const r = await api('/api/admin/ai-prompts', {
+      method: 'PUT',
+      body: JSON.stringify({ pdf_id: activePdfId, type, prompt, enabled: true })
+    });
+    if (!r.ok) throw new Error('ব্যর্থ');
+    const status = document.getElementById('promptSaveStatus');
+    status.textContent = '✅ প্রম্পট সেভ হয়েছে (' + type + ')';
+    status.style.display = 'block';
+    setTimeout(() => status.style.display = 'none', 3000);
+    showToast('প্রম্পট সেভ হয়েছে ✓', 'success');
+  } catch (e) { showToast('সেভ ব্যর্থ: ' + e.message, 'error'); }
+  finally { btn.disabled = false; }
+}
+
+async function loadAiPrompt() {
+  if (!activePdfId) return showToast('PDF নির্বাচন করুন', 'error');
+  const type = document.getElementById('aiType').value || 'standard';
+  try {
+    const r = await api('/api/admin/ai-prompts?pdf_id=' + activePdfId);
+    if (!r.ok) throw new Error('ব্যর্থ');
+    const d = await r.json();
+    const match = (d.prompts || []).find(p => p.type === type);
+    if (match && match.prompt) {
+      document.getElementById('aiPrompt').value = match.prompt;
+      showToast('সেভ করা প্রম্পট লোড হয়েছে (' + type + ')', 'success');
+    } else {
+      showToast('এই ধরনের জন্য কোনো সেভ করা প্রম্পট নেই', 'info');
+    }
+  } catch (e) { showToast('লোড ব্যর্থ: ' + e.message, 'error'); }
 }
 
 loadSubjects();

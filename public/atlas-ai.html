@@ -370,6 +370,71 @@
   color: var(--red);
 }
 
+/* ── Attach / Image Preview ── */
+.attach-btn {
+  width: 38px; height: 38px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--card);
+  border: 1px solid var(--border);
+  color: var(--text2);
+  flex-shrink: 0;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.attach-btn:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+  background: var(--primary-light);
+}
+.img-preview-bar {
+  display: none;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  background: var(--bg2);
+  border-top: 1px solid var(--border);
+}
+.img-preview-bar.show { display: flex; }
+.img-preview-thumb {
+  width: 48px; height: 48px;
+  border-radius: 8px;
+  background-size: cover;
+  background-position: center;
+  border: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.img-preview-name {
+  flex: 1;
+  font-size: 11px;
+  color: var(--text2);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.img-preview-remove {
+  width: 26px; height: 26px;
+  border-radius: 50%;
+  background: rgba(239,68,68,0.12);
+  border: 1px solid rgba(239,68,68,0.3);
+  color: var(--red);
+  font-size: 16px;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  transition: all 0.2s;
+}
+.img-preview-remove:hover {
+  background: rgba(239,68,68,0.25);
+}
+.msg-bubble img.chat-img {
+  max-width: 100%;
+  max-height: 200px;
+  border-radius: 8px;
+  margin-top: 6px;
+  display: block;
+}
+
 /* ── Error Toast ── */
 .chat-toast {
   position: fixed;
@@ -457,8 +522,19 @@ body {
     </div>
   </div>
 
+  <!-- Image Preview -->
+  <div class="img-preview-bar" id="imgPreviewBar">
+    <div class="img-preview-thumb" id="imgPreviewThumb"></div>
+    <span class="img-preview-name" id="imgPreviewName"></span>
+    <button class="img-preview-remove" onclick="removeImage()" title="সরাও">&times;</button>
+  </div>
+
   <!-- Input -->
   <div class="chat-input-area">
+    <button class="attach-btn" id="attachBtn" onclick="document.getElementById('imageInput').click()" title="ছবি যোগ করো">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+    </button>
+    <input type="file" id="imageInput" accept="image/*" style="display:none" onchange="onImageSelect(event)">
     <div class="chat-input-wrap">
       <textarea class="chat-input" id="chatInput" rows="1"
         placeholder="তোমার প্রশ্ন লেখো..."
@@ -487,6 +563,8 @@ body {
 const STORAGE_KEY = 'atlas_ai_chat_history';
 let chatHistory = [];
 let isSending = false;
+let selectedImage = null;
+let selectedImageBase64 = null;
 
 // ── DOM refs ──
 const chatMessages = document.getElementById('chatMessages');
@@ -512,7 +590,7 @@ function loadHistory() {
       chatHistory = JSON.parse(saved);
       if (chatHistory.length > 0) {
         welcomeScreen.style.display = 'none';
-        chatHistory.forEach(msg => renderMessage(msg.role, msg.content, msg.time, false));
+        chatHistory.forEach(msg => renderMessage(msg.role, msg.content, msg.time, false, msg.image || null));
         scrollToBottom();
       }
     }
@@ -554,10 +632,42 @@ function getTimeStr() {
   return new Date().toLocaleTimeString('bn-BD', { hour: '2-digit', minute: '2-digit' });
 }
 
+// ── Image handling ──
+function onImageSelect(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  if (!file.type.startsWith('image/')) {
+    showToast('শুধুমাত্র ছবি ফাইল গ্রহণযোগ্য');
+    return;
+  }
+  if (file.size > 5 * 1024 * 1024) {
+    showToast('ছবি ৫MB এর বেশি হতে পারবে না');
+    return;
+  }
+  selectedImage = file;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    selectedImageBase64 = ev.target.result;
+    const bar = document.getElementById('imgPreviewBar');
+    document.getElementById('imgPreviewThumb').style.backgroundImage = `url(${ev.target.result})`;
+    document.getElementById('imgPreviewName').textContent = file.name;
+    bar.classList.add('show');
+  };
+  reader.readAsDataURL(file);
+}
+
+function removeImage() {
+  selectedImage = null;
+  selectedImageBase64 = null;
+  document.getElementById('imageInput').value = '';
+  document.getElementById('imgPreviewBar').classList.remove('show');
+}
+
 // ── Send message ──
 async function sendMessage() {
   const text = chatInput.value.trim();
-  if (!text || isSending) return;
+  const hasImage = !!selectedImageBase64;
+  if ((!text && !hasImage) || isSending) return;
 
   isSending = true;
   sendBtn.disabled = true;
@@ -565,25 +675,34 @@ async function sendMessage() {
   // Hide welcome
   if (welcomeScreen) welcomeScreen.style.display = 'none';
 
+  // Capture image data before clearing
+  const imageData = selectedImageBase64 || null;
+  const imageName = selectedImage?.name || null;
+
   // Add user message
   const userTime = getTimeStr();
-  chatHistory.push({ role: 'user', content: text, time: userTime });
-  renderMessage('user', text, userTime);
+  const msgContent = text || (imageData ? '(ছবি পাঠানো হয়েছে)' : '');
+  chatHistory.push({ role: 'user', content: msgContent, time: userTime, image: imageData });
+  renderMessage('user', msgContent, userTime, true, imageData);
   saveHistory();
 
-  // Clear input
+  // Clear input + image
   chatInput.value = '';
   chatInput.style.height = 'auto';
+  removeImage();
   scrollToBottom();
 
   // Show typing
   showTyping();
 
   try {
+    const payload = { message: text || 'এই ছবিটি বিশ্লেষণ করো' };
+    if (imageData) payload.image = imageData;
+
     const res = await fetch(CONFIG.workerUrl + '/api/ai/chat', {
       method: 'POST',
       headers: Auth.headers(),
-      body: JSON.stringify({ message: text }),
+      body: JSON.stringify(payload),
     });
 
     hideTyping();
@@ -613,7 +732,7 @@ async function sendMessage() {
 }
 
 // ── Render a message bubble ──
-function renderMessage(role, content, time, animate = true) {
+function renderMessage(role, content, time, animate = true, imageData = null) {
   const row = document.createElement('div');
   row.className = `msg-row ${role}`;
   if (!animate) row.style.animation = 'none';
@@ -622,11 +741,12 @@ function renderMessage(role, content, time, animate = true) {
   const avatarLetter = role === 'user' ? userName.charAt(0).toUpperCase() : 'AI';
 
   const formattedContent = role === 'ai' ? formatMarkdown(content) : escapeHtml(content);
+  const imgHtml = imageData ? `<img class="chat-img" src="${imageData}" alt="uploaded image">` : '';
 
   row.innerHTML = `
     <div class="msg-avatar">${role === 'ai' ? '🤖' : avatarLetter}</div>
     <div>
-      <div class="msg-bubble">${formattedContent}</div>
+      <div class="msg-bubble">${formattedContent}${imgHtml}</div>
       <div class="msg-time">${time || ''}</div>
     </div>
   `;

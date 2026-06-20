@@ -506,13 +506,16 @@ function zoom(d){
 }
 
 function toggleSel(p){
+  const cb=document.getElementById('cb-'+p);
   if(selPages.has(p)){
     selPages.delete(p);
     document.getElementById('pc-'+p)?.classList.remove('sel');
+    if(cb)cb.checked=false;
     document.getElementById('cbv-'+p).textContent='';
   }else{
     selPages.add(p);
     document.getElementById('pc-'+p)?.classList.add('sel');
+    if(cb)cb.checked=true;
     document.getElementById('cbv-'+p).textContent='✓';
   }
   updateMultiBtn();
