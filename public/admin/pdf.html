@@ -586,6 +586,17 @@ body { padding-top: 56px; padding-bottom: 80px; }
     </div>
   </div>
 
+  <!-- All Saved PDFs -->
+  <div class="section-card card-amber" style="margin-top:14px">
+    <div class="card-body">
+      <div class="card-title">📂 সংরক্ষিত সকল PDF</div>
+      <div class="pdf-list" id="allPdfList">
+        <div class="skeleton skel-row"></div>
+        <div class="skeleton skel-sm"></div>
+      </div>
+    </div>
+  </div>
+
 </main>
 
 <div class="mcq-panel" id="mcqPanel">
@@ -1618,13 +1629,13 @@ async function aiGenerate() {
     if (!r.ok || d.error) throw new Error(d.error || 'AI ব্যর্থ');
     aiData = d.mcqs || [];
     if (!aiData.length) throw new Error('AI কোনো বৈধ MCQ তৈরি করতে পারেনি। Gemini API key চেক করুন এবং আবার চেষ্টা করুন।');
-    renderAiPreview(aiData);
+    renderAiPreview(aiData, d.auto_saved);
     showToast(aiData.length + ' টি MCQ তৈরি হয়েছে ✓', 'success');
   } catch (e) { clearInterval(progressTimer); showToast('AI ত্রুটি: ' + e.message, 'error'); }
   finally { spin.classList.remove('show'); genBtn.disabled = false; genBtn.innerHTML = '🤖 AI দিয়ে MCQ তৈরি করো'; }
 }
 
-function renderAiPreview(qs) {
+function renderAiPreview(qs, autoSaved) {
   const optKeys = ['k','kh','g','gh'];
   const optDbKeys = ['a','b','c','d'];
   const optLbls = { k:'ক', kh:'খ', g:'গ', gh:'ঘ' };
@@ -1655,17 +1666,39 @@ function renderAiPreview(qs) {
     </div>`;
   }).join('');
   document.getElementById('aiResult').classList.add('show');
+  const saveBtn = document.getElementById('aiSaveBtn');
+  if (autoSaved) {
+    saveBtn.textContent = '✅ স্বয়ংক্রিয়ভাবে সংরক্ষিত';
+    saveBtn.disabled = true;
+    saveBtn.dataset.autoSaved = '1';
+  } else {
+    saveBtn.textContent = '✓ সব সংরক্ষণ করো';
+    saveBtn.disabled = false;
+    saveBtn.dataset.autoSaved = '';
+  }
 }
 
 function discardAi() {
   aiData = [];
   document.getElementById('aiResult').classList.remove('show');
   document.getElementById('aiPreviewList').innerHTML = '';
+  const saveBtn = document.getElementById('aiSaveBtn');
+  saveBtn.textContent = '✓ সব সংরক্ষণ করো';
+  saveBtn.disabled = false;
+  saveBtn.dataset.autoSaved = '';
 }
 
 async function saveAiMcqs() {
   if (!aiData.length) return;
   if (!activePdfId) return;
+  const btn = document.getElementById('aiSaveBtn');
+
+  if (btn.dataset.autoSaved === '1') {
+    showToast('ইতিমধ্যে স্বয়ংক্রিয়ভাবে সংরক্ষিত ✓', 'success');
+    discardAi(); loadMcqs(); loadPageSummary();
+    return;
+  }
+
   const optKeys = ['k','kh','g','gh'];
   const keyToLetter = { k:'A', kh:'B', g:'C', gh:'D' };
   const mcqs = aiData.map((q, idx) => ({
@@ -1681,7 +1714,6 @@ async function saveAiMcqs() {
     explanation: q.explanation || '',
   })).filter(m => m.question);
 
-  const btn = document.getElementById('aiSaveBtn');
   btn.disabled = true; btn.innerHTML = '<span class="spinner-inline"></span> সংরক্ষণ হচ্ছে...';
   try {
     const r = await api('/api/admin/mcq/batch', { method: 'POST', body: JSON.stringify({ mcqs }) });
@@ -1731,7 +1763,42 @@ async function loadAiPrompt() {
   } catch (e) { showToast('লোড ব্যর্থ: ' + e.message, 'error'); }
 }
 
+async function loadAllPdfs() {
+  const listEl = document.getElementById('allPdfList');
+  try {
+    const r = await api('/api/admin/pdfs/all');
+    if (!r.ok) throw new Error();
+    const d = await r.json();
+    const pdfs = d.pdfs || [];
+    if (!pdfs.length) {
+      listEl.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📄</div><div class="empty-state-title">কোনো PDF নেই</div><div class="empty-state-text">উপরে বিষয় ও অধ্যায় বেছে PDF আপলোড করুন</div></div>';
+      return;
+    }
+    listEl.innerHTML = pdfs.map(p => `
+      <div class="pdf-card" id="allpdf-${p.id}">
+        <div class="pdf-card-top">
+          <div class="pdf-card-icon">📕</div>
+          <div class="pdf-card-info">
+            <div class="pdf-card-title">${esc(p.title)}</div>
+            <div class="pdf-card-meta">
+              ${p.subject_name ? '📚 ' + esc(p.subject_name) : ''}
+              ${p.chapter_name ? ' › 📖 ' + esc(p.chapter_name) : ''}
+              ${p.file_size ? ' · ' + fmtSize(p.file_size) : ''}
+            </div>
+          </div>
+          <div class="pdf-card-actions">
+            <button class="act-btn act-edit" title="MCQ সম্পাদনা" onclick="openMcqPanel(${p.id}, '${esc(p.title)}')">📝</button>
+            <button class="act-btn act-delete" title="মুছুন" onclick="deletePdf(${p.id}, '${esc(p.title)}')">🗑️</button>
+          </div>
+        </div>
+      </div>`).join('');
+  } catch {
+    listEl.innerHTML = '<div class="empty-state"><div class="empty-state-icon">⚠️</div><div class="empty-state-title">লোড ব্যর্থ</div><button class="btn btn-outline btn-sm" style="margin-top:10px" onclick="loadAllPdfs()">পুনরায় চেষ্টা</button></div>';
+  }
+}
+
 loadSubjects();
+loadAllPdfs();
 </script>
 </body>
 </html>

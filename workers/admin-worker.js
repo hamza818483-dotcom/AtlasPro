@@ -2,7 +2,7 @@
 import { supabaseUpload, supabaseDelete, getGeminiKeys, callGemini, callGroq, callCfAi, callAiChain, callAiVisionChain, parseMcqJson, callTogether, callOpenRouter, callCerebras, getAiKeys } from './utils.js';
 
 export default {
-  async fetch(request, env) {
+  async fetch(request, env, ctx) {
     const url = new URL(request.url);
     const path = url.pathname;
     const method = request.method;
@@ -360,19 +360,23 @@ export default {
           return json({ error: 'AI কোনো বৈধ MCQ তৈরি করতে পারেনি। আবার চেষ্টা করুন।', count: 0, mcqs: [] });
         }
 
-        for (const mcq of mcqs) {
-          await env.DB.prepare(`
-            INSERT INTO mcqs (pdf_id, type, question, option_a, option_b, option_c, option_d, correct_answer, explanation, page_number)
-            VALUES (?,?,?,?,?,?,?,?,?,?)
-          `).bind(
-            pdf_id, type,
-            mcq.question, mcq.option_a || '', mcq.option_b || '',
-            mcq.option_c || '', mcq.option_d || '',
-            mcq.correct_answer || 'A', mcq.explanation || '', page_number
-          ).run();
-        }
+        const savePromise2 = (async () => {
+          for (const mcq of mcqs) {
+            await env.DB.prepare(`
+              INSERT INTO mcqs (pdf_id, type, question, option_a, option_b, option_c, option_d, correct_answer, explanation, page_number, created_at)
+              VALUES (?,?,?,?,?,?,?,?,?,?,datetime('now'))
+            `).bind(
+              pdf_id, type,
+              mcq.question, mcq.option_a || '', mcq.option_b || '',
+              mcq.option_c || '', mcq.option_d || '',
+              mcq.correct_answer || 'A', mcq.explanation || '', page_number
+            ).run();
+          }
+        })();
+        if (ctx?.waitUntil) ctx.waitUntil(savePromise2);
+        else await savePromise2;
 
-        return json({ count: mcqs.length, mcqs });
+        return json({ count: mcqs.length, mcqs, auto_saved: true });
       }
 
       // MCQ Batch Insert (JSON array — used by CSV import and AI save)
@@ -466,7 +470,24 @@ export default {
           return json({ error: 'AI কোনো বৈধ MCQ তৈরি করতে পারেনি। আবার চেষ্টা করুন।', count: 0, mcqs: [] });
         }
 
-        return json({ count: mcqs.length, mcqs });
+        // Auto-save to DB so MCQs persist even if browser closes
+        const savePromise = (async () => {
+          for (const mcq of mcqs) {
+            await env.DB.prepare(`
+              INSERT INTO mcqs (pdf_id, type, question, option_a, option_b, option_c, option_d, correct_answer, explanation, page_number, created_at)
+              VALUES (?,?,?,?,?,?,?,?,?,?,datetime('now'))
+            `).bind(
+              pdf_id, type,
+              mcq.question, mcq.option_a || '', mcq.option_b || '',
+              mcq.option_c || '', mcq.option_d || '',
+              mcq.correct_answer || 'A', mcq.explanation || '', page_number
+            ).run();
+          }
+        })();
+        if (ctx?.waitUntil) ctx.waitUntil(savePromise);
+        else await savePromise;
+
+        return json({ count: mcqs.length, mcqs, auto_saved: true });
       }
 
       // ===== AI PROMPTS (save/load per PDF/type) =====
