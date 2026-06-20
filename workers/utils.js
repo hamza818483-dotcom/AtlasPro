@@ -45,7 +45,7 @@ export function getGeminiKeys(env) {
 }
 
 export async function callGemini(keys, body) {
-  const models = ['gemini-2.5-flash', 'gemini-2.0-flash'];
+  const models = ['gemini-2.5-flash'];
   for (const key of keys) {
     for (const model of models) {
       try {
