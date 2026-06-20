@@ -45,7 +45,7 @@ export function getGeminiKeys(env) {
 }
 
 export async function callGemini(keys, body) {
-  const models = ['gemini-2.5-flash'];
+  const models = ['gemini-2.5-flash', 'gemini-2.0-flash'];
   for (const key of keys) {
     for (const model of models) {
       try {
@@ -53,6 +53,7 @@ export async function callGemini(keys, body) {
           `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`,
           { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }
         );
+        if (res.status === 429 || res.status >= 500) continue;
         if (!res.ok) continue;
         const d = await res.json();
         const text = d.candidates?.[0]?.content?.parts?.[0]?.text;
@@ -150,7 +151,21 @@ export function parseMcqJson(text) {
   let cleaned = text.replace(/```json\s*/gi, '').replace(/```\s*/g, '').trim();
   const m = cleaned.match(/\[[\s\S]*\]/);
   if (!m) return [];
-  try { return JSON.parse(m[0]); } catch (_) { return []; }
+  try {
+    const arr = JSON.parse(m[0]);
+    if (!Array.isArray(arr)) return [];
+    return arr.filter(q => {
+      if (!q || typeof q !== 'object') return false;
+      const qText = (q.question || '').trim();
+      if (!qText || qText.length < 5) return false;
+      if (/^MCQ\s*\d+/i.test(qText) && qText.length < 30) return false;
+      if (/প্রশ্নটি যোগ করুন|add.*question|your question/i.test(qText)) return false;
+      const opts = [q.option_a, q.option_b, q.option_c, q.option_d].map(o => (o || '').trim());
+      const filledOpts = opts.filter(o => o.length > 0);
+      if (filledOpts.length < 2) return false;
+      return true;
+    });
+  } catch (_) { return []; }
 }
 
 // Supabase Storage helpers (replaces R2)

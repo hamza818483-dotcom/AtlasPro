@@ -1604,10 +1604,10 @@ async function aiGenerate() {
       })
     });
     clearInterval(progressTimer);
-    if (!r.ok) throw new Error((await r.json()).error || 'AI ব্যর্থ');
     const d = await r.json();
+    if (!r.ok || d.error) throw new Error(d.error || 'AI ব্যর্থ');
     aiData = d.mcqs || [];
-    if (!aiData.length) throw new Error('কোনো প্রশ্ন তৈরি হয়নি');
+    if (!aiData.length) throw new Error('AI কোনো বৈধ MCQ তৈরি করতে পারেনি। Gemini API key চেক করুন এবং আবার চেষ্টা করুন।');
     renderAiPreview(aiData);
     showToast(aiData.length + ' টি MCQ তৈরি হয়েছে ✓', 'success');
   } catch (e) { clearInterval(progressTimer); showToast('AI ত্রুটি: ' + e.message, 'error'); }

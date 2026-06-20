@@ -283,19 +283,18 @@ export default {
         return json({ message: 'Updated' });
       }
 
-      // MCQ Generate via AI
+      // MCQ Generate via AI (redirects to vision endpoint internally)
       if (path === '/api/admin/mcq/generate' && method === 'POST') {
         const body = await request.json();
         const { pdf_id, page_number, type, prompt } = body;
 
-        // Check if already generated
         const existing = await env.DB.prepare(
           'SELECT COUNT(*) as count FROM mcqs WHERE pdf_id=? AND page_number=? AND type=?'
         ).bind(pdf_id, page_number, type).first();
 
         if (existing?.count >= 2) {
           const { results } = await env.DB.prepare(
-            'SELECT * FROM mcqs WHERE pdf_id=? AND page_number=? AND type=? LIMIT 10'
+            'SELECT * FROM mcqs WHERE pdf_id=? AND page_number=? AND type=? LIMIT 20'
           ).bind(pdf_id, page_number, type).all();
           return json({ mcqs: results, from_cache: true });
         }
@@ -303,11 +302,57 @@ export default {
         const pdf = await env.DB.prepare('SELECT r2_url FROM pdfs WHERE id=?').bind(pdf_id).first();
         if (!pdf) return json({ error: 'PDF not found' }, 404);
 
-        const geminiPrompt = `${prompt}\n\nContent: Page ${page_number} of the educational PDF.\n\nReturn ONLY a JSON array like: [{"question":"...","option_a":"...","option_b":"...","option_c":"...","option_d":"...","correct_answer":"A","explanation":"..."}]`;
+        const savedPrompt = await env.DB.prepare(
+          'SELECT prompt FROM ai_prompts WHERE pdf_id=? AND type=?'
+        ).bind(pdf_id, type).first().catch(() => null);
+
+        const defaults = {
+          standard:   'এই PDF পেইজের content থেকে ১৫টি সাধারণ MCQ তৈরি করো।',
+          true_false: 'এই PDF পেইজের content থেকে ১৫টি সত্য/মিথ্যা প্রশ্ন তৈরি করো। A=সত্য B=মিথ্যা।',
+          hard:       'এই PDF পেইজের content থেকে ১৫টি কঠিন বিশ্লেষণমূলক MCQ তৈরি করো।',
+        };
+        const finalPrompt = prompt || savedPrompt?.prompt || defaults[type] || defaults.standard;
 
         let mcqs = [];
-        const aiText = await callAiChain(env, geminiPrompt, 2048);
-        if (aiText) mcqs = parseMcqJson(aiText);
+
+        // Try Gemini Vision first (PDF content)
+        if (pdf.r2_url) {
+          const geminiKeys = getGeminiKeys(env);
+          if (geminiKeys.length > 0) {
+            try {
+              const pdfRes = await fetch(pdf.r2_url);
+              if (pdfRes.ok) {
+                const buf = await pdfRes.arrayBuffer();
+                const u8 = new Uint8Array(buf);
+                let bin = '';
+                for (let i = 0; i < u8.length; i += 8192) {
+                  bin += String.fromCharCode(...u8.subarray(i, i + 8192));
+                }
+                const pdfBase64 = btoa(bin);
+                const geminiBody = {
+                  contents: [{ parts: [
+                    { inline_data: { mime_type: 'application/pdf', data: pdfBase64 } },
+                    { text: `পেইজ ${page_number} এর content পড়ো এবং MCQ তৈরি করো।\n${finalPrompt}\n\nIMPORTANT: Content যে ভাষায় আছে সেই ভাষায় MCQ তৈরি করো। প্রতিটি question এ অবশ্যই প্রকৃত প্রশ্ন থাকবে, option_a/b/c/d তে অবশ্যই প্রকৃত উত্তর থাকবে। কোনো ফাঁকা field রাখবে না।\nReturn ONLY valid JSON array: [{"question":"actual question text here","option_a":"actual option","option_b":"actual option","option_c":"actual option","option_d":"actual option","correct_answer":"A","explanation":"brief explanation"}]` },
+                  ]}],
+                  generationConfig: { temperature: 0.7, maxOutputTokens: 4096 },
+                };
+                const text = await callGemini(geminiKeys, geminiBody);
+                if (text) mcqs = parseMcqJson(text);
+              }
+            } catch (_) {}
+          }
+        }
+
+        // Fallback: text-only AI chain (only if vision failed)
+        if (!mcqs.length) {
+          const textPrompt = `${finalPrompt}\n\nSubject: Educational textbook, Page ${page_number}.\nIMPORTANT: Generate real, meaningful questions with real options. Do NOT leave any field empty. Do NOT use placeholder text.\nContent যে ভাষায় আছে সেই ভাষায় MCQ তৈরি করো।\nReturn ONLY valid JSON array: [{"question":"...","option_a":"...","option_b":"...","option_c":"...","option_d":"...","correct_answer":"A","explanation":"..."}]`;
+          const aiText = await callAiChain(env, textPrompt, 4096);
+          if (aiText) mcqs = parseMcqJson(aiText);
+        }
+
+        if (!mcqs.length) {
+          return json({ error: 'AI কোনো বৈধ MCQ তৈরি করতে পারেনি। আবার চেষ্টা করুন।', count: 0, mcqs: [] });
+        }
 
         for (const mcq of mcqs) {
           await env.DB.prepare(`
@@ -315,7 +360,7 @@ export default {
             VALUES (?,?,?,?,?,?,?,?,?,?)
           `).bind(
             pdf_id, type,
-            mcq.question || '', mcq.option_a || '', mcq.option_b || '',
+            mcq.question, mcq.option_a || '', mcq.option_b || '',
             mcq.option_c || '', mcq.option_d || '',
             mcq.correct_answer || 'A', mcq.explanation || '', page_number
           ).run();
@@ -363,23 +408,27 @@ export default {
         ).bind(pdf_id, type).first().catch(() => null);
 
         const defaults = {
-          standard:   'এই PDF পেইজের content থেকে ১৫টি সাধারণ MCQ তৈরি করো। IMPORTANT: Content যে ভাষায় আছে সেই ভাষায় MCQ তৈরি করো (বাংলা হলে বাংলায়, ইংরেজি হলে ইংরেজিতে)। Return ONLY JSON array: [{"question":"","option_a":"","option_b":"","option_c":"","option_d":"","correct_answer":"A","explanation":""}]',
-          true_false: 'এই PDF পেইজের content থেকে ১৫টি সত্য/মিথ্যা প্রশ্ন তৈরি করো। Content যে ভাষায় আছে সেই ভাষায়। A=সত্য B=মিথ্যা। Return ONLY JSON array: [{"question":"","option_a":"সত্য","option_b":"মিথ্যা","option_c":"","option_d":"","correct_answer":"A","explanation":""}]',
-          hard:       'এই PDF পেইজের content থেকে ১৫টি কঠিন বিশ্লেষণমূলক MCQ তৈরি করো। Content যে ভাষায় আছে সেই ভাষায়। Return ONLY JSON array: [{"question":"","option_a":"","option_b":"","option_c":"","option_d":"","correct_answer":"A","explanation":""}]',
+          standard:   'এই PDF পেইজের content থেকে ১৫টি সাধারণ MCQ তৈরি করো।',
+          true_false: 'এই PDF পেইজের content থেকে ১৫টি সত্য/মিথ্যা প্রশ্ন তৈরি করো। A=সত্য B=মিথ্যা।',
+          hard:       'এই PDF পেইজের content থেকে ১৫টি কঠিন বিশ্লেষণমূলক MCQ তৈরি করো।',
         };
         const prompt = customPrompt || savedPrompt?.prompt || defaults[type] || defaults.standard;
+
+        const jsonInstruction = `\n\nIMPORTANT RULES:\n1. Content যে ভাষায় আছে সেই ভাষায় MCQ তৈরি করো (বাংলা হলে বাংলায়, ইংরেজি হলে ইংরেজিতে)।\n2. প্রতিটি question field এ অবশ্যই প্রকৃত/বাস্তব প্রশ্ন লিখতে হবে। কোনো placeholder বা ফাঁকা রাখা যাবে না।\n3. প্রতিটি option_a, option_b, option_c, option_d তে অবশ্যই প্রকৃত উত্তর/বিকল্প লিখতে হবে।\n4. Return ONLY valid JSON array, no extra text:\n[{"question":"actual question here","option_a":"actual option","option_b":"actual option","option_c":"actual option","option_d":"actual option","correct_answer":"A","explanation":"brief explanation"}]`;
 
         // Fetch PDF and convert to base64
         let pdfBase64 = null;
         try {
           const pdfRes = await fetch(pdf.r2_url);
-          const buf = await pdfRes.arrayBuffer();
-          const u8 = new Uint8Array(buf);
-          let bin = '';
-          for (let i = 0; i < u8.length; i += 8192) {
-            bin += String.fromCharCode(...u8.subarray(i, i + 8192));
+          if (pdfRes.ok) {
+            const buf = await pdfRes.arrayBuffer();
+            const u8 = new Uint8Array(buf);
+            let bin = '';
+            for (let i = 0; i < u8.length; i += 8192) {
+              bin += String.fromCharCode(...u8.subarray(i, i + 8192));
+            }
+            pdfBase64 = btoa(bin);
           }
-          pdfBase64 = btoa(bin);
         } catch (_) {}
 
         let mcqs = [];
@@ -391,20 +440,24 @@ export default {
             contents: [{
               parts: [
                 { inline_data: { mime_type: 'application/pdf', data: pdfBase64 } },
-                { text: `পেইজ ${page_number} এর content থেকে MCQ তৈরি করো।\n${prompt}` },
+                { text: `পেইজ ${page_number} এর content পড়ো এবং MCQ তৈরি করো।\n${prompt}${jsonInstruction}` },
               ],
             }],
-            generationConfig: { maxOutputTokens: 4096 },
+            generationConfig: { temperature: 0.7, maxOutputTokens: 4096 },
           };
           const text = await callGemini(keys, geminiBody);
           if (text) mcqs = parseMcqJson(text);
         }
 
-        // Fallback: full AI chain (text-only)
+        // Fallback: text-only AI chain
         if (!mcqs.length) {
-          const textPrompt = `${prompt}\n\nPage: ${page_number}`;
+          const textPrompt = `${prompt}\n\nSubject: Educational textbook, Page ${page_number}.${jsonInstruction}`;
           const aiText = await callAiChain(env, textPrompt, 4096);
           if (aiText) mcqs = parseMcqJson(aiText);
+        }
+
+        if (!mcqs.length) {
+          return json({ error: 'AI কোনো বৈধ MCQ তৈরি করতে পারেনি। আবার চেষ্টা করুন।', count: 0, mcqs: [] });
         }
 
         return json({ count: mcqs.length, mcqs });

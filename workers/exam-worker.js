@@ -68,11 +68,11 @@ export default {
             'SELECT prompt FROM ai_prompts WHERE pdf_id=? AND type=?'
           ).bind(pdfId, type).first().catch(() => null);
 
-          const prompt = savedPrompt?.prompt || `Generate 15 ${typePrompt} from page ${pageList} of a textbook PDF titled "${pdf.title || 'Unknown'}".
-IMPORTANT: The MCQ language MUST match the PDF content language. If the content is in Bengali/বাংলা, generate Bengali MCQs. If English, generate English MCQs.
-Each question must have 4 options (A, B, C, D), one correct answer, and a brief explanation.
-Return ONLY a JSON array: [{"question":"...","option_a":"...","option_b":"...","option_c":"...","option_d":"...","correct_answer":"A","explanation":"..."}]`;
+          const basePrompt = savedPrompt?.prompt || `Generate 15 ${typePrompt} from page ${pageList} of a textbook PDF titled "${pdf.title || 'Unknown'}".`;
 
+          const jsonInstruction = `\n\nIMPORTANT RULES:\n1. The MCQ language MUST match the PDF content language. If Bengali, write Bengali MCQs. If English, write English MCQs.\n2. Every question field MUST contain a real, meaningful question — NOT placeholder text like "MCQ 1" or empty.\n3. Every option_a, option_b, option_c, option_d MUST contain real answer options — NOT empty.\n4. Each question must have exactly one correct_answer (A/B/C/D) and a brief explanation.\n5. Return ONLY a valid JSON array, no other text:\n[{"question":"actual question text","option_a":"real option","option_b":"real option","option_c":"real option","option_d":"real option","correct_answer":"A","explanation":"brief explanation"}]`;
+
+          const prompt = basePrompt + jsonInstruction;
           let aiText = null;
 
           // Try Gemini Vision if PDF URL available
@@ -90,7 +90,7 @@ Return ONLY a JSON array: [{"question":"...","option_a":"...","option_b":"...","
                 const body = {
                   contents: [{ parts: [
                     { inline_data: { mime_type: 'application/pdf', data: b64 } },
-                    { text: prompt }
+                    { text: `পেইজ ${pageList} এর content পড়ো এবং MCQ তৈরি করো।\n${prompt}` }
                   ]}],
                   generationConfig: { temperature: 0.7, maxOutputTokens: 4096 }
                 };
@@ -129,7 +129,7 @@ Return ONLY a JSON array: [{"question":"...","option_a":"...","option_b":"...","
             }
           }
 
-          return json({ coming_soon: true, message: 'MCQ তৈরি করা যায়নি। পরে আবার চেষ্টা করুন।' });
+          return json({ error: 'AI MCQ তৈরি করতে পারেনি। আবার চেষ্টা করুন।', questions: [] });
         }
 
         const questions = allMcqs.map(m => ({
