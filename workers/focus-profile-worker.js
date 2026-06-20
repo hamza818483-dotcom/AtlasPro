@@ -101,7 +101,7 @@ export default {
       // Get active students (full list with details + today total + ranking)
       if (path === '/api/focus/active' && method === 'GET') {
         const { results } = await env.DB.prepare(`
-          SELECT fs.id, fs.status, fs.study_seconds, fs.breaks_used,
+          SELECT fs.id, fs.status, fs.study_seconds, fs.breaks_used, fs.breaks_count,
             u.id as user_id, u.name, u.profile_pic, u.gender, u.hsc_batch, u.college_name,
             CAST((julianday('now') - julianday(fs.started_at)) * 86400 AS INTEGER) as total_elapsed,
             COALESCE((

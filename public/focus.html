@@ -12,221 +12,234 @@
 .intro-wrap {
   min-height: calc(100vh - 60px);
   display: flex; flex-direction: column;
-  padding: 20px 16px 100px;
+  padding: 10px 14px 80px;
 }
-.intro-hero {
-  text-align: center; padding: 24px 0 20px;
-}
-.intro-icon {
-  font-size: 52px; margin-bottom: 10px;
-  animation: float 3s ease-in-out infinite;
-}
-@keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-8px)} }
+.intro-hero { text-align: center; padding: 14px 0 10px; }
+.intro-icon { font-size: 42px; margin-bottom: 6px; animation: float 3s ease-in-out infinite; }
+@keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-6px)} }
 .intro-title {
-  font-size: 22px; font-weight: 900; letter-spacing: 1px;
+  font-size: 20px; font-weight: 900; letter-spacing: 1px;
   background: linear-gradient(135deg, #818CF8, #C4B5FD, #F472B6);
-  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-  background-clip: text;
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
 }
-.intro-sub { font-size: 12px; color: var(--text3); margin-top: 4px; }
+.intro-sub { font-size: 11px; color: var(--text3); margin-top: 2px; }
 
 .premium-box {
   background: linear-gradient(135deg, rgba(108,99,255,.12), rgba(196,181,253,.06));
   border: 1.5px solid rgba(108,99,255,.3);
-  border-radius: var(--radius); padding: 18px 16px;
-  margin-bottom: 14px;
-  box-shadow: 0 4px 24px rgba(108,99,255,.15);
+  border-radius: var(--radius); padding: 12px 14px; margin-bottom: 10px;
 }
-.premium-box-title {
-  font-size: 13px; font-weight: 800; color: var(--accent); margin-bottom: 12px;
-  display: flex; align-items: center; gap: 6px;
-}
-.feature-list { list-style: none; display: flex; flex-direction: column; gap: 8px; }
-.feature-list li {
-  font-size: 12px; color: var(--text2); display: flex; gap: 8px; align-items: flex-start;
-}
-.feature-list li::before { content:'✅'; flex-shrink:0; }
+.premium-box-title { font-size: 12px; font-weight: 800; color: var(--accent); margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
+.feature-list { list-style: none; display: flex; flex-direction: column; gap: 5px; }
+.feature-list li { font-size: 11px; color: var(--text2); display: flex; gap: 6px; align-items: flex-start; line-height: 1.4; }
+.feature-list li::before { content:'✅'; flex-shrink:0; font-size:10px; }
 
 .how-box {
   background: var(--card); border: 1px solid var(--border);
-  border-radius: var(--radius); padding: 14px 16px; margin-bottom: 20px;
+  border-radius: var(--radius); padding: 10px 14px; margin-bottom: 12px;
 }
-.how-title { font-size: 12px; font-weight: 800; color: var(--text2); margin-bottom: 10px; }
-.how-steps { display: flex; flex-direction: column; gap: 8px; counter-reset: step; }
-.how-step {
-  font-size: 12px; color: var(--text2);
-  display: flex; gap: 8px; align-items: flex-start;
-}
+.how-title { font-size: 11px; font-weight: 800; color: var(--text2); margin-bottom: 8px; }
+.how-steps { display: flex; flex-direction: column; gap: 5px; }
+.how-step { font-size: 11px; color: var(--text2); display: flex; gap: 6px; align-items: flex-start; line-height: 1.3; }
 .how-step-num {
-  width: 20px; height: 20px; border-radius: 50%;
+  width: 18px; height: 18px; border-radius: 50%;
   background: var(--primary-light); border: 1px solid rgba(108,99,255,.3);
-  color: var(--primary); font-size: 10px; font-weight: 900;
+  color: var(--primary); font-size: 9px; font-weight: 900;
   display: flex; align-items: center; justify-content: center; flex-shrink: 0;
 }
 
 .intro-start-btn {
-  width: 100%; padding: 16px;
+  width: 100%; padding: 14px;
   background: linear-gradient(135deg, var(--primary), #8B5CF6);
   border: none; border-radius: var(--radius); color: #fff;
-  font-size: 16px; font-weight: 900; cursor: pointer;
+  font-size: 15px; font-weight: 900; cursor: pointer;
   font-family: inherit; letter-spacing: .5px;
   box-shadow: 0 6px 24px rgba(108,99,255,.4);
   transition: all .2s; display: flex; align-items: center; justify-content: center; gap: 8px;
 }
-.intro-start-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 28px rgba(108,99,255,.5); }
-.intro-start-btn:active { transform: translateY(0); }
+.intro-start-btn:hover { transform: translateY(-2px); }
 
 /* ── Timer Screen ── */
 .timer-screen { display: none; flex-direction: column; min-height: calc(100vh - 60px); }
 .timer-screen.show { display: flex; }
 
-/* Stats bar (below header) */
-.stats-bar {
-  display: flex; align-items: center; gap: 0;
+/* Live summary bar (above timer) */
+.live-summary {
+  display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+  padding: 8px 14px;
   background: var(--bg2); border-bottom: 1px solid var(--border);
-  padding: 8px 14px; font-size: 11px; flex-wrap: wrap; gap: 6px;
+  font-size: 11px;
 }
-.stat-pill {
-  display: flex; align-items: center; gap: 4px;
-  background: var(--card); border: 1px solid var(--border);
-  border-radius: 20px; padding: 4px 10px;
-  font-size: 11px; font-weight: 700;
+.ls-chip {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 3px 8px; border-radius: 16px; font-weight: 700; font-size: 10px;
 }
-.stat-pill.green  { background:rgba(16,185,129,.1); border-color:rgba(16,185,129,.3); color:var(--green); }
-.stat-pill.amber  { background:rgba(245,158,11,.1); border-color:rgba(245,158,11,.3); color:var(--amber); }
-.stat-pill.purple { background:var(--primary-light); border-color:rgba(108,99,255,.3); color:var(--primary); }
-.stat-pill .dot   { width:6px; height:6px; border-radius:50%; background:currentColor; }
+.ls-reading { background:rgba(16,185,129,.12); color:var(--green); }
+.ls-break { background:rgba(245,158,11,.12); color:var(--amber); }
+.ls-name {
+  font-weight: 800; font-size: 10px; max-width: 60px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.ls-batch { font-size: 9px; opacity: 0.8; }
+.ls-dot { width: 5px; height: 5px; border-radius: 50%; animation: blink 1.2s ease-in-out infinite; }
+.ls-dot-g { background: var(--green); }
+.ls-dot-a { background: var(--amber); }
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:.3} }
 
 /* Timer main area */
 .timer-main {
   flex: 0 0 auto; display: flex; flex-direction: column;
-  align-items: center; padding: 20px 14px 16px;
-  position: relative;
+  align-items: center; padding: 16px 14px 10px; position: relative;
 }
 .timer-fab-row {
-  position: absolute; top: 16px; right: 14px;
-  display: flex; flex-direction: column; gap: 8px;
+  position: absolute; top: 12px; right: 14px;
+  display: flex; flex-direction: column; gap: 6px;
 }
 .fab {
-  display: flex; align-items: center; gap: 5px;
-  padding: 8px 12px; border-radius: 10px;
-  font-size: 11px; font-weight: 800; cursor: pointer;
-  border: none; font-family: inherit; transition: all .2s;
-  white-space: nowrap;
+  display: flex; align-items: center; gap: 4px;
+  padding: 7px 10px; border-radius: 8px;
+  font-size: 10px; font-weight: 800; cursor: pointer;
+  border: none; font-family: inherit; transition: all .2s; white-space: nowrap;
 }
-.fab-break {
-  background: linear-gradient(135deg, var(--amber), #F59E0B);
-  color: #fff; box-shadow: 0 3px 12px rgba(245,158,11,.35);
-}
+.fab-break { background: linear-gradient(135deg, var(--amber), #F59E0B); color: #fff; box-shadow: 0 3px 10px rgba(245,158,11,.3); }
 .fab-break:hover { transform: translateY(-1px); }
-.fab-break:disabled { opacity: .45; cursor: not-allowed; transform: none !important; }
-.fab-end {
-  background: var(--card); color: var(--text2);
-  border: 1.5px solid var(--border);
-}
+.fab-break:disabled { opacity: .4; cursor: not-allowed; transform: none !important; }
+.fab-end { background: var(--card); color: var(--text2); border: 1.5px solid var(--border); }
 .fab-end:hover { border-color: var(--red); color: var(--red); }
 
 /* Ring */
-.timer-ring-wrap { position: relative; width: 190px; height: 190px; margin-bottom: 12px; }
+.timer-ring-wrap { position: relative; width: 170px; height: 170px; margin-bottom: 8px; }
 .timer-svg { transform: rotate(-90deg); }
 .t-track { fill:none; stroke:var(--border); stroke-width:10; }
-.t-ring  {
+.t-ring {
   fill:none; stroke:var(--primary); stroke-width:10; stroke-linecap:round;
-  stroke-dasharray:565; stroke-dashoffset:565;
+  stroke-dasharray:502; stroke-dashoffset:502;
   transition: stroke-dashoffset .9s linear, stroke .4s;
 }
 .timer-center {
   position:absolute; inset:0;
-  display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px;
+  display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px;
 }
-.t-display {
-  font-size: 44px; font-weight: 900; font-family:'Inter',monospace;
-  letter-spacing: 2px; color: var(--text); line-height: 1;
-}
+.t-display { font-size: 40px; font-weight: 900; font-family:'Inter',monospace; letter-spacing: 2px; color: var(--text); line-height: 1; }
 .t-label { font-size: 10px; color: var(--text3); font-weight: 700; text-transform: uppercase; letter-spacing: 1px; }
 
 /* Break dots */
-.break-track {
-  display: flex; flex-direction: column; align-items: center; gap: 4px;
-}
-.break-dots { display: flex; gap: 8px; }
-.bd {
-  width: 12px; height: 12px; border-radius: 50%; transition: all .3s;
-  background: var(--border);
-}
-.bd.used  { background: var(--amber); box-shadow: 0 0 6px rgba(245,158,11,.4); }
+.break-track { display: flex; flex-direction: column; align-items: center; gap: 3px; }
+.break-dots { display: flex; gap: 6px; }
+.bd { width: 10px; height: 10px; border-radius: 50%; transition: all .3s; background: var(--border); }
+.bd.used { background: var(--amber); box-shadow: 0 0 5px rgba(245,158,11,.4); }
 .bd.avail { background: rgba(245,158,11,.2); border: 1.5px solid var(--amber); }
-.break-lbl { font-size: 10px; color: var(--text3); }
+.break-lbl { font-size: 9px; color: var(--text3); }
 
 /* Break warning */
 .break-warn-bar {
-  margin: 0 14px 8px; padding: 8px 14px;
+  margin: 0 14px 6px; padding: 6px 12px;
   background: rgba(245,158,11,.1); border: 1px solid rgba(245,158,11,.35);
-  border-radius: var(--radius-sm); font-size: 12px; color: var(--amber);
+  border-radius: var(--radius-sm); font-size: 11px; color: var(--amber);
   text-align: center; font-weight: 600; display: none;
 }
 .break-warn-bar.show { display: block; animation: pulse 1s ease-in-out infinite alternate; }
 @keyframes pulse { from{opacity:.7} to{opacity:1} }
 
-/* Resume button (break state) */
+/* Resume button */
 .resume-btn {
-  display: none; margin: 0 14px 10px;
-  width: calc(100% - 28px); padding: 14px;
+  display: none; margin: 0 14px 8px;
+  width: calc(100% - 28px); padding: 12px;
   background: linear-gradient(135deg, var(--green), #059669);
   border: none; border-radius: var(--radius); color: #fff;
-  font-size: 15px; font-weight: 800; cursor: pointer; font-family: inherit;
-  box-shadow: 0 4px 16px rgba(16,185,129,.35); transition: all .2s;
+  font-size: 14px; font-weight: 800; cursor: pointer; font-family: inherit;
+  box-shadow: 0 4px 12px rgba(16,185,129,.3); transition: all .2s;
 }
 .resume-btn.show { display: block; }
-.resume-btn:hover { transform: translateY(-1px); }
 
-/* ── Active Students ── */
+/* ── Live Stats Box (separate card) ── */
+.live-stats-box {
+  margin: 8px 14px; padding: 10px 12px;
+  background: var(--card); border: 1.5px solid var(--border);
+  border-radius: 12px; display: flex; align-items: center; gap: 0;
+  justify-content: space-around;
+}
+.lsb-item { text-align: center; flex: 1; }
+.lsb-val { font-size: 18px; font-weight: 900; }
+.lsb-val.green { color: var(--green); }
+.lsb-val.amber { color: var(--amber); }
+.lsb-val.gold { color: #F59E0B; }
+.lsb-lbl { font-size: 9px; color: var(--text3); font-weight: 600; }
+.lsb-divider { width: 1px; height: 28px; background: var(--border); flex-shrink: 0; }
+.lsb-top-name {
+  font-size: 11px; font-weight: 900; color: #F59E0B;
+  max-width: 80px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+
+/* ── Batch filter ── */
+.batch-filter {
+  display: flex; gap: 6px; padding: 6px 14px; overflow-x: auto;
+  scrollbar-width: none;
+}
+.batch-filter::-webkit-scrollbar { display: none; }
+.bf-chip {
+  padding: 4px 10px; border-radius: 14px; font-size: 10px; font-weight: 700;
+  white-space: nowrap; cursor: pointer; border: 1px solid var(--border);
+  background: var(--card); color: var(--text2); transition: all .2s;
+  flex-shrink: 0;
+}
+.bf-chip.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+.bf-chip .bf-cnt { font-weight: 900; margin-left: 2px; }
+
+/* ── Students Section ── */
 .students-section { flex: 1; padding: 0 0 80px; }
 .students-header {
-  padding: 10px 14px 8px;
-  display: flex; flex-direction: column; gap: 2px;
+  padding: 6px 14px;
+  display: flex; align-items: center; justify-content: space-between;
 }
-.sh-title { font-size: 14px; font-weight: 800; }
-.sh-top {
-  font-size: 11px; color: var(--amber); font-weight: 700;
-  display: flex; align-items: center; gap: 4px;
-}
-.students-list { display: flex; flex-direction: column; gap: 6px; padding: 0 14px; }
+.sh-title { font-size: 12px; font-weight: 800; }
+
+/* ── Compact Student Cards ── */
+.students-list { display: flex; flex-direction: column; gap: 3px; padding: 0 14px; }
 .s-card {
-  display: flex; align-items: center; gap: 10px;
+  display: flex; align-items: center; gap: 8px;
   background: var(--card); border: 1px solid var(--border);
-  border-radius: 14px; padding: 10px 12px;
-  transition: border-color .2s;
+  border-radius: 10px; padding: 6px 8px;
+  transition: border-color .2s; position: relative;
 }
-.s-card:first-child { border-color: rgba(245,158,11,.4); background: rgba(245,158,11,.05); }
-.s-card:nth-child(2) { border-color: rgba(148,163,184,.3); }
-.s-card:nth-child(3) { border-color: rgba(180,140,100,.3); }
-.s-rank { font-size: 18px; flex-shrink: 0; width: 24px; text-align: center; }
+.s-card:first-child { border-color: rgba(245,158,11,.35); background: rgba(245,158,11,.04); }
+.s-card:nth-child(2) { border-color: rgba(148,163,184,.25); }
+.s-card:nth-child(3) { border-color: rgba(180,140,100,.25); }
+.s-rank { font-size: 14px; flex-shrink: 0; width: 20px; text-align: center; }
 .s-photo {
-  width: 42px; height: 42px; border-radius: 50%; flex-shrink: 0;
-  object-fit: cover; border: 2px solid rgba(108,99,255,.3);
+  width: 28px; height: 28px; border-radius: 50%; flex-shrink: 0;
+  object-fit: cover; border: 1.5px solid rgba(108,99,255,.25);
   background: var(--primary-light);
   display: flex; align-items: center; justify-content: center;
-  font-size: 20px; overflow: hidden;
+  font-size: 14px; overflow: hidden;
 }
 .s-photo img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
-.s-info { flex: 1; min-width: 0; }
-.s-name { font-size: 13px; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.s-session { font-size: 11px; color: var(--green); font-weight: 700; margin-top: 1px; }
-.s-today { font-size: 10px; color: var(--text3); }
-.s-right { display: flex; flex-direction: column; align-items: flex-end; gap: 3px; flex-shrink: 0; }
-.live-badge {
-  display: flex; align-items: center; gap: 4px;
-  background: rgba(16,185,129,.15); border: 1px solid rgba(16,185,129,.3);
-  border-radius: 20px; padding: 3px 9px;
-  font-size: 10px; font-weight: 800; color: var(--green);
+.s-info { flex: 1; min-width: 0; display: flex; align-items: center; gap: 6px; }
+.s-name { font-size: 11px; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 90px; }
+.s-time { font-size: 10px; font-weight: 700; color: var(--green); white-space: nowrap; }
+.s-breaks { font-size: 9px; color: var(--text3); white-space: nowrap; }
+.s-right { display: flex; align-items: center; gap: 4px; flex-shrink: 0; }
+
+/* HSC Batch badge (premium color, corner) */
+.hsc-badge {
+  font-size: 8px; font-weight: 800; padding: 1px 5px; border-radius: 4px;
+  background: linear-gradient(135deg, #F59E0B, #D97706); color: #fff;
+  white-space: nowrap; flex-shrink: 0; letter-spacing: .3px;
 }
-.live-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); animation: blink 1.2s ease-in-out infinite; }
-@keyframes blink { 0%,100%{opacity:1} 50%{opacity:.3} }
-.break-badge {
-  font-size: 9px; color: var(--amber); font-weight: 700;
-  background: rgba(245,158,11,.12); border-radius: 10px; padding: 2px 6px;
+
+/* Live status indicator */
+.status-indicator {
+  display: inline-flex; align-items: center; gap: 3px;
+  font-size: 9px; font-weight: 800; padding: 2px 6px; border-radius: 10px;
 }
+.status-reading { background: rgba(16,185,129,.12); color: var(--green); }
+.status-break { background: rgba(245,158,11,.12); color: var(--amber); }
+.status-dot {
+  width: 5px; height: 5px; border-radius: 50%;
+  animation: blink 1.2s ease-in-out infinite;
+}
+.status-reading .status-dot { background: var(--green); }
+.status-break .status-dot { background: var(--amber); }
 
 /* ── End Modal ── */
 .modal-bg {
@@ -237,18 +250,17 @@
 @keyframes fadeIn { from{opacity:0;transform:scale(.95)} to{opacity:1;transform:scale(1)} }
 .modal {
   background: var(--card); border: 1px solid var(--border);
-  border-radius: var(--radius); padding: 24px; width: 100%; max-width: 320px;
-  text-align: center;
+  border-radius: var(--radius); padding: 20px; width: 100%; max-width: 300px; text-align: center;
 }
-.modal h3 { font-size: 18px; font-weight: 900; margin-bottom: 6px; }
-.modal p  { font-size: 12px; color: var(--text2); line-height: 1.6; margin-bottom: 16px; }
+.modal h3 { font-size: 16px; font-weight: 900; margin-bottom: 6px; }
+.modal p { font-size: 11px; color: var(--text2); line-height: 1.5; margin-bottom: 14px; }
 .modal-stats {
   display: grid; grid-template-columns: 1fr 1fr;
-  gap: 6px; margin-bottom: 18px;
-  background: var(--bg2); border-radius: var(--radius-sm); padding: 12px;
+  gap: 6px; margin-bottom: 14px;
+  background: var(--bg2); border-radius: var(--radius-sm); padding: 10px;
 }
-.ms-val { font-size: 22px; font-weight: 900; color: var(--primary); }
-.ms-lbl { font-size: 10px; color: var(--text3); margin-top: 1px; }
+.ms-val { font-size: 20px; font-weight: 900; color: var(--primary); }
+.ms-lbl { font-size: 9px; color: var(--text3); margin-top: 1px; }
 .modal-row { display: flex; gap: 8px; }
 .modal-row button { flex: 1; }
 </style>
@@ -302,14 +314,8 @@
     <h3>⏹ Session শেষ করবে?</h3>
     <p>Timer বন্ধ হবে এবং পড়াশোনার সময় সেভ হবে।</p>
     <div class="modal-stats">
-      <div>
-        <div class="ms-val" id="ms-time">0:00</div>
-        <div class="ms-lbl">পড়ার সময়</div>
-      </div>
-      <div>
-        <div class="ms-val" id="ms-breaks">0/3</div>
-        <div class="ms-lbl">বিরতি ব্যবহার</div>
-      </div>
+      <div><div class="ms-val" id="ms-time">0:00</div><div class="ms-lbl">পড়ার সময়</div></div>
+      <div><div class="ms-val" id="ms-breaks">0/3</div><div class="ms-lbl">বিরতি ব্যবহার</div></div>
     </div>
     <div class="modal-row">
       <button class="btn btn-outline" onclick="closeModal()">← ফিরে যাও</button>
@@ -356,50 +362,63 @@
 <!-- ═══ TIMER SCREEN ═══ -->
 <div class="timer-screen" id="timerScreen">
 
-  <!-- Stats bar -->
-  <div class="stats-bar">
-    <span class="stat-pill green"><span class="dot"></span><span id="sbActive">0</span> পড়ছে</span>
-    <span class="stat-pill amber"><span class="dot"></span><span id="sbBreak">0</span> বিরতিতে</span>
-    <span class="stat-pill purple">🏆 <span id="sbTop">—</span></span>
-  </div>
+  <!-- Live name ticker above timer -->
+  <div class="live-summary" id="liveSummary"></div>
 
   <!-- Timer -->
   <div class="timer-main">
-    <!-- FAB buttons top-right -->
     <div class="timer-fab-row" id="fabRow">
-      <button class="fab fab-break" id="fabBreak" onclick="takeBreak()">★ Break নাও</button>
-      <button class="fab fab-end"   onclick="showModal()">⏹ বন্ধ করো</button>
+      <button class="fab fab-break" id="fabBreak" onclick="takeBreak()">★ Break</button>
+      <button class="fab fab-end" onclick="showModal()">⏹ বন্ধ</button>
     </div>
 
     <div class="timer-ring-wrap">
-      <svg class="timer-svg" width="190" height="190" viewBox="0 0 190 190">
-        <circle class="t-track" cx="95" cy="95" r="90"/>
-        <circle class="t-ring"  cx="95" cy="95" r="90" id="tRing"/>
+      <svg class="timer-svg" width="170" height="170" viewBox="0 0 170 170">
+        <circle class="t-track" cx="85" cy="85" r="80"/>
+        <circle class="t-ring" cx="85" cy="85" r="80" id="tRing"/>
       </svg>
       <div class="timer-center">
         <div class="t-display" id="tDisplay">00:00</div>
-        <div class="t-label"   id="tLabel">পড়াশোনা</div>
+        <div class="t-label" id="tLabel">পড়াশোনা</div>
       </div>
     </div>
 
-    <!-- Break tracker dots -->
     <div class="break-track">
       <div class="break-dots" id="breakDots"></div>
-      <div class="break-lbl" id="breakLbl">বিরতি ৩টি পর্যন্ত (প্রতিটি সর্বোচ্চ ১ ঘণ্টা)</div>
+      <div class="break-lbl" id="breakLbl">বিরতি ৩টি পর্যন্ত</div>
     </div>
   </div>
 
   <!-- Break warning -->
   <div class="break-warn-bar" id="breakWarn"></div>
-
-  <!-- Resume button (shown during break) -->
   <button class="resume-btn" id="resumeBtn" onclick="resumeStudy()">▶ আবার শুরু করো</button>
+
+  <!-- Live Stats Box (separate card) -->
+  <div class="live-stats-box" id="liveStatsBox">
+    <div class="lsb-item">
+      <div class="lsb-val green" id="lsbActive">0</div>
+      <div class="lsb-lbl">📖 পড়ছে</div>
+    </div>
+    <div class="lsb-divider"></div>
+    <div class="lsb-item">
+      <div class="lsb-val amber" id="lsbBreak">0</div>
+      <div class="lsb-lbl">☕ বিরতিতে</div>
+    </div>
+    <div class="lsb-divider"></div>
+    <div class="lsb-item">
+      <div class="lsb-val gold">🏆</div>
+      <div class="lsb-top-name" id="lsbTopName">—</div>
+      <div class="lsb-lbl">Top Focused</div>
+    </div>
+  </div>
+
+  <!-- Batch filter -->
+  <div class="batch-filter" id="batchFilter"></div>
 
   <!-- Active Students -->
   <div class="students-section">
     <div class="students-header">
-      <div class="sh-title" id="shTitle">🟢 এখন পড়ছে — <span id="shCount">0</span> জন</div>
-      <div class="sh-top" id="shTop" style="display:none">🏆 Top Focused: <span id="shTopName"></span></div>
+      <div class="sh-title" id="shTitle">🟢 সকল ছাত্র-ছাত্রী — <span id="shCount">0</span> জন</div>
     </div>
     <div class="students-list" id="studentsList"></div>
   </div>
@@ -431,33 +450,55 @@
 <script>
 // ── Sidebar / Toast ──
 function toggleSidebar() { document.getElementById('sidebar').classList.toggle('open'); document.getElementById('sidebarOverlay').classList.toggle('open'); }
-function closeSidebar()  { document.getElementById('sidebar').classList.remove('open'); document.getElementById('sidebarOverlay').classList.remove('open'); }
+function closeSidebar() { document.getElementById('sidebar').classList.remove('open'); document.getElementById('sidebarOverlay').classList.remove('open'); }
 function showToast(msg, d=3000) { const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); clearTimeout(t._t); t._t=setTimeout(()=>t.classList.remove('show'),d); }
 
 // ── Constants ──
-const MAX_BREAKS    = 3;
-const MAX_BREAK_SEC = 3600; // 1 hour
-const CIRC          = 2 * Math.PI * 90; // r=90
+const MAX_BREAKS = 3;
+const MAX_BREAK_SEC = 3600;
+const CIRC = 2 * Math.PI * 80; // r=80
 
 // ── State ──
-let state      = 'idle';
-let sessionId  = null;
-let studySecs  = 0;
-let breakSecs  = 0;
+let state = 'idle';
+let sessionId = null;
+let studySecs = 0;
+let breakSecs = 0;
 let breaksUsed = 0;
-let ticker     = null;
+let ticker = null;
+let pollInterval = null;
+let allStudents = [];
+let selectedBatch = 'all';
 
 // ── Helpers ──
-function pad(n) { return String(n).padStart(2,'0'); }
+function pad(n) { return String(n).padStart(2, '0'); }
 function fmt(s) {
-  const h=Math.floor(s/3600), m=Math.floor((s%3600)/60), sec=s%60;
-  return h>0 ? `${h}:${pad(m)}:${pad(sec)}` : `${pad(m)}:${pad(sec)}`;
+  const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), sec = s % 60;
+  return h > 0 ? `${h}:${pad(m)}:${pad(sec)}` : `${pad(m)}:${pad(sec)}`;
 }
-function fmtShort(s) {
-  const h=Math.floor(s/3600), m=Math.floor((s%3600)/60);
-  if(h>0) return `${h}h ${m}m`;
+function fmtSmart(s) {
+  if (s < 60) return `${s}s`;
+  const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60);
+  if (h > 0) return `${h}h ${m}m`;
   return `${m}m`;
 }
+function esc(s) { return String(s || '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]); }
+
+// ── LocalStorage persistence ──
+const LS_KEY = 'atlas_focus_state';
+function saveState() {
+  localStorage.setItem(LS_KEY, JSON.stringify({
+    state, sessionId, studySecs, breakSecs, breaksUsed,
+    savedAt: Date.now()
+  }));
+}
+function loadState() {
+  try {
+    const raw = localStorage.getItem(LS_KEY);
+    if (!raw) return null;
+    return JSON.parse(raw);
+  } catch (_) { return null; }
+}
+function clearState() { localStorage.removeItem(LS_KEY); }
 
 // ── Screens ──
 function showTimerScreen() {
@@ -472,19 +513,19 @@ function showIntroScreen() {
 // ── Render timer ──
 function renderTimer() {
   const display = document.getElementById('tDisplay');
-  const label   = document.getElementById('tLabel');
-  const ring    = document.getElementById('tRing');
-  const warn    = document.getElementById('breakWarn');
-  const resume  = document.getElementById('resumeBtn');
-  const fab     = document.getElementById('fabBreak');
-  const dots    = document.getElementById('breakDots');
-  const lbl     = document.getElementById('breakLbl');
-  const fabRow  = document.getElementById('fabRow');
+  const label = document.getElementById('tLabel');
+  const ring = document.getElementById('tRing');
+  const warn = document.getElementById('breakWarn');
+  const resume = document.getElementById('resumeBtn');
+  const fab = document.getElementById('fabBreak');
+  const dots = document.getElementById('breakDots');
+  const lbl = document.getElementById('breakLbl');
+  const fabRow = document.getElementById('fabRow');
 
   if (state === 'active') {
     display.textContent = fmt(studySecs);
-    label.textContent   = 'পড়াশোনা চলছে';
-    ring.style.stroke   = 'var(--primary)';
+    label.textContent = 'পড়াশোনা চলছে';
+    ring.style.stroke = 'var(--primary)';
     ring.style.strokeDashoffset = CIRC - (CIRC * ((studySecs % 3600) / 3600));
     warn.classList.remove('show');
     resume.classList.remove('show');
@@ -492,8 +533,8 @@ function renderTimer() {
     fabRow.style.display = '';
   } else if (state === 'break') {
     display.textContent = fmt(breakSecs);
-    label.textContent   = 'বিরতি চলছে';
-    ring.style.stroke   = 'var(--amber)';
+    label.textContent = 'বিরতি চলছে';
+    ring.style.stroke = 'var(--amber)';
     ring.style.strokeDashoffset = CIRC - (CIRC * (breakSecs / MAX_BREAK_SEC));
     const rem = MAX_BREAK_SEC - breakSecs;
     if (rem <= 600) {
@@ -504,13 +545,12 @@ function renderTimer() {
     fabRow.style.display = 'none';
   }
 
-  // Break dots
   let d = '';
-  for(let i=0;i<MAX_BREAKS;i++){
+  for (let i = 0; i < MAX_BREAKS; i++) {
     d += i < breaksUsed ? '<div class="bd used"></div>' : '<div class="bd avail"></div>';
   }
   dots.innerHTML = d;
-  lbl.textContent = `${breaksUsed}/${MAX_BREAKS} বিরতি ব্যবহার হয়েছে`;
+  lbl.textContent = `${breaksUsed}/${MAX_BREAKS} বিরতি ব্যবহার`;
 }
 
 // ── Tick ──
@@ -528,6 +568,7 @@ function tick() {
     }
   }
   renderTimer();
+  if (studySecs % 5 === 0 || breakSecs % 5 === 0) saveState();
 }
 
 // ── Session actions ──
@@ -535,16 +576,19 @@ async function startSession() {
   state = 'active'; studySecs = 0; breakSecs = 0; breaksUsed = 0; sessionId = null;
   showTimerScreen();
   renderTimer();
-  renderStudents();
+  saveState();
   ticker = setInterval(tick, 1000);
   showToast('📚 পড়াশোনা শুরু হয়েছে!');
   beep();
+  renderStudents();
+  startPolling();
   if (Auth.isLoggedIn()) {
     try {
-      const r = await Auth.api('/api/focus/start', {method:'POST'});
+      const r = await Auth.api('/api/focus/start', { method: 'POST' });
       const d = await r.json();
       sessionId = d.session_id || null;
-    } catch(_){}
+      saveState();
+    } catch (_) {}
   }
 }
 
@@ -552,40 +596,43 @@ async function takeBreak() {
   if (breaksUsed >= MAX_BREAKS) { showToast('❌ সর্বোচ্চ ৩টি বিরতি শেষ হয়ে গেছে।'); return; }
   state = 'break'; breakSecs = 0; breaksUsed++;
   renderTimer();
+  saveState();
   showToast(`☕ বিরতি ${breaksUsed}/3 শুরু হয়েছে — সর্বোচ্চ ১ ঘণ্টা।`);
   if (Auth.isLoggedIn() && sessionId) {
-    try { await Auth.api('/api/focus/break', {method:'POST', body:JSON.stringify({session_id:sessionId})}); } catch(_){}
+    try { await Auth.api('/api/focus/break', { method: 'POST', body: JSON.stringify({ session_id: sessionId }) }); } catch (_) {}
   }
 }
 
 async function resumeStudy() {
   state = 'active'; breakSecs = 0;
   renderTimer();
+  saveState();
   showToast('📚 আবার শুরু! পড়াশোনা continue করো।');
   if (Auth.isLoggedIn() && sessionId) {
-    try { await Auth.api('/api/focus/resume', {method:'POST', body:JSON.stringify({session_id:sessionId})}); } catch(_){}
+    try { await Auth.api('/api/focus/resume', { method: 'POST', body: JSON.stringify({ session_id: sessionId }) }); } catch (_) {}
   }
 }
 
-async function doEnd(auto=false) {
+async function doEnd(auto = false) {
   clearInterval(ticker);
+  stopPolling();
   state = 'ended';
+  clearState();
   if (!auto) showToast(`✅ দারুণ! ${fmt(studySecs)} পড়েছো! 🎉`, 4000);
   beep();
   if (Auth.isLoggedIn() && sessionId) {
     try {
-      await Auth.api('/api/focus/end', {method:'POST', body:JSON.stringify({
+      await Auth.api('/api/focus/end', { method: 'POST', body: JSON.stringify({
         session_id: sessionId, study_seconds: studySecs, breaks_used: breaksUsed
-      })});
-    } catch(_){}
+      }) });
+    } catch (_) {}
   }
-  // Show ended state briefly, then go back to intro
-  setTimeout(() => { showIntroScreen(); }, 2500);
+  setTimeout(() => { showIntroScreen(); state = 'idle'; }, 2500);
 }
 
 // ── Modal ──
 function showModal() {
-  document.getElementById('ms-time').textContent   = fmt(studySecs);
+  document.getElementById('ms-time').textContent = fmt(studySecs);
   document.getElementById('ms-breaks').textContent = `${breaksUsed}/${MAX_BREAKS}`;
   document.getElementById('endModal').classList.add('show');
 }
@@ -601,93 +648,207 @@ window.addEventListener('popstate', () => {
   }
 });
 
+// ── Polling ──
+function startPolling() {
+  stopPolling();
+  pollInterval = setInterval(renderStudents, 15000);
+}
+function stopPolling() {
+  if (pollInterval) { clearInterval(pollInterval); pollInterval = null; }
+}
+
 // ── Active Students ──
-const MEDALS = ['🥇','🥈','🥉'];
-function avatar(student) {
-  if (student.profile_pic) {
-    return `<div class="s-photo"><img src="${student.profile_pic}" onerror="this.parentElement.innerHTML='${student.gender==='female'?'👩':'👨'}'"></div>`;
+const MEDALS = ['🥇', '🥈', '🥉'];
+
+function avatar(s) {
+  if (s.profile_pic) {
+    return `<div class="s-photo"><img src="${esc(s.profile_pic)}" onerror="this.parentElement.innerHTML='${s.gender === 'female' ? '👩' : '👨'}'"></div>`;
   }
-  return `<div class="s-photo">${student.gender === 'female' ? '👩' : '👨'}</div>`;
+  return `<div class="s-photo">${s.gender === 'female' ? '👩' : '👨'}</div>`;
 }
 
 async function renderStudents() {
   try {
-    let students=[], active=0, onBreak=0, top=null;
+    let students = [], active = 0, onBreak = 0, top = null;
     if (Auth.isLoggedIn()) {
       const r = await Auth.api('/api/focus/active');
       if (r.ok) {
         const d = await r.json();
         students = d.students || [];
-        active   = d.active   || 0;
-        onBreak  = d.on_break || 0;
-        top      = d.top      || null;
+        active = d.active || 0;
+        onBreak = d.on_break || 0;
+        top = d.top || null;
       }
     }
+    allStudents = students;
 
-    // Stats bar
-    document.getElementById('sbActive').textContent = active;
-    document.getElementById('sbBreak').textContent  = onBreak;
-    document.getElementById('sbTop').textContent    = top || '—';
+    // Live Stats Box
+    document.getElementById('lsbActive').textContent = active;
+    document.getElementById('lsbBreak').textContent = onBreak;
+    document.getElementById('lsbTopName').textContent = top || '—';
 
-    // Header
+    // Live summary ticker (names with batch, blinking)
+    renderLiveSummary(students);
+
+    // Batch filter
+    renderBatchFilter(students);
+
+    // Header count
     document.getElementById('shCount').textContent = active + onBreak;
-    const shTop = document.getElementById('shTop');
-    if (top) { shTop.style.display='flex'; document.getElementById('shTopName').textContent=top; }
-    else { shTop.style.display='none'; }
 
-    // List
-    const list = document.getElementById('studentsList');
-    if (!students.length) {
-      list.innerHTML = `<div style="text-align:center;padding:20px;color:var(--text3);font-size:12px">
-        ${Auth.isLoggedIn() ? 'এখন কেউ পড়ছে না' : 'লগইন করলে সবার নাম দেখতে পাবে'}
-      </div>`;
-      return;
-    }
-    list.innerHTML = students.map((s, i) => `
-      <div class="s-card">
-        <div class="s-rank">${i < 3 ? MEDALS[i] : `<span style="font-size:12px;font-weight:800;color:var(--text3)">${i+1}</span>`}</div>
-        ${avatar(s)}
-        <div class="s-info">
-          <div class="s-name">${s.name || 'Unknown'}</div>
-          <div class="s-session">${fmtShort(s.study_seconds || 0)} this session</div>
-          <div class="s-today">Today: ${fmtShort(s.today_total || 0)}</div>
-        </div>
-        <div class="s-right">
-          <span class="live-badge"><span class="live-dot"></span>LIVE</span>
-          ${s.status === 'break' ? '<span class="break-badge">☕ Break</span>' : ''}
-        </div>
-      </div>`).join('');
-  } catch(_) {}
+    // Student list
+    renderStudentList(students);
+  } catch (_) {}
+}
+
+function renderLiveSummary(students) {
+  const el = document.getElementById('liveSummary');
+  if (!students.length) { el.innerHTML = '<span style="font-size:10px;color:var(--text3)">কেউ পড়ছে না এখন</span>'; return; }
+  el.innerHTML = students.slice(0, 8).map(s => {
+    const isBreak = s.status === 'break';
+    return `<span class="ls-chip ${isBreak ? 'ls-break' : 'ls-reading'}">
+      <span class="ls-dot ${isBreak ? 'ls-dot-a' : 'ls-dot-g'}"></span>
+      <span class="ls-name">${esc(s.name)}</span>
+      ${s.hsc_batch ? `<span class="ls-batch">'${esc(String(s.hsc_batch).slice(-2))}</span>` : ''}
+    </span>`;
+  }).join('');
+}
+
+function renderBatchFilter(students) {
+  const batches = {};
+  students.forEach(s => {
+    const b = s.hsc_batch || 'অন্যান্য';
+    batches[b] = (batches[b] || 0) + 1;
+  });
+  const el = document.getElementById('batchFilter');
+  const keys = Object.keys(batches).sort();
+  if (keys.length <= 1) { el.innerHTML = ''; return; }
+  el.innerHTML = `<div class="bf-chip ${selectedBatch === 'all' ? 'active' : ''}" onclick="filterBatch('all')">সবাই<span class="bf-cnt">${students.length}</span></div>` +
+    keys.map(k => `<div class="bf-chip ${selectedBatch === k ? 'active' : ''}" onclick="filterBatch('${esc(k)}')">${esc(k)}<span class="bf-cnt">${batches[k]}</span></div>`).join('');
+}
+
+function filterBatch(batch) {
+  selectedBatch = batch;
+  renderBatchFilter(allStudents);
+  renderStudentList(allStudents);
+}
+
+function renderStudentList(students) {
+  const filtered = selectedBatch === 'all' ? students : students.filter(s => (s.hsc_batch || 'অন্যান্য') === selectedBatch);
+  const list = document.getElementById('studentsList');
+  if (!filtered.length) {
+    list.innerHTML = `<div style="text-align:center;padding:16px;color:var(--text3);font-size:11px">
+      ${Auth.isLoggedIn() ? 'এই ফিল্টারে কেউ নেই' : 'লগইন করলে সবার নাম দেখতে পাবে'}
+    </div>`;
+    return;
+  }
+  list.innerHTML = filtered.map((s, i) => {
+    const isBreak = s.status === 'break';
+    const timeStr = fmtSmart(s.study_seconds || 0);
+    return `<div class="s-card">
+      <div class="s-rank">${i < 3 ? MEDALS[i] : `<span style="font-size:10px;font-weight:800;color:var(--text3)">${i + 1}</span>`}</div>
+      ${avatar(s)}
+      <div class="s-info">
+        <div class="s-name">${esc(s.name)}</div>
+        <span class="s-time">${timeStr}</span>
+        <span class="s-breaks">· ☕${s.breaks_used || 0}</span>
+      </div>
+      <div class="s-right">
+        <span class="status-indicator ${isBreak ? 'status-break' : 'status-reading'}">
+          <span class="status-dot"></span>${isBreak ? 'বিরতি' : 'LIVE'}
+        </span>
+        ${s.hsc_batch ? `<span class="hsc-badge">HSC '${esc(String(s.hsc_batch).slice(-2))}</span>` : ''}
+      </div>
+    </div>`;
+  }).join('');
 }
 
 // ── Beep ──
 function beep() {
   try {
-    const ctx = new (window.AudioContext||window.webkitAudioContext)();
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
     const osc = ctx.createOscillator(), g = ctx.createGain();
     osc.connect(g); g.connect(ctx.destination);
-    osc.frequency.value=880; osc.type='sine';
-    g.gain.setValueAtTime(0.3,ctx.currentTime);
-    g.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+0.8);
-    osc.start(); osc.stop(ctx.currentTime+0.8);
-  } catch(_){}
+    osc.frequency.value = 880; osc.type = 'sine';
+    g.gain.setValueAtTime(0.3, ctx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.8);
+    osc.start(); osc.stop(ctx.currentTime + 0.8);
+  } catch (_) {}
 }
 
 // ── Header ──
 function initHeader() {
-  const name=Auth.getUserName(), isAdmin=Auth.isAdmin(), isPremium=localStorage.getItem('is_premium')==='true';
-  const i=name?name[0].toUpperCase():'A';
-  document.getElementById('avatarBtn').textContent=i;
-  document.getElementById('sidebarAvatar').textContent=i;
-  document.getElementById('sidebarName').textContent=name||'Guest';
-  if(isPremium){const b=document.getElementById('sidebarBadge');b.className='sidebar-badge badge-premium';b.textContent='⭐ Premium';}
-  if(isAdmin) document.getElementById('adminLink').style.display='flex';
+  const name = Auth.getUserName(), isAdmin = Auth.isAdmin(), isPremium = localStorage.getItem('is_premium') === 'true';
+  const i = name ? name[0].toUpperCase() : 'A';
+  document.getElementById('avatarBtn').textContent = i;
+  document.getElementById('sidebarAvatar').textContent = i;
+  document.getElementById('sidebarName').textContent = name || 'Guest';
+  if (isPremium) { const b = document.getElementById('sidebarBadge'); b.className = 'sidebar-badge badge-premium'; b.textContent = '⭐ Premium'; }
+  if (isAdmin) document.getElementById('adminLink').style.display = 'flex';
 }
 
+// ── Restore session from localStorage on page load ──
+function restoreSession() {
+  const saved = loadState();
+  if (!saved || (saved.state !== 'active' && saved.state !== 'break')) return false;
+
+  const elapsed = Math.floor((Date.now() - saved.savedAt) / 1000);
+  state = saved.state;
+  sessionId = saved.sessionId;
+  breaksUsed = saved.breaksUsed || 0;
+
+  if (state === 'active') {
+    studySecs = (saved.studySecs || 0) + elapsed;
+    breakSecs = saved.breakSecs || 0;
+  } else if (state === 'break') {
+    studySecs = saved.studySecs || 0;
+    breakSecs = (saved.breakSecs || 0) + elapsed;
+    if (breakSecs >= MAX_BREAK_SEC) {
+      clearState();
+      return false;
+    }
+  }
+
+  showTimerScreen();
+  renderTimer();
+  ticker = setInterval(tick, 1000);
+  renderStudents();
+  startPolling();
+  return true;
+}
+
+// ── Page visibility: keep ticking accurately ──
+let lastVisibleTime = Date.now();
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) {
+    lastVisibleTime = Date.now();
+    saveState();
+  } else {
+    const saved = loadState();
+    if (saved && (state === 'active' || state === 'break')) {
+      const elapsed = Math.floor((Date.now() - saved.savedAt) / 1000);
+      if (state === 'active') {
+        studySecs = (saved.studySecs || 0) + elapsed;
+      } else if (state === 'break') {
+        breakSecs = (saved.breakSecs || 0) + elapsed;
+        if (breakSecs >= MAX_BREAK_SEC) {
+          doEnd(true);
+          return;
+        }
+      }
+      renderTimer();
+      renderStudents();
+    }
+  }
+});
+
+// ── Init ──
 document.addEventListener('DOMContentLoaded', () => {
   initHeader();
-  // Poll active students every 30s even on intro screen
-  renderStudents();
+  const restored = restoreSession();
+  if (!restored) {
+    renderStudents();
+  }
   setInterval(renderStudents, 30000);
 });
 </script>
