@@ -276,10 +276,55 @@ async function loadQuestions(){
   }
 
   questions=data.questions||[];
-  if(!questions.length){showError('এই page-গুলোতে কোনো MCQ পাওয়া যায়নি।');return}
+  if(!questions.length){
+    // No MCQs — try POST with page image for vision-based generation
+    tryVisionGenerate();
+    return;
+  }
   questions.sort(()=>Math.random()-0.5);
   timerSecs=questions.length*30;
   showPreScreen();
+}
+
+async function tryVisionGenerate(){
+  const pages=PAGES_STR?PAGES_STR.split(',').map(Number).filter(Boolean):[];
+  const pg=pages[0]||1;
+  showGenerating({eta_seconds:45});
+
+  // Try to render the page and capture image for vision AI
+  let pageImage=null;
+  if(typeof pdfjsLib!=='undefined'&& PDF_ID){
+    try{
+      const urlRes=await fetch(`${CONFIG.workerUrl}/api/pdf-url?pdf_id=${PDF_ID}`,{headers:Auth.headers()});
+      if(urlRes.ok){
+        const urlData=await urlRes.json();
+        if(urlData.url){
+          const pdfDoc=await pdfjsLib.getDocument(urlData.url).promise;
+          const pageObj=await pdfDoc.getPage(Math.min(pg,pdfDoc.numPages));
+          const vp=pageObj.getViewport({scale:1.5});
+          const c=document.createElement('canvas');
+          c.width=vp.width;c.height=vp.height;
+          await pageObj.render({canvasContext:c.getContext('2d'),viewport:vp}).promise;
+          pageImage=c.toDataURL('image/png');
+        }
+      }
+    }catch(_){}
+  }
+
+  try{
+    const r=await fetch(`${CONFIG.workerUrl}/api/exam/generate`,{
+      method:'POST',
+      headers:Auth.headers(),
+      body:JSON.stringify({pdf_id:parseInt(PDF_ID),page_number:pg,type:TYPE||'standard',page_image:pageImage||undefined})
+    });
+    if(!r.ok)throw new Error();
+    const d=await r.json();
+    questions=d.questions||[];
+    if(!questions.length){showError(d.error||'MCQ তৈরি করা যায়নি। আবার চেষ্টা করুন।');return}
+    questions.sort(()=>Math.random()-0.5);
+    timerSecs=questions.length*30;
+    showPreScreen();
+  }catch(e){showError('AI MCQ তৈরি করতে পারেনি। আবার চেষ্টা করুন।')}
 }
 
 function showError(msg){

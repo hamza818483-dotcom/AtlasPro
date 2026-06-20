@@ -64,7 +64,7 @@ export async function callGemini(keys, body) {
   return null;
 }
 
-// Generic OpenAI-compatible API caller
+// Generic OpenAI-compatible API caller (text-only)
 async function callOpenAICompat(endpoint, key, model, messages, maxTokens = 4096) {
   if (!key) return null;
   try {
@@ -72,6 +72,31 @@ async function callOpenAICompat(endpoint, key, model, messages, maxTokens = 4096
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${key}` },
       body: JSON.stringify({ model, messages, max_tokens: maxTokens }),
+    });
+    if (!res.ok) return null;
+    const d = await res.json();
+    return d.choices?.[0]?.message?.content || null;
+  } catch (_) { return null; }
+}
+
+// Generic OpenAI-compatible API caller (vision — image + text)
+async function callOpenAICompatVision(endpoint, key, model, prompt, imageBase64, maxTokens = 4096) {
+  if (!key || !imageBase64) return null;
+  try {
+    const res = await fetch(endpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${key}` },
+      body: JSON.stringify({
+        model,
+        messages: [{
+          role: 'user',
+          content: [
+            { type: 'image_url', image_url: { url: imageBase64 } },
+            { type: 'text', text: prompt },
+          ],
+        }],
+        max_tokens: maxTokens,
+      }),
     });
     if (!res.ok) return null;
     const d = await res.json();
@@ -112,6 +137,36 @@ export async function callCfAi(env, prompt) {
   return null;
 }
 
+// Vision model callers (free vision-capable models)
+export async function callGroqVision(key, prompt, imageBase64, maxTokens = 4096) {
+  return callOpenAICompatVision('https://api.groq.com/openai/v1/chat/completions', key, 'llama-3.2-90b-vision-preview', prompt, imageBase64, maxTokens);
+}
+
+export async function callTogetherVision(key, prompt, imageBase64, maxTokens = 4096) {
+  return callOpenAICompatVision('https://api.together.xyz/v1/chat/completions', key, 'meta-llama/Llama-Vision-Free', prompt, imageBase64, maxTokens);
+}
+
+export async function callOpenRouterVision(key, prompt, imageBase64, maxTokens = 4096) {
+  return callOpenAICompatVision('https://openrouter.ai/api/v1/chat/completions', key, 'meta-llama/llama-3.2-11b-vision-instruct:free', prompt, imageBase64, maxTokens);
+}
+
+export async function callCfAiVision(env, prompt, imageBase64) {
+  if (!env.AI || !imageBase64) return null;
+  try {
+    const res = await env.AI.run('@cf/meta/llama-3.2-11b-vision-instruct', {
+      messages: [{
+        role: 'user',
+        content: [
+          { type: 'image_url', image_url: { url: imageBase64 } },
+          { type: 'text', text: prompt },
+        ],
+      }],
+    });
+    if (res?.response) return res.response;
+  } catch (_) {}
+  return null;
+}
+
 // Get all configured AI keys
 export function getAiKeys(env) {
   return {
@@ -120,6 +175,29 @@ export function getAiKeys(env) {
     openrouter: env.OPENROUTER_KEY || null,
     cerebras: env.CEREBRAS_KEY || null,
   };
+}
+
+// Full AI Vision fallback chain (image + text)
+// Order: Gemini 2.5 Flash (PDF) → Groq Vision → OpenRouter Vision → Together Vision → CF AI Vision → text-only chain
+export async function callAiVisionChain(env, prompt, imageBase64, maxTokens = 4096) {
+  if (!imageBase64) return callAiChain(env, prompt, maxTokens);
+  const keys = getAiKeys(env);
+
+  // 1. Groq Vision (fastest)
+  if (keys.groq) { const t = await callGroqVision(keys.groq, prompt, imageBase64, maxTokens); if (t) return t; }
+
+  // 2. OpenRouter Vision
+  if (keys.openrouter) { const t = await callOpenRouterVision(keys.openrouter, prompt, imageBase64, maxTokens); if (t) return t; }
+
+  // 3. Together Vision
+  if (keys.together) { const t = await callTogetherVision(keys.together, prompt, imageBase64, maxTokens); if (t) return t; }
+
+  // 4. CF AI Vision (no key needed)
+  const cfResult = await callCfAiVision(env, prompt, imageBase64);
+  if (cfResult) return cfResult;
+
+  // 5. Last resort: text-only chain
+  return callAiChain(env, prompt, maxTokens);
 }
 
 // Full AI fallback chain (text-only, no vision)

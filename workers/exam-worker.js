@@ -1,5 +1,5 @@
 // workers/exam-worker.js
-import { getGeminiKeys, callGemini, callGroq, callCfAi, callAiChain, parseMcqJson } from './utils.js';
+import { getGeminiKeys, callGemini, callGroq, callCfAi, callAiChain, callAiVisionChain, parseMcqJson } from './utils.js';
 
 export default {
   async fetch(request, env) {
@@ -144,6 +144,83 @@ export default {
         }));
 
         return json({ questions });
+      }
+
+      // ── GENERATE MCQs WITH PAGE IMAGE (vision fallback) ───
+      if (path === '/api/exam/generate' && method === 'POST') {
+        const body = await request.json();
+        const { pdf_id, page_number, type = 'standard', page_image } = body;
+        if (!pdf_id) return json({ error: 'pdf_id required' }, 400);
+
+        const pdf = await env.DB.prepare('SELECT * FROM pdfs WHERE id=?').bind(pdf_id).first();
+        if (!pdf) return json({ error: 'PDF not found' }, 404);
+
+        const savedPrompt = await env.DB.prepare(
+          'SELECT prompt FROM ai_prompts WHERE pdf_id=? AND type=?'
+        ).bind(pdf_id, type).first().catch(() => null);
+
+        const typeLabel = type === 'true_false' ? 'সত্য/মিথ্যা' : type === 'hard' ? 'কঠিন' : 'সাধারণ';
+        const basePrompt = savedPrompt?.prompt || `এই পেইজের content থেকে ১৫টি ${typeLabel} MCQ তৈরি করো।`;
+        const jsonInstruction = `\n\nIMPORTANT RULES:\n1. Content যে ভাষায় আছে সেই ভাষায় MCQ তৈরি করো।\n2. প্রতিটি question এ প্রকৃত প্রশ্ন, option_a/b/c/d তে প্রকৃত উত্তর থাকবে। ফাঁকা রাখা যাবে না।\n3. Return ONLY valid JSON array:\n[{"question":"...","option_a":"...","option_b":"...","option_c":"...","option_d":"...","correct_answer":"A","explanation":"..."}]`;
+        const fullPrompt = `পেইজ ${page_number} এর content দেখো।\n${basePrompt}${jsonInstruction}`;
+
+        let aiText = null;
+
+        // Step 1: Gemini with full PDF
+        const geminiKeys = getGeminiKeys(env);
+        if (pdf.r2_url && geminiKeys.length > 0) {
+          try {
+            const pdfRes = await fetch(pdf.r2_url);
+            if (pdfRes.ok) {
+              const buf = await pdfRes.arrayBuffer();
+              const u8 = new Uint8Array(buf);
+              let bin = '';
+              for (let i = 0; i < u8.length; i += 8192) {
+                bin += String.fromCharCode(...u8.subarray(i, i + 8192));
+              }
+              aiText = await callGemini(geminiKeys, {
+                contents: [{ parts: [
+                  { inline_data: { mime_type: 'application/pdf', data: btoa(bin) } },
+                  { text: fullPrompt },
+                ]}],
+                generationConfig: { temperature: 0.7, maxOutputTokens: 4096 },
+              });
+            }
+          } catch (_) {}
+        }
+
+        // Step 2: Vision fallback with page image
+        if (!aiText && page_image) {
+          aiText = await callAiVisionChain(env, fullPrompt, page_image, 4096);
+        }
+
+        // Step 3: Text-only fallback
+        if (!aiText) {
+          aiText = await callAiChain(env, fullPrompt, 4096);
+        }
+
+        if (!aiText) return json({ error: 'AI MCQ তৈরি করতে পারেনি।', questions: [] });
+
+        const parsed = parseMcqJson(aiText);
+        if (!parsed.length) return json({ error: 'AI কোনো বৈধ MCQ তৈরি করতে পারেনি।', questions: [] });
+
+        // Save to DB
+        for (const q of parsed) {
+          await env.DB.prepare(`
+            INSERT INTO mcqs (pdf_id, page_number, type, question, option_a, option_b, option_c, option_d, correct_answer, explanation, created_at)
+            VALUES (?,?,?,?,?,?,?,?,?,?,datetime('now'))
+          `).bind(pdf_id, page_number, type, q.question, q.option_a, q.option_b, q.option_c, q.option_d, q.correct_answer || 'A', q.explanation || '').run();
+        }
+
+        const questions = parsed.map(q => ({
+          question: q.question,
+          options: [q.option_a, q.option_b, q.option_c, q.option_d],
+          correct_index: ['A','B','C','D'].indexOf((q.correct_answer||'A').toUpperCase()),
+          explanation: q.explanation || '',
+          type,
+          page: page_number,
+        }));
+        return json({ questions, ai_generated: true });
       }
 
       // ── SUBMIT EXAM ────────────────────────────────────────

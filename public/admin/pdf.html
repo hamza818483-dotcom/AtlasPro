@@ -1587,6 +1587,15 @@ async function aiGenerate() {
   spin.classList.add('show'); genBtn.disabled = true; result.classList.remove('show'); aiData = [];
   genBtn.innerHTML = '⏳ পেইজ ' + currentPage + ' — MCQ তৈরি হচ্ছে...';
 
+  // Capture page image from preview canvas for vision fallback
+  let pageImage = null;
+  try {
+    const canvas = document.getElementById('previewCanvas');
+    if (canvas && canvas.width > 0) {
+      pageImage = canvas.toDataURL('image/png');
+    }
+  } catch (_) {}
+
   let progressPct = 0;
   const progressTimer = setInterval(() => {
     progressPct = Math.min(progressPct + 3, 95);
@@ -1601,6 +1610,7 @@ async function aiGenerate() {
         page_number: currentPage,
         type,
         prompt: promptVal || undefined,
+        page_image: pageImage || undefined,
       })
     });
     clearInterval(progressTimer);
