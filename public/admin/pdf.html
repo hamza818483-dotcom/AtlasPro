@@ -1614,24 +1614,34 @@ async function aiGenerate() {
   }, 1000);
 
   try {
-    const r = await api('/api/admin/mcq/generate-vision', {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 60000);
+    const r = await fetch(CONFIG.workerUrl + '/api/admin/mcq/generate-vision', {
       method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + Auth.getToken(), 'Content-Type': 'application/json' },
       body: JSON.stringify({
         pdf_id: activePdfId,
         page_number: currentPage,
         type,
         prompt: promptVal || undefined,
         page_image: pageImage || undefined,
-      })
+      }),
+      signal: controller.signal,
     });
+    clearTimeout(timeout);
     clearInterval(progressTimer);
     const d = await r.json();
     if (!r.ok || d.error) throw new Error(d.error || 'AI ব্যর্থ');
     aiData = d.mcqs || [];
-    if (!aiData.length) throw new Error('AI কোনো বৈধ MCQ তৈরি করতে পারেনি। Gemini API key চেক করুন এবং আবার চেষ্টা করুন।');
+    if (!aiData.length) throw new Error('AI কোনো বৈধ MCQ তৈরি করতে পারেনি। API key চেক করুন এবং আবার চেষ্টা করুন।');
     renderAiPreview(aiData, d.auto_saved);
     showToast(aiData.length + ' টি MCQ তৈরি হয়েছে ✓', 'success');
-  } catch (e) { clearInterval(progressTimer); showToast('AI ত্রুটি: ' + e.message, 'error'); }
+    loadMcqs(); loadPageSummary();
+  } catch (e) {
+    clearInterval(progressTimer);
+    const msg = e.name === 'AbortError' ? 'সময় শেষ — AI সাড়া দেয়নি। আবার চেষ্টা করুন।' : ('AI ত্রুটি: ' + e.message);
+    showToast(msg, 'error');
+  }
   finally { spin.classList.remove('show'); genBtn.disabled = false; genBtn.innerHTML = '🤖 AI দিয়ে MCQ তৈরি করো'; }
 }
 

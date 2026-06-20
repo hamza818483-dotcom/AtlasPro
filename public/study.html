@@ -446,11 +446,11 @@ function makePage(p,tot){
   d.className='page-card'; d.id='pc-'+p; d.dataset.page=p;
   d.innerHTML=`
     <div class="page-top-bar">
-      <label class="cb-label" onclick="toggleSel(${p})">
-        <input type="checkbox" id="cb-${p}">
+      <div class="cb-label" onclick="toggleSel(${p})">
+        <input type="checkbox" id="cb-${p}" style="display:none">
         <div class="cb-box" id="cbv-${p}"></div>
         <span class="cb-txt">নির্বাচন</span>
-      </label>
+      </div>
       <span class="p-badge">পেইজ ${p} / ${tot}</span>
     </div>
     <div class="canvas-wrap" id="cw-${p}">
@@ -506,17 +506,15 @@ function zoom(d){
 }
 
 function toggleSel(p){
-  const cb=document.getElementById('cb-'+p);
+  const cbv=document.getElementById('cbv-'+p);
   if(selPages.has(p)){
     selPages.delete(p);
     document.getElementById('pc-'+p)?.classList.remove('sel');
-    if(cb)cb.checked=false;
-    document.getElementById('cbv-'+p).textContent='';
+    if(cbv){cbv.textContent='';cbv.style.background='';cbv.style.borderColor=''}
   }else{
     selPages.add(p);
     document.getElementById('pc-'+p)?.classList.add('sel');
-    if(cb)cb.checked=true;
-    document.getElementById('cbv-'+p).textContent='✓';
+    if(cbv){cbv.textContent='✓';cbv.style.background='var(--primary)';cbv.style.borderColor='var(--primary)';cbv.style.color='#fff'}
   }
   updateMultiBtn();
 }

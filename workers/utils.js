@@ -36,6 +36,13 @@ export function jsonRes(data, status = 200) {
   });
 }
 
+// Timeout-aware fetch (prevents AI calls from hanging)
+function fetchWithTimeout(url, options = {}, timeoutMs = 20000) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  return fetch(url, { ...options, signal: controller.signal }).finally(() => clearTimeout(timer));
+}
+
 // Gemini key rotation helpers
 export function getGeminiKeys(env) {
   const keys = [];
@@ -49,9 +56,10 @@ export async function callGemini(keys, body) {
   for (const key of keys) {
     for (const model of models) {
       try {
-        const res = await fetch(
+        const res = await fetchWithTimeout(
           `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`,
-          { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }
+          { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) },
+          25000
         );
         if (res.status === 429 || res.status >= 500) continue;
         if (!res.ok) continue;
@@ -68,11 +76,11 @@ export async function callGemini(keys, body) {
 async function callOpenAICompat(endpoint, key, model, messages, maxTokens = 4096) {
   if (!key) return null;
   try {
-    const res = await fetch(endpoint, {
+    const res = await fetchWithTimeout(endpoint, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${key}` },
       body: JSON.stringify({ model, messages, max_tokens: maxTokens }),
-    });
+    }, 20000);
     if (!res.ok) return null;
     const d = await res.json();
     return d.choices?.[0]?.message?.content || null;
@@ -83,7 +91,7 @@ async function callOpenAICompat(endpoint, key, model, messages, maxTokens = 4096
 async function callOpenAICompatVision(endpoint, key, model, prompt, imageBase64, maxTokens = 4096) {
   if (!key || !imageBase64) return null;
   try {
-    const res = await fetch(endpoint, {
+    const res = await fetchWithTimeout(endpoint, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${key}` },
       body: JSON.stringify({
@@ -97,7 +105,7 @@ async function callOpenAICompatVision(endpoint, key, model, prompt, imageBase64,
         }],
         max_tokens: maxTokens,
       }),
-    });
+    }, 20000);
     if (!res.ok) return null;
     const d = await res.json();
     return d.choices?.[0]?.message?.content || null;
@@ -125,12 +133,14 @@ export async function callCfAi(env, prompt) {
   const models = ['@cf/meta/llama-3.1-8b-instruct', '@cf/meta/llama-3-8b-instruct'];
   for (const model of models) {
     try {
-      const res = await env.AI.run(model, {
+      const aiPromise = env.AI.run(model, {
         messages: [
           { role: 'system', content: 'You are a helpful assistant. Always respond with valid JSON when asked. No extra text outside JSON.' },
           { role: 'user', content: prompt }
         ],
       });
+      const timeout = new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 15000));
+      const res = await Promise.race([aiPromise, timeout]);
       if (res?.response) return res.response;
     } catch (_) {}
   }
@@ -153,7 +163,7 @@ export async function callOpenRouterVision(key, prompt, imageBase64, maxTokens =
 export async function callCfAiVision(env, prompt, imageBase64) {
   if (!env.AI || !imageBase64) return null;
   try {
-    const res = await env.AI.run('@cf/meta/llama-3.2-11b-vision-instruct', {
+    const aiPromise = env.AI.run('@cf/meta/llama-3.2-11b-vision-instruct', {
       messages: [{
         role: 'user',
         content: [
@@ -162,6 +172,8 @@ export async function callCfAiVision(env, prompt, imageBase64) {
         ],
       }],
     });
+    const timeout = new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 15000));
+    const res = await Promise.race([aiPromise, timeout]);
     if (res?.response) return res.response;
   } catch (_) {}
   return null;
@@ -178,49 +190,65 @@ export function getAiKeys(env) {
 }
 
 // Full AI Vision fallback chain (image + text)
-// Order: Gemini 2.5 Flash (PDF) → Groq Vision → OpenRouter Vision → Together Vision → CF AI Vision → text-only chain
+// Fast parallel groups: [Groq+OpenRouter] → [Together+CF AI] → text-only
 export async function callAiVisionChain(env, prompt, imageBase64, maxTokens = 4096) {
   if (!imageBase64) return callAiChain(env, prompt, maxTokens);
   const keys = getAiKeys(env);
 
-  // 1. Groq Vision (fastest)
-  if (keys.groq) { const t = await callGroqVision(keys.groq, prompt, imageBase64, maxTokens); if (t) return t; }
+  // Group 1: Race Groq + OpenRouter vision (fastest)
+  const g1 = [];
+  if (keys.groq) g1.push(callGroqVision(keys.groq, prompt, imageBase64, maxTokens));
+  if (keys.openrouter) g1.push(callOpenRouterVision(keys.openrouter, prompt, imageBase64, maxTokens));
+  if (g1.length) {
+    const results = await Promise.allSettled(g1);
+    for (const r of results) if (r.status === 'fulfilled' && r.value) return r.value;
+  }
 
-  // 2. OpenRouter Vision
-  if (keys.openrouter) { const t = await callOpenRouterVision(keys.openrouter, prompt, imageBase64, maxTokens); if (t) return t; }
+  // Group 2: Race Together + CF AI vision
+  const g2 = [];
+  if (keys.together) g2.push(callTogetherVision(keys.together, prompt, imageBase64, maxTokens));
+  if (env.AI) g2.push(callCfAiVision(env, prompt, imageBase64));
+  if (g2.length) {
+    const results = await Promise.allSettled(g2);
+    for (const r of results) if (r.status === 'fulfilled' && r.value) return r.value;
+  }
 
-  // 3. Together Vision
-  if (keys.together) { const t = await callTogetherVision(keys.together, prompt, imageBase64, maxTokens); if (t) return t; }
-
-  // 4. CF AI Vision (no key needed)
-  const cfResult = await callCfAiVision(env, prompt, imageBase64);
-  if (cfResult) return cfResult;
-
-  // 5. Last resort: text-only chain
+  // Last resort: text-only chain
   return callAiChain(env, prompt, maxTokens);
 }
 
 // Full AI fallback chain (text-only, no vision)
-// Order: Groq (fastest) → Gemini → OpenRouter → Together → Cerebras → CF AI
+// Fast parallel groups: [Groq+Gemini] → [OpenRouter+Together+Cerebras] → CF AI
 export async function callAiChain(env, prompt, maxTokens = 4096) {
   const messages = [{ role: 'user', content: prompt }];
   const keys = getAiKeys(env);
 
-  if (keys.groq) { const t = await callGroq(keys.groq, messages, maxTokens); if (t) return t; }
-
+  // Group 1: Race Groq (fastest) + Gemini
+  const g1 = [];
+  if (keys.groq) g1.push(callGroq(keys.groq, messages, maxTokens));
   const geminiKeys = getGeminiKeys(env);
   if (geminiKeys.length > 0) {
-    const t = await callGemini(geminiKeys, {
+    g1.push(callGemini(geminiKeys, {
       contents: [{ parts: [{ text: prompt }] }],
       generationConfig: { maxOutputTokens: maxTokens },
-    });
-    if (t) return t;
+    }));
+  }
+  if (g1.length) {
+    const results = await Promise.allSettled(g1);
+    for (const r of results) if (r.status === 'fulfilled' && r.value) return r.value;
   }
 
-  if (keys.openrouter) { const t = await callOpenRouter(keys.openrouter, messages, maxTokens); if (t) return t; }
-  if (keys.together) { const t = await callTogether(keys.together, messages, maxTokens); if (t) return t; }
-  if (keys.cerebras) { const t = await callCerebras(keys.cerebras, messages, maxTokens); if (t) return t; }
+  // Group 2: Race OpenRouter + Together + Cerebras
+  const g2 = [];
+  if (keys.openrouter) g2.push(callOpenRouter(keys.openrouter, messages, maxTokens));
+  if (keys.together) g2.push(callTogether(keys.together, messages, maxTokens));
+  if (keys.cerebras) g2.push(callCerebras(keys.cerebras, messages, maxTokens));
+  if (g2.length) {
+    const results = await Promise.allSettled(g2);
+    for (const r of results) if (r.status === 'fulfilled' && r.value) return r.value;
+  }
 
+  // Last resort: CF AI
   return callCfAi(env, prompt);
 }
 

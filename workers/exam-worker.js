@@ -1,6 +1,12 @@
 // workers/exam-worker.js
 import { getGeminiKeys, callGemini, callGroq, callCfAi, callAiChain, callAiVisionChain, parseMcqJson } from './utils.js';
 
+function fetchPdfWithTimeout(url, timeoutMs = 15000) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  return fetch(url, { signal: controller.signal }).finally(() => clearTimeout(timer));
+}
+
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
@@ -78,7 +84,7 @@ export default {
           // Try Gemini Vision if PDF URL available
           if (pdf.r2_url && geminiKeys.length > 0) {
             try {
-              const pdfRes = await fetch(pdf.r2_url);
+              const pdfRes = await fetchPdfWithTimeout(pdf.r2_url);
               if (pdfRes.ok) {
                 const buf = await pdfRes.arrayBuffer();
                 const u8 = new Uint8Array(buf);
@@ -99,7 +105,7 @@ export default {
             } catch (_) {}
           }
 
-          // Fallback: full AI chain (text-only, all providers)
+          // Fallback: full AI chain (text-only, all providers — parallel)
           if (!aiText) {
             aiText = await callAiChain(env, prompt, 4096);
           }
@@ -170,7 +176,7 @@ export default {
         const geminiKeys = getGeminiKeys(env);
         if (pdf.r2_url && geminiKeys.length > 0) {
           try {
-            const pdfRes = await fetch(pdf.r2_url);
+            const pdfRes = await fetchPdfWithTimeout(pdf.r2_url);
             if (pdfRes.ok) {
               const buf = await pdfRes.arrayBuffer();
               const u8 = new Uint8Array(buf);
@@ -189,14 +195,15 @@ export default {
           } catch (_) {}
         }
 
-        // Step 2: Vision fallback with page image
-        if (!aiText && page_image) {
-          aiText = await callAiVisionChain(env, fullPrompt, page_image, 4096);
-        }
-
-        // Step 3: Text-only fallback
+        // Step 2: Vision + Text fallback in parallel
         if (!aiText) {
-          aiText = await callAiChain(env, fullPrompt, 4096);
+          const fallbacks = [];
+          if (page_image) fallbacks.push(callAiVisionChain(env, fullPrompt, page_image, 4096));
+          fallbacks.push(callAiChain(env, fullPrompt, 4096));
+          const results = await Promise.allSettled(fallbacks);
+          for (const r of results) {
+            if (r.status === 'fulfilled' && r.value) { aiText = r.value; break; }
+          }
         }
 
         if (!aiText) return json({ error: 'AI MCQ তৈরি করতে পারেনি।', questions: [] });

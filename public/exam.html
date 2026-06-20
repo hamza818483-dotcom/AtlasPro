@@ -256,6 +256,13 @@ function show(id){['preScreen','examScreen','loadScreen'].forEach(s=>{document.g
 
 async function loadQuestions(){
   show('loadScreen');
+  const pages=PAGES_STR?PAGES_STR.split(',').map(Number).filter(Boolean):[];
+  const pageLabel=pages.length>1?`${pages.length} টি পেইজ`:pages.length===1?`পেইজ ${pages[0]}`:'সব পেইজ';
+  const typeName=TYPE==='hard'?'কঠিন MCQ':TYPE==='true_false'?'সত্য/মিথ্যা':'Standard MCQ';
+
+  // Show instant progress UI
+  showProgress(pageLabel, typeName, 5, 'ডাটাবেস চেক হচ্ছে...');
+
   const qp=new URLSearchParams();
   if(PDF_ID)qp.set('pdf_id',PDF_ID);
   if(PAGES_STR)qp.set('pages',PAGES_STR);
@@ -271,13 +278,9 @@ async function loadQuestions(){
   if(data.coming_soon){
     showComingSoon(data.message||'এই ধরনের MCQ এখনো চালু হয়নি');return
   }
-  if(data.generating){
-    showGenerating(data);return
-  }
 
   questions=data.questions||[];
   if(!questions.length){
-    // No MCQs — try POST with page image for vision-based generation
     tryVisionGenerate();
     return;
   }
@@ -289,9 +292,11 @@ async function loadQuestions(){
 async function tryVisionGenerate(){
   const pages=PAGES_STR?PAGES_STR.split(',').map(Number).filter(Boolean):[];
   const pg=pages[0]||1;
-  showGenerating({eta_seconds:45});
+  const pageLabel=pages.length>1?`${pages.length} টি পেইজ`:`পেইজ ${pg}`;
+  const typeName=TYPE==='hard'?'কঠিন MCQ':TYPE==='true_false'?'সত্য/মিথ্যা':'Standard MCQ';
 
-  // Try to render the page and capture image for vision AI
+  showProgress(pageLabel, typeName, 15, 'PDF পেইজ রেন্ডার হচ্ছে...');
+
   let pageImage=null;
   if(typeof pdfjsLib!=='undefined'&& PDF_ID){
     try{
@@ -299,40 +304,66 @@ async function tryVisionGenerate(){
       if(urlRes.ok){
         const urlData=await urlRes.json();
         if(urlData.url){
-          const pdfDoc=await pdfjsLib.getDocument(urlData.url).promise;
-          const pageObj=await pdfDoc.getPage(Math.min(pg,pdfDoc.numPages));
+          showProgress(pageLabel, typeName, 25, 'PDF ডাউনলোড হচ্ছে...');
+          const pdfDoc2=await pdfjsLib.getDocument(urlData.url).promise;
+          const pageObj=await pdfDoc2.getPage(Math.min(pg,pdfDoc2.numPages));
           const vp=pageObj.getViewport({scale:1.5});
           const c=document.createElement('canvas');
           c.width=vp.width;c.height=vp.height;
           await pageObj.render({canvasContext:c.getContext('2d'),viewport:vp}).promise;
           pageImage=c.toDataURL('image/png');
+          showProgress(pageLabel, typeName, 35, 'AI MCQ তৈরি করছে...');
         }
       }
-    }catch(_){}
+    }catch(_){
+      showProgress(pageLabel, typeName, 30, 'AI MCQ তৈরি করছে (টেক্সট)...');
+    }
   }
 
+  // Start progress animation
+  let pct=40;
+  const progressTimer=setInterval(()=>{
+    pct=Math.min(pct+2,92);
+    updateProgressBar(pct);
+  },800);
+
   try{
+    const controller=new AbortController();
+    const timeout=setTimeout(()=>controller.abort(),55000);
     const r=await fetch(`${CONFIG.workerUrl}/api/exam/generate`,{
       method:'POST',
       headers:Auth.headers(),
-      body:JSON.stringify({pdf_id:parseInt(PDF_ID),page_number:pg,type:TYPE||'standard',page_image:pageImage||undefined})
+      body:JSON.stringify({pdf_id:parseInt(PDF_ID),page_number:pg,type:TYPE||'standard',page_image:pageImage||undefined}),
+      signal:controller.signal
     });
-    if(!r.ok)throw new Error();
+    clearTimeout(timeout);
+    clearInterval(progressTimer);
+    if(!r.ok){const d=await r.json().catch(()=>({}));showError(d.error||'সার্ভার সমস্যা');return}
     const d=await r.json();
     questions=d.questions||[];
-    if(!questions.length){showError(d.error||'MCQ তৈরি করা যায়নি। আবার চেষ্টা করুন।');return}
+    if(!questions.length){showError(d.error||'AI কোনো MCQ তৈরি করতে পারেনি। আবার চেষ্টা করুন।');return}
     questions.sort(()=>Math.random()-0.5);
     timerSecs=questions.length*30;
     showPreScreen();
-  }catch(e){showError('AI MCQ তৈরি করতে পারেনি। আবার চেষ্টা করুন।')}
+  }catch(e){
+    clearInterval(progressTimer);
+    if(e.name==='AbortError'){
+      showError('সময় শেষ — সার্ভার সাড়া দেয়নি। আবার চেষ্টা করুন।');
+    }else{
+      showError('AI MCQ তৈরি করতে পারেনি। নেটওয়ার্ক চেক করে আবার চেষ্টা করুন।');
+    }
+  }
 }
 
 function showError(msg){
   show('loadScreen');
   document.getElementById('loadScreen').innerHTML=`
     <div class="ctr"><div style="font-size:48px;margin-bottom:12px">😔</div>
-    <div style="font-size:15px;font-weight:700;color:var(--text2)">${esc(msg)}</div>
-    <button class="coming-btn" onclick="history.back()" style="margin-top:16px">← ফিরে যাও</button></div>`;
+    <div style="font-size:15px;font-weight:700;color:var(--text2);max-width:300px;line-height:1.6">${esc(msg)}</div>
+    <div style="display:flex;gap:10px;margin-top:16px">
+      <button class="coming-btn" onclick="history.back()">← ফিরে যাও</button>
+      <button class="coming-btn" style="background:var(--primary);color:#fff;border-color:var(--primary)" onclick="location.reload()">🔄 আবার চেষ্টা</button>
+    </div></div>`;
 }
 
 function showComingSoon(msg){
@@ -344,31 +375,33 @@ function showComingSoon(msg){
     <button class="coming-btn" onclick="history.back()">← ফিরে যাও</button></div>`;
 }
 
-let genStartTime=null, genEta=30;
-function showGenerating(data){
+function showProgress(pageLabel, typeName, pct, statusText){
   show('loadScreen');
-  const eta=data.eta_seconds||30;
-  if(!genStartTime){ genStartTime=Date.now(); genEta=eta; }
-  const elapsed=Math.floor((Date.now()-genStartTime)/1000);
-  const pct=Math.min(95,Math.round((elapsed/genEta)*100));
-  const pages=PAGES_STR?PAGES_STR.split(',').filter(Boolean):[];
-  const pageLabel=pages.length>1?`${pages.length} টি পেইজ`:pages.length===1?`পেইজ ${pages[0]}`:'';
-
   document.getElementById('loadScreen').innerHTML=`
-    <div class="ctr" style="gap:18px">
+    <div class="ctr" style="gap:14px">
       <div class="sp"></div>
-      <div style="font-size:15px;font-weight:900;color:var(--text)">AI দিয়ে MCQ তৈরি হচ্ছে... ${pageLabel?pageLabel:''}</div>
-      <div style="width:80%;max-width:280px">
+      <div style="font-size:16px;font-weight:900;color:var(--text)">AI MCQ তৈরি হচ্ছে</div>
+      <div style="display:flex;gap:12px;flex-wrap:wrap;justify-content:center">
+        <span style="font-size:12px;background:rgba(108,99,255,.15);color:var(--primary);padding:4px 10px;border-radius:8px;font-weight:700">📄 ${esc(pageLabel)}</span>
+        <span style="font-size:12px;background:rgba(16,185,129,.15);color:var(--green);padding:4px 10px;border-radius:8px;font-weight:700">📝 ${esc(typeName)}</span>
+      </div>
+      <div style="width:85%;max-width:300px;margin-top:4px">
         <div style="background:var(--bg2);border-radius:8px;height:10px;overflow:hidden;border:1px solid var(--border)">
           <div id="genBar" style="height:100%;border-radius:8px;background:linear-gradient(90deg,#6C63FF,#8B5CF6);transition:width .5s ease;width:${pct}%"></div>
         </div>
         <div style="display:flex;justify-content:space-between;margin-top:6px">
-          <span style="font-size:11px;color:var(--text3)">আনুমানিক ${Math.max(0,eta-elapsed)} সেকেন্ড বাকি</span>
-          <span style="font-size:12px;font-weight:900;color:var(--primary)">${pct}%</span>
+          <span id="genStatus" style="font-size:11px;color:var(--text3)">${esc(statusText)}</span>
+          <span id="genPct" style="font-size:12px;font-weight:900;color:var(--primary)">${pct}%</span>
         </div>
       </div>
     </div>`;
-  setTimeout(()=>loadQuestions(),3000);
+}
+
+function updateProgressBar(pct){
+  const bar=document.getElementById('genBar');
+  const pctEl=document.getElementById('genPct');
+  if(bar)bar.style.width=pct+'%';
+  if(pctEl)pctEl.textContent=pct+'%';
 }
 
 async function showPreScreen(){

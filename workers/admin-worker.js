@@ -1,6 +1,12 @@
 // admin-worker.js — AtlasPro Admin API
 import { supabaseUpload, supabaseDelete, getGeminiKeys, callGemini, callGroq, callCfAi, callAiChain, callAiVisionChain, parseMcqJson, callTogether, callOpenRouter, callCerebras, getAiKeys } from './utils.js';
 
+function fetchPdfWithTimeout(url, timeoutMs = 15000) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  return fetch(url, { signal: controller.signal }).finally(() => clearTimeout(timer));
+}
+
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
@@ -322,7 +328,7 @@ export default {
           const geminiKeys = getGeminiKeys(env);
           if (geminiKeys.length > 0) {
             try {
-              const pdfRes = await fetch(pdf.r2_url);
+              const pdfRes = await fetchPdfWithTimeout(pdf.r2_url);
               if (pdfRes.ok) {
                 const buf = await pdfRes.arrayBuffer();
                 const u8 = new Uint8Array(buf);
@@ -344,16 +350,18 @@ export default {
           }
         }
 
-        // Step 2: Vision fallback chain with page image
-        if (!mcqs.length && page_image) {
-          const aiText = await callAiVisionChain(env, fullPrompt, page_image, 4096);
-          if (aiText) mcqs = parseMcqJson(aiText);
-        }
-
-        // Step 3: Text-only fallback
+        // Step 2: Vision + Text fallback in parallel
         if (!mcqs.length) {
-          const aiText = await callAiChain(env, fullPrompt, 4096);
-          if (aiText) mcqs = parseMcqJson(aiText);
+          const fallbacks = [];
+          if (page_image) fallbacks.push(callAiVisionChain(env, fullPrompt, page_image, 4096));
+          fallbacks.push(callAiChain(env, fullPrompt, 4096));
+          const results = await Promise.allSettled(fallbacks);
+          for (const r of results) {
+            if (r.status === 'fulfilled' && r.value) {
+              mcqs = parseMcqJson(r.value);
+              if (mcqs.length) break;
+            }
+          }
         }
 
         if (!mcqs.length) {
@@ -431,7 +439,7 @@ export default {
         const geminiKeys = getGeminiKeys(env);
         if (geminiKeys.length > 0) {
           try {
-            const pdfRes = await fetch(pdf.r2_url);
+            const pdfRes = await fetchPdfWithTimeout(pdf.r2_url);
             if (pdfRes.ok) {
               const buf = await pdfRes.arrayBuffer();
               const u8 = new Uint8Array(buf);
@@ -453,17 +461,19 @@ export default {
           } catch (_) {}
         }
 
-        // Step 2: If Gemini failed and we have a page image, use vision fallback chain
-        if (!mcqs.length && page_image) {
-          const aiText = await callAiVisionChain(env, fullPrompt, page_image, 4096);
-          if (aiText) mcqs = parseMcqJson(aiText);
-        }
-
-        // Step 3: Last resort — text-only chain
+        // Step 2: Vision + Text fallback in parallel (fast)
         if (!mcqs.length) {
+          const fallbacks = [];
+          if (page_image) fallbacks.push(callAiVisionChain(env, fullPrompt, page_image, 4096));
           const textPrompt = `${prompt}\n\nSubject: Educational textbook, Page ${page_number}.${jsonInstruction}`;
-          const aiText = await callAiChain(env, textPrompt, 4096);
-          if (aiText) mcqs = parseMcqJson(aiText);
+          fallbacks.push(callAiChain(env, textPrompt, 4096));
+          const results = await Promise.allSettled(fallbacks);
+          for (const r of results) {
+            if (r.status === 'fulfilled' && r.value) {
+              mcqs = parseMcqJson(r.value);
+              if (mcqs.length) break;
+            }
+          }
         }
 
         if (!mcqs.length) {
